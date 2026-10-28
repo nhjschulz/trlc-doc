@@ -1,0 +1,216 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "https://github.com/NewTec-GmbH/trlcdoc/schema/trlcdoc.schema.json",
+    "title": "trlcdoc project configuration",
+    "description": "Project specific configuration of the trlcdoc documentation tooling. Relative paths are resolved against the directory of the configuration file (the project root). Cross references (document ids, level names) are checked by trlcdoc after the schema validation.",
+    "type": "object",
+    "additionalProperties": false,
+    "required": ["project", "paths", "documents"],
+    "properties": {
+        "project": {
+            "description": "Project metadata, used for the HTML site and the online trace links.",
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["name", "author", "copyright"],
+            "properties": {
+                "name": {"type": "string", "minLength": 1},
+                "author": {"type": "string", "minLength": 1},
+                "copyright": {"type": "string", "minLength": 1},
+                "repository": {
+                    "description": "Repository URL for online trace report links. 'auto' derives it from 'git remote get-url origin'.",
+                    "type": "string",
+                    "default": "auto"
+                },
+                "logo": {"description": "Path to a logo image for the HTML site.", "type": ["string", "null"], "default": null},
+                "favicon": {"description": "Path to a favicon for the HTML site.", "type": ["string", "null"], "default": null}
+            }
+        },
+        "paths": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["trlc_model"],
+            "properties": {
+                "trlc_model": {"description": "Folder with the TRLC model (.rsl) files. Always passed as include to the TRLC tools.", "type": "string"},
+                "output": {"description": "Folder for all generated files. Must not be inside the trlcdoc submodule.", "type": "string", "default": "build/trlcdoc"}
+            }
+        },
+        "documents": {
+            "description": "Documents of the HTML site, in table of contents order. The id is the key used by 'include' and by the trace levels.",
+            "type": "array",
+            "minItems": 1,
+            "items": {"$ref": "#/$defs/document"}
+        },
+        "tests": {"$ref": "#/$defs/tests"},
+        "trace": {"$ref": "#/$defs/trace"},
+        "plantuml": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "version": {"description": "PlantUML release downloaded from GitHub if no jar is available.", "type": "string", "default": "1.2024.8"},
+                "jar": {"description": "Use this plantuml.jar instead of downloading one. The PLANTUML environment variable has precedence.", "type": ["string", "null"], "default": null}
+            }
+        },
+        "html": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "theme": {"type": "string", "default": "haiku"},
+                "extensions": {"description": "Additional Sphinx extensions.", "type": "array", "items": {"type": "string"}, "default": []},
+                "extra_conf": {"description": "Additional Sphinx configuration values, set in the generated conf.py.", "type": "object", "default": {}}
+            }
+        }
+    },
+    "$defs": {
+        "id": {"type": "string", "pattern": "^[a-z][a-z0-9_]*$"},
+        "converterPath": {
+            "description": "pyTRLCConverter project file. 'builtin:<file>' refers to the converters shipped with trlcdoc, any other path is relative to the project root.",
+            "type": "string",
+            "minLength": 1
+        },
+        "converter": {
+            "description": "Converter per output format. 'rst' is required for the HTML site.",
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["rst"],
+            "properties": {
+                "rst": {"$ref": "#/$defs/converterPath"},
+                "markdown": {"$ref": "#/$defs/converterPath"}
+            }
+        },
+        "document": {
+            "type": "object",
+            "required": ["id", "type"],
+            "properties": {
+                "id": {"$ref": "#/$defs/id"},
+                "title": {"type": "string", "minLength": 1},
+                "type": {"enum": ["trlc", "test_results", "trace_report", "html", "rst", "markdown", "text", "command"]},
+                "source": {"type": "string", "minLength": 1},
+                "include": {"description": "Ids of documents whose TRLC files are needed to resolve references.", "type": "array", "items": {"$ref": "#/$defs/id"}, "uniqueItems": true},
+                "converter": {"$ref": "#/$defs/converter"},
+                "translation": {"$ref": "#/$defs/converterPath"},
+                "render_cfg": {"$ref": "#/$defs/converterPath"},
+                "command": {"type": "array", "minItems": 1, "items": {"type": "string"}},
+                "output": {"type": "string", "minLength": 1}
+            },
+            "allOf": [
+                {
+                    "if": {"properties": {"type": {"const": "trlc"}}},
+                    "then": {
+                        "required": ["title", "source", "converter"],
+                        "propertyNames": {"enum": ["id", "title", "type", "source", "include", "converter", "translation", "render_cfg"]}
+                    }
+                },
+                {
+                    "if": {"properties": {"type": {"const": "test_results"}}},
+                    "then": {
+                        "required": ["title", "converter"],
+                        "propertyNames": {"enum": ["id", "title", "type", "include", "converter", "translation", "render_cfg"]}
+                    }
+                },
+                {
+                    "if": {"properties": {"type": {"const": "trace_report"}}},
+                    "then": {
+                        "required": ["title"],
+                        "propertyNames": {"enum": ["id", "title", "type"]}
+                    }
+                },
+                {
+                    "if": {"properties": {"type": {"const": "html"}}},
+                    "then": {
+                        "description": "An HTML folder with index.html, shown in an iframe. 'tests:coverage' refers to the coverage report of the tests step.",
+                        "required": ["title", "source"],
+                        "propertyNames": {"enum": ["id", "title", "type", "source"]}
+                    }
+                },
+                {
+                    "if": {"properties": {"type": {"enum": ["rst", "markdown"]}}},
+                    "then": {
+                        "description": "A project owned page, used as is. Its own first heading is the page title.",
+                        "required": ["source"],
+                        "propertyNames": {"enum": ["id", "title", "type", "source"]}
+                    }
+                },
+                {
+                    "if": {"properties": {"type": {"const": "text"}}},
+                    "then": {
+                        "description": "A plain text file shown literally, e.g. the LICENSE.",
+                        "required": ["title", "source"],
+                        "propertyNames": {"enum": ["id", "title", "type", "source"]}
+                    }
+                },
+                {
+                    "if": {"properties": {"type": {"const": "command"}}},
+                    "then": {
+                        "description": "An external tool generating an HTML folder (output) with index.html, shown like type html.",
+                        "required": ["title", "command", "output"],
+                        "propertyNames": {"enum": ["id", "title", "type", "command", "output"]}
+                    }
+                }
+            ]
+        },
+        "tests": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["runner", "link"],
+            "properties": {
+                "runner": {"enum": ["pytest", "command"]},
+                "args": {"description": "pytest arguments. A '--cov' argument enables the HTML coverage report.", "type": "array", "items": {"type": "string"}, "default": []},
+                "command": {"description": "Test command for runner 'command'. It must write a JUnit XML file to 'junit'.", "type": "array", "minItems": 1, "items": {"type": "string"}},
+                "junit": {"description": "JUnit XML file written by the test command.", "type": "string"},
+                "coverage": {"description": "HTML coverage folder written by the test command.", "type": "string"},
+                "link": {
+                    "description": "How a test result is linked to its TRLC test case.",
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": ["from", "to"],
+                    "properties": {
+                        "property": {"description": "JUnit test case property holding the test case id. Used first, if present.", "type": "string", "default": "lobster-trace"},
+                        "from": {"description": "Test function name pattern with a {name} placeholder.", "type": "string", "pattern": "\\{name\\}"},
+                        "to": {"description": "Qualified test case id pattern (Package.record) with a {name} placeholder.", "type": "string", "pattern": "^[A-Za-z_][A-Za-z0-9_]*\\..*\\{name\\}"}
+                    }
+                }
+            },
+            "allOf": [
+                {
+                    "if": {"properties": {"runner": {"const": "command"}}},
+                    "then": {"required": ["command", "junit"]}
+                }
+            ]
+        },
+        "trace": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["levels"],
+            "properties": {
+                "namespace": {"description": "LOBSTER namespace of all TRLC levels.", "type": "string", "default": "req"},
+                "levels": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/level"}}
+            }
+        },
+        "level": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["name"],
+            "properties": {
+                "name": {"description": "LOBSTER level name, referenced by trace_to and requires.", "type": "string", "minLength": 1},
+                "kind": {"enum": ["requirements", "implementation"], "default": "requirements"},
+                "document": {"description": "Id of the document (type trlc or test_results) providing the records.", "$ref": "#/$defs/id"},
+                "record_type": {"description": "Qualified TRLC record type (Package.Type).", "type": "string", "pattern": "^[A-Za-z_][A-Za-z0-9_]*\\.[A-Za-z_][A-Za-z0-9_]*$"},
+                "tags": {"description": "Record components holding the trace links.", "type": "array", "items": {"type": "string"}, "default": []},
+                "description_fields": {"type": "array", "items": {"type": "string"}, "default": ["description"]},
+                "trace_to": {"type": "array", "items": {"type": "string"}, "uniqueItems": true, "default": []},
+                "requires": {"type": "array", "items": {"type": "string"}, "uniqueItems": true, "default": []},
+                "extractor": {"enum": ["lobster-python"]},
+                "sources": {"type": "array", "minItems": 1, "items": {"type": "string"}}
+            },
+            "if": {"properties": {"kind": {"const": "implementation"}}, "required": ["kind"]},
+            "then": {
+                "required": ["extractor", "sources"],
+                "not": {"anyOf": [{"required": ["document"]}, {"required": ["record_type"]}]}
+            },
+            "else": {
+                "required": ["document", "record_type"],
+                "not": {"anyOf": [{"required": ["extractor"]}, {"required": ["sources"]}]}
+            }
+        }
+    }
+}
