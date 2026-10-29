@@ -1,0 +1,41 @@
+@startuml comp_cli
+
+package "CLI" {
+    class "cli" as cli <<module>> {
+        + STEPS
+        + main(argv): int
+        - _parse_args(argv): Namespace
+        - _selected_steps(cfg, requested): List[str]
+        - _run_step(step, cfg, args): bool
+    }
+
+    class "__main__" as main <<module>>
+}
+
+class "argparse" as argparser
+
+class "config" as config <<module>>
+class "util" as util <<module>>
+class "plantuml" as plantuml <<module>>
+class "testrun" as testrun <<module>>
+class "convert" as convert <<module>>
+class "trace" as trace <<module>>
+class "html" as html <<module>>
+
+main ..> cli : main()
+cli ...> argparser
+cli ...> config : find_config()\nload_config()
+cli ...> util : remove_output()
+cli ...> plantuml : provide_plantuml()
+cli ...> testrun : run_tests()
+cli ...> convert : convert_documents()
+cli ...> trace : build_trace_report()
+cli ...> html : build_html()
+
+note right of cli
+  Steps: clean, check, plantuml,
+  tests, convert, trace, html
+  Exit codes: 0 ok, 1 findings,
+  2 build error
+end note
+@enduml

@@ -1,0 +1,46 @@
+@startuml context_diagram
+skinparam componentStyle uml2
+left to right direction
+
+actor "Developer or\nCI Pipeline" as dev
+
+package "Project" {
+    file "trlcdoc.yaml" as yaml
+    file "TRLC model and\nrecords (.rsl/.trlc)" as trlc
+    file "PlantUML\ndiagrams (.puml)" as puml
+    file "Sources and tests" as src
+}
+
+[trlcdoc] as trlcdoc <<component>>
+
+package "Toolchain" {
+    [pytest] as pytest <<SOUP>>
+    [pyTRLCConverter] as conv <<SOUP>>
+    [LOBSTER] as lobster <<SOUP>>
+    [PlantUML] as plantuml <<SOUP>>
+    [Sphinx] as sphinx <<SOUP>>
+    [git] as git <<SOUP>>
+}
+
+folder "Output folder" as out {
+    file "HTML site" as site
+}
+
+actor "Reader" as reader
+
+dev --> trlcdoc : calls
+yaml --> trlcdoc
+trlc --> trlcdoc
+puml --> trlcdoc
+src --> trlcdoc
+
+trlcdoc --> pytest
+trlcdoc --> conv
+trlcdoc --> lobster
+trlcdoc --> plantuml
+trlcdoc --> sphinx
+trlcdoc --> git
+
+trlcdoc --> site
+site --> reader
+@enduml

@@ -1,0 +1,12 @@
+@startuml component_overview
+skinparam componentStyle uml2
+
+package "Toolchain" {
+    [pytest] as pytest <<SOUP>>
+    [pyTRLCConverter] as pytrlc <<SOUP>>
+    [LOBSTER] as lobster <<SOUP>>
+    [PlantUML] as plantuml <<SOUP>>
+    [Sphinx] as sphinx <<SOUP>>
+}
+
+@enduml

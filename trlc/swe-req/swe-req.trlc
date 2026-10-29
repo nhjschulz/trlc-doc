@@ -1,0 +1,205 @@
+package SwRequirements
+import AbstractRequirements
+import Generic
+
+section "trlcdoc" {
+
+    Generic.Info sw_req_info_about_sw_req {
+        description = "This file contains the software requirements for trlcdoc, the configurable documentation tooling for TRLC based projects."
+    }
+
+    Generic.PlantUML sw_req_info_overview_diagram {
+            caption = "Tool Operation Overview"
+            file_path = "img/overview.puml"
+    }
+
+    section "Software Requirements" {
+
+        section "General" {
+
+            SwReq sw_req_cli {
+                description = "The software shall provide its functionality as a command-line interface (CLI) tool named 'trlcdoc'."
+                verification_criteria = "Every feature shall be accessible via the command line. Therefore it is verified by CLI tests."
+                valid_status = AbstractRequirements.VALID_STATUS.valid
+            }
+
+            SwReq sw_req_cli_help {
+                description = "The software shall show usage help information when called with the command line argument '-h' or '--help'."
+                verification_criteria = "Call trlcdoc with '-h' and '--help' and check that the usage help is shown."
+                valid_status = AbstractRequirements.VALID_STATUS.valid
+            }
+
+            SwReq sw_req_steps {
+                description = "The software shall organize the documentation build in the steps clean, check, plantuml, tests, convert, trace and html. The user shall be able to select the steps to execute. Without a selection, all steps except clean shall be executed, skipping the steps the configuration has no settings for."
+                verification_criteria = "Call trlcdoc without step, with single steps and with combinations of steps. Check that exactly the selected steps are executed."
+                valid_status = AbstractRequirements.VALID_STATUS.valid
+            }
+
+            SwReq sw_req_step_order {
+                description = "The software shall execute the selected steps in a fixed order, independent of the order given on the command line, and add the steps a selected step depends on."
+                verification_criteria = "Call trlcdoc with steps in reverse order and with a step that needs PlantUML. Check the execution order and that PlantUML is provided."
+                valid_status = AbstractRequirements.VALID_STATUS.valid
+            }
+
+            SwReq sw_req_exit_code {
+                description = "The software shall terminate with exit code 0 on success, with exit code 1 if the project content has findings (failed tests, missing trace links) and with exit code 2 if the documentation could not be built."
+                verification_criteria = "Run trlcdoc on a project without findings, with a failing test and with an invalid configuration. Check the exit codes."
+                valid_status = AbstractRequirements.VALID_STATUS.valid
+            }
+        }
+
+        section "Configuration" {
+
+            SwReq sw_req_config_file {
+                description = "The software shall read all project specific settings from a YAML configuration file. Without a file given on the command line, it shall use the file 'trlcdoc.yaml' of the current folder or its nearest parent folder."
+                verification_criteria = "Call trlcdoc from the project root, from a subfolder and with an explicit configuration file. Check that the expected configuration is used."
+                valid_status = AbstractRequirements.VALID_STATUS.valid
+            }
+
+            SwReq sw_req_config_validation {
+                description = "The software shall validate the configuration against a JSON schema and check the references between its entries, before any step is executed. An invalid configuration shall be reported with the location of each error."
+                verification_criteria = "Call trlcdoc with configurations violating the schema and with unresolved references. Check the error messages and that no step is executed."
+                valid_status = AbstractRequirements.VALID_STATUS.valid
+            }
+
+            SwReq sw_req_project_settings {
+                description = "The software shall take the project metadata (name, author, copyright, repository, logo) from the configuration."
+                verification_criteria = "Build the documentation with different project metadata and check the generated site."
+                valid_status = AbstractRequirements.VALID_STATUS.valid
+            }
+        }
+
+        section "Documents" {
+
+            SwReq sw_req_documents {
+                description = "The software shall build the documentation from a configurable, ordered list of documents. Each document has a unique id and a title."
+                verification_criteria = "Configure documents in different orders and check the table of contents of the generated site."
+                valid_status = AbstractRequirements.VALID_STATUS.valid
+            }
+
+            SwReq sw_req_document_types {
+                description = "The software shall support TRLC documents, test results, the tracing report, existing HTML sites, reStructuredText, Markdown and plain text files, and HTML sites generated by a configured command as document types."
+                verification_criteria = "Build a documentation containing every document type and check the generated pages."
+                valid_status = AbstractRequirements.VALID_STATUS.valid
+            }
+
+            SwReq sw_req_trlc_conversion {
+                description = "The software shall convert TRLC documents with pyTRLCConverter into reStructuredText or Markdown, using the converter, translation and render configuration configured per document. Records of included documents shall be available for resolving references, without being part of the output."
+                verification_criteria = "Convert a document referencing records of an included document into both formats. Check the output and that the included records are not part of it."
+                valid_status = AbstractRequirements.VALID_STATUS.valid
+            }
+
+            SwReq sw_req_builtin_converters {
+                description = "The software shall provide built-in converters for requirements, architecture, test cases and test results, which projects can reference instead of providing their own converter files."
+                verification_criteria = "Convert documents of each kind using the built-in converters and check the output."
+                valid_status = AbstractRequirements.VALID_STATUS.valid
+            }
+
+            SwReq sw_req_plantuml {
+                description = "The software shall provide the PlantUML renderer for the diagrams of the documents. It shall use a jar given by the environment or the configuration, otherwise download the configured PlantUML version."
+                verification_criteria = "Run the plantuml step with the PLANTUML environment variable, with a configured jar and without both. Check the used jar."
+                valid_status = AbstractRequirements.VALID_STATUS.valid
+            }
+        }
+
+        section "Tests" {
+
+            SwReq sw_req_test_run {
+                description = "The software shall run the project tests with pytest or a configured command and read their results from a JUnit XML file. If configured, it shall create a code coverage report."
+                verification_criteria = "Run the tests step with pytest, with coverage and with a custom command. Check the result file and the coverage report."
+                valid_status = AbstractRequirements.VALID_STATUS.valid
+            }
+
+            SwReq sw_req_test_results {
+                description = "The software shall convert the test results into TRLC test result records, which reference their TRLC test cases. A test shall be linked by a property it records or by a configured name mapping. A test that cannot be linked shall be reported as error."
+                verification_criteria = "Run the tests step with tests linked by property, linked by name mapping and not linked. Check the generated records and the error."
+                valid_status = AbstractRequirements.VALID_STATUS.valid
+            }
+        }
+
+        section "Tracing" {
+
+            SwReq sw_req_trace_levels {
+                description = "The software shall derive the LOBSTER tracing configuration from configured trace levels. Each level names its document, its record types and tags, and the levels it traces to or that must trace to it."
+                verification_criteria = "Configure trace levels for requirements, architecture, tests and test results and check the generated tracing report."
+                valid_status = AbstractRequirements.VALID_STATUS.valid
+            }
+
+            SwReq sw_req_trace_report {
+                description = "The software shall create an HTML tracing report. On request, the report shall link the items to their sources in the project repository."
+                verification_criteria = "Create the tracing report offline and online. Check the item links of both reports."
+                valid_status = AbstractRequirements.VALID_STATUS.valid
+            }
+
+            SwReq sw_req_trace_findings {
+                description = "The software shall list the items with missing trace links and report them as findings."
+                verification_criteria = "Run the trace step on a project with an untraced requirement. Check the listed item and the exit code."
+                valid_status = AbstractRequirements.VALID_STATUS.valid
+            }
+        }
+
+        section "HTML Site" {
+
+            SwReq sw_req_html_site {
+                description = "The software shall build a static HTML site with Sphinx, containing a start page with the table of contents and one page per configured document."
+                verification_criteria = "Build the site and check the start page, the table of contents and every document page."
+                valid_status = AbstractRequirements.VALID_STATUS.valid
+            }
+
+            SwReq sw_req_html_version_info {
+                description = "The software shall show the version control state the documentation was built from on every page."
+                verification_criteria = "Build the site in a git working copy and check the commit information on the pages."
+                valid_status = AbstractRequirements.VALID_STATUS.valid
+            }
+        }
+
+        section "Output" {
+
+            SwReq sw_req_output_folder {
+                description = "The software shall write all generated files into a configurable output folder. The output folder shall be neither inside the trlcdoc package nor the project root or one of its parents."
+                verification_criteria = "Build the documentation and check that no file outside the output folder was created or changed. Configure forbidden output folders and check the errors."
+                valid_status = AbstractRequirements.VALID_STATUS.valid
+            }
+
+            SwReq sw_req_clean {
+                description = "The software shall remove all build artifacts with the clean step."
+                verification_criteria = "Run the clean step after a build and check that the output folder is removed."
+                valid_status = AbstractRequirements.VALID_STATUS.valid
+            }
+
+            SwReq sw_req_delete_protection {
+                description = "The software shall delete only folders it created itself. It shall refuse to delete an existing folder with other content and report an error."
+                verification_criteria = "Configure an existing source folder as output folder and run the clean and build steps. Check the error and that the folder content is unchanged."
+                valid_status = AbstractRequirements.VALID_STATUS.valid
+            }
+        }
+    }
+
+    section "Software Constraints" {
+
+        SwConstraint sw_constraint_python {
+            description = "The software shall be implemented in Python and run with Python 3.10 or higher."
+            valid_status = AbstractRequirements.VALID_STATUS.valid
+        }
+
+        SwConstraint sw_constraint_os_win {
+            description = "The software shall support the Windows operating system."
+            valid_status = AbstractRequirements.VALID_STATUS.valid
+        }
+
+        SwConstraint sw_constraint_os_linux {
+            description = "The software shall support the Linux operating system."
+            valid_status = AbstractRequirements.VALID_STATUS.valid
+        }
+
+        SwConstraint sw_constraint_project_independent {
+            description = "The software shall contain no project specific content, so a single copy can be shared by projects, e.g. as git submodule."
+            valid_status = AbstractRequirements.VALID_STATUS.valid
+        }
+
+        SwConstraint sw_constraint_toolchain {
+            description = "The software shall use TRLC, pyTRLCConverter, LOBSTER, PlantUML and Sphinx for parsing, converting, tracing, rendering and publishing."
+            valid_status = AbstractRequirements.VALID_STATUS.valid
+        }
+    }
+}

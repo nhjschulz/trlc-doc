@@ -1,0 +1,40 @@
+@startuml comp_html
+
+package "HTML Builder" {
+    class "html" as html <<module>> {
+        + build_html(cfg): Path
+        - _write_page(cfg, doc, src_dir, copy_dirs): str
+        - _write_converted_page(cfg, doc, src_dir): str
+        - _write_index(cfg, src_dir, pages): Path
+        - _write_sphinx_config(cfg, src_dir, copy_dirs): Path
+    }
+
+    class "conf.py" as conf <<module>> {
+        + setup(app)
+        - _copy_dirs(app)
+        - _git_commit_info(): str
+    }
+
+    class "_static" as static <<folder>>
+}
+
+package "Sphinx" {
+    class "sphinx.cmd.build" as build <<SOUP>>
+    class "sphinxcontrib.plantuml" as spuml <<SOUP>>
+}
+
+class "Config" as cfg
+class "util" as util <<module>>
+
+class "trlcdoc_settings.json" as settings <<file>>
+class "html" as site <<folder>>
+
+html ..> cfg : documents,\nproject,\nhtml settings
+html ..> util : run(),\nclean_dir()
+html --> settings : writes
+html ..> build : build_main()
+build ..> conf : loads
+conf ..> settings : reads
+conf ..> spuml : <<use>>
+build --> site
+@enduml
