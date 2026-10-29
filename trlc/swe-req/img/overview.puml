@@ -1,0 +1,26 @@
+@startuml overview
+skinparam componentStyle uml2
+left to right direction
+
+
+package "Project" {
+    file "TRLC model and\nrecords (.rsl/.trlc)" as trlc
+    file "PlantUML\ndiagrams (.puml)" as puml
+    file "Sources and tests" as src
+}
+
+[trlcdoc] as trlcdoc <<tool>> #lightgreen
+
+
+
+Database "HTML Documentation" as out {
+}
+
+
+trlc --> trlcdoc
+puml --> trlcdoc
+src --> trlcdoc
+
+
+trlcdoc --> out
+@enduml

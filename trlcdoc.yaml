@@ -1,0 +1,71 @@
+# yaml-language-server: $schema=trlcdoc/schema/trlcdoc.schema.json
+#
+# trlcdoc configuration of trlcdoc itself: builds requirements, architecture,
+# tracing report and the HTML site.
+#
+#   pip install -e .
+#   trlcdoc            # all steps, HTML site in build/trlcdoc/html
+
+project:
+  name: trlcdoc
+  author: Norbert Schulz
+  copyright: "2026, NewTec GmbH"
+  repository: https://github.com/nhjschulz/trlc-doc.git
+
+paths:
+  trlc_model: trlc/model
+  output: build/trlcdoc
+
+documents:
+  - id: sw_requirements
+    title: SW-Requirements
+    type: trlc
+    source: trlc/swe-req
+    converter:
+      rst: builtin:req2rst.py
+      markdown: builtin:req2markdown.py
+    translation: builtin:translation.json
+
+  - id: sw_architecture
+    title: SW-Architecture
+    type: trlc
+    source: trlc/swe-arch
+    include: [sw_requirements]
+    converter:
+      rst: builtin:req2rst.py
+      markdown: builtin:req2markdown.py
+    translation: builtin:translation.json
+
+  - id: sw_tracing_report
+    title: Software Tracing Report
+    type: trace_report
+
+  - id: license
+    title: License information
+    type: text
+    source: LICENSE
+
+trace:
+  namespace: req
+  levels:
+    - name: SW Requirement
+      document: sw_requirements
+      record_type: SwRequirements.SwReq
+      requires: [SW Architecture]
+
+    - name: SW Constraint
+      document: sw_requirements
+      record_type: SwRequirements.SwConstraint
+      requires: [SW Architecture]
+
+    - name: SW Architecture
+      document: sw_architecture
+      record_type: SwArch.SwArchSpec
+      tags: [satisfies]
+      trace_to: [SW Requirement, SW Constraint]
+
+plantuml:
+  version: 1.2024.8
+
+html:
+  theme: haiku

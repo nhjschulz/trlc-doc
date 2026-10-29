@@ -1,0 +1,21 @@
+@startuml comp_plantuml
+
+package "PlantUML Provider" {
+    class "plantuml" as plantuml <<module>> {
+        + DEFAULT_VERSION
+        + provide_plantuml(cfg): Path
+        - _download(url, target): Path
+    }
+}
+
+class "Config" as cfg
+class "util" as util <<module>>
+class "urllib.request" as urllib <<module>>
+
+class "plantuml.jar" as jar <<file>>
+
+plantuml ..> cfg : plantuml settings
+plantuml ..> util : prepare_output()
+plantuml ..> urllib : download
+plantuml --> jar : locates or downloads
+@enduml

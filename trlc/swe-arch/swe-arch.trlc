@@ -1,0 +1,204 @@
+package SwArch
+
+import Generic
+import SwRequirements
+
+section "trlcdoc SW Architecture" {
+
+    Generic.Info sw_arch_info_about {
+        description = "This file contains the high level software architecture of trlcdoc, the configurable documentation tooling for TRLC based projects."
+    }
+
+    section "Context" {
+
+        SwArchSpec sw_arch_trlcdoc_tool {
+            description = "trlcdoc is a Python 3 package providing the console application 'trlcdoc'. It builds the documentation of a TRLC based project as static HTML site from the project configuration trlcdoc.yaml, the TRLC model and records, the PlantUML diagrams, and the project sources and tests. It contains no project specific content and orchestrates the external toolchain: pytest runs the tests, pyTRLCConverter converts the TRLC records, LOBSTER creates the tracing report, PlantUML renders the diagrams, Sphinx builds the site and git provides version information. All generated files are written into the output folder."
+            verification_criteria = "Build the documentation of a reference project with 'trlcdoc'. Check the generated site and the console output."
+            satisfies = [SwRequirements.sw_req_cli, SwRequirements.sw_constraint_python, SwRequirements.sw_constraint_os_win, SwRequirements.sw_constraint_os_linux, SwRequirements.sw_constraint_project_independent, SwRequirements.sw_constraint_toolchain]
+        }
+
+        Generic.PlantUML sw_arch_context_diagram {
+            caption = "Context Diagram"
+            file_path = "img/context_diagram.puml"
+        }
+    }
+
+    section "Static View" {
+
+        Generic.Info sw_arch_info_static_view {
+            description = "The software consists of eight components. The CLI runs the build steps, each step is realized by one component: PlantUML Provider, Test Runner, TRLC Conversion, Trace Report and HTML Builder. All steps get their settings and paths from the Configuration component and use the Common Services for running external tools and managing the output folder."
+        }
+
+        Generic.PlantUML sw_arch_component_diagram {
+            caption = "Component Overview"
+            file_path = "img/component_overview.puml"
+        }
+
+        section "Components" {
+
+            section "CLI" {
+
+                SwArchSpec sw_arch_comp_cli {
+                    description = "The CLI component (cli.py, __main__.py) is the application entry point. It parses the command line with argparse, locates and loads the configuration, determines the steps to run in their fixed order, including the steps they depend on, and runs them. The clean step removes the output folder, the check step reports the valid configuration, all other steps are delegated to their components. It maps the step results to the exit codes 0 (success), 1 (findings) and 2 (build error)."
+                    verification_criteria = "Call 'trlcdoc' with different step selections, with '--help' and with an invalid configuration. Check the executed steps, the console output and the exit code."
+                    satisfies = [SwRequirements.sw_req_cli, SwRequirements.sw_req_cli_help, SwRequirements.sw_req_steps, SwRequirements.sw_req_step_order, SwRequirements.sw_req_exit_code, SwRequirements.sw_req_clean]
+                }
+
+                Generic.PlantUML sw_arch_comp_cli_diagram {
+                    caption = "CLI Component"
+                    file_path = "img/comp_cli.puml"
+                }
+            }
+
+            section "Configuration" {
+
+                SwArchSpec sw_arch_comp_config {
+                    description = "The Configuration component (config.py, schema/trlcdoc.schema.json) finds and loads the YAML configuration, validates it against the JSON schema and checks the references between documents, includes, converter files and trace levels, as well as the location of the output folder. It provides the validated settings as Config object, which resolves all paths: the configured inputs relative to the project root, and the generated files in fixed subfolders of the output folder."
+                    verification_criteria = "Load valid configurations, configurations violating the schema and configurations with unresolved references or a forbidden output folder. Check the resolved paths and the error messages."
+                    satisfies = [SwRequirements.sw_req_config_file, SwRequirements.sw_req_config_validation, SwRequirements.sw_req_project_settings, SwRequirements.sw_req_documents, SwRequirements.sw_req_output_folder]
+                }
+
+                Generic.PlantUML sw_arch_comp_config_diagram {
+                    caption = "Configuration Component"
+                    file_path = "img/comp_config.puml"
+                }
+            }
+
+            section "Common Services" {
+
+                SwArchSpec sw_arch_comp_util {
+                    description = "The Common Services component (util.py) provides the services shared by all steps: locating the toolchain executables of the running Python environment, running external commands, querying git, and managing the output folder. Build errors are reported with the TrlcdocError exception. The output folder management creates the output folder with a marker file and deletes only folders inside a marked output folder."
+                    verification_criteria = "Run commands with success and error results. Create, clean and remove output folders, and try to delete unmarked folders with content. Check the results and errors."
+                    satisfies = [SwRequirements.sw_req_output_folder, SwRequirements.sw_req_clean, SwRequirements.sw_req_delete_protection, SwRequirements.sw_req_exit_code]
+                }
+
+                Generic.PlantUML sw_arch_comp_util_diagram {
+                    caption = "Common Services Component"
+                    file_path = "img/comp_util.puml"
+                }
+            }
+
+            section "PlantUML Provider" {
+
+                SwArchSpec sw_arch_comp_plantuml {
+                    description = "The PlantUML Provider component (plantuml.py) realizes the plantuml step. It selects the PlantUML jar from the PLANTUML environment variable, the configuration or a download of the configured version into the output folder, and exports the selected jar in the PLANTUML environment variable for the converters and Sphinx."
+                    verification_criteria = "Run the plantuml step with the environment variable set, with a configured jar and without both. Check the exported jar path."
+                    satisfies = [SwRequirements.sw_req_plantuml]
+                }
+
+                Generic.PlantUML sw_arch_comp_plantuml_diagram {
+                    caption = "PlantUML Provider Component"
+                    file_path = "img/comp_plantuml.puml"
+                }
+            }
+
+            section "Test Runner" {
+
+                SwArchSpec sw_arch_comp_testrun {
+                    description = "The Test Runner component (testrun.py) realizes the tests step. It runs pytest, with a coverage report if requested, or the configured test command. It reads the JUnit XML results, links each test to its TRLC test case by the recorded property or the configured name mapping, and writes the results as SwTestCaseResult records into the output folder. It reports failed tests as findings and unlinked tests as error."
+                    verification_criteria = "Run the tests step with passing, failing, linked and unlinked tests. Check the generated test result records, the coverage report and the reported results."
+                    satisfies = [SwRequirements.sw_req_test_run, SwRequirements.sw_req_test_results]
+                }
+
+                Generic.PlantUML sw_arch_comp_testrun_diagram {
+                    caption = "Test Runner Component"
+                    file_path = "img/comp_testrun.puml"
+                }
+            }
+
+            section "TRLC Conversion" {
+
+                SwArchSpec sw_arch_comp_convert {
+                    description = "The TRLC Conversion component (convert.py, converters/) realizes the convert step. It runs pyTRLCConverter per TRLC document with the document sources, the TRLC model and the records of the included documents, using the configured converter, translation and render configuration. The built-in converters extend the pyTRLCConverter reStructuredText and Markdown converters for the Generic types (information, images, PlantUML diagrams), requirements, test cases and test results."
+                    verification_criteria = "Convert TRLC documents with built-in and project converters into both formats. Check the output files and the rendered diagrams."
+                    satisfies = [SwRequirements.sw_req_document_types, SwRequirements.sw_req_trlc_conversion, SwRequirements.sw_req_builtin_converters]
+                }
+
+                Generic.PlantUML sw_arch_comp_convert_diagram {
+                    caption = "TRLC Conversion Component"
+                    file_path = "img/comp_convert.puml"
+                }
+            }
+
+            section "Trace Report" {
+
+                SwArchSpec sw_arch_comp_trace {
+                    description = "The Trace Report component (trace.py) realizes the trace step. It extracts the trace data per configured level with lobster-trlc or the code extractor, generates the LOBSTER policy from the level relations, runs lobster-report and creates the HTML tracing report with lobster-html-report. For online reports it links the items to the repository with lobster-online-report. It lists the items with missing trace links and reports them as findings."
+                    verification_criteria = "Run the trace step offline and online on a project with complete and with missing trace links. Check the report, its links and the listed findings."
+                    satisfies = [SwRequirements.sw_req_trace_levels, SwRequirements.sw_req_trace_report, SwRequirements.sw_req_trace_findings]
+                }
+
+                Generic.PlantUML sw_arch_comp_trace_diagram {
+                    caption = "Trace Report Component"
+                    file_path = "img/comp_trace.puml"
+                }
+            }
+
+            section "HTML Builder" {
+
+                SwArchSpec sw_arch_comp_html {
+                    description = "The HTML Builder component (html.py, sphinx/) realizes the html step. It generates the Sphinx source folder with one page per document according to its type, the start page with the table of contents and the project settings, and builds the site with Sphinx. The generic Sphinx configuration conf.py reads the project settings, copies embedded HTML sites into the site and adds the git commit to the page footer."
+                    verification_criteria = "Build the site from a configuration with every document type. Check the start page, the document pages, the embedded sites and the page footer."
+                    satisfies = [SwRequirements.sw_req_documents, SwRequirements.sw_req_document_types, SwRequirements.sw_req_project_settings, SwRequirements.sw_req_html_site, SwRequirements.sw_req_html_version_info]
+                }
+
+                Generic.PlantUML sw_arch_comp_html_diagram {
+                    caption = "HTML Builder Component"
+                    file_path = "img/comp_html.puml"
+                }
+            }
+        }
+    }
+
+    section "Dynamic View" {
+
+        SwArchSpec sw_arch_build_flow {
+            description = "A trlcdoc run loads and validates the configuration first and stops with exit code 2 if it is invalid. It then runs the selected steps in their fixed order. A build error stops the run with exit code 2. Findings of the tests and trace steps do not stop the run, so the site still documents them, and lead to exit code 1."
+            verification_criteria = "Run trlcdoc with an invalid configuration, a failing build step and a project with findings. Check the executed steps and the exit codes."
+            satisfies = [SwRequirements.sw_req_step_order, SwRequirements.sw_req_config_validation, SwRequirements.sw_req_exit_code]
+        }
+
+        Generic.PlantUML sw_arch_build_sequence_diagram {
+            caption = "trlcdoc Build Sequence"
+            file_path = "img/trlcdoc_sequence.puml"
+        }
+
+        section "Output Folder States" {
+
+            SwArchSpec sw_arch_output_folder_states {
+                description = "Before deleting anything, trlcdoc classifies the configured output folder into one of the states Missing, Empty, Owned or Foreign. Creating the output folder (prepare_output) changes Missing and Empty to Owned by writing the marker file. Cleaning subfolders keeps the folder Owned, removing it (clean step) changes it to Missing. A Foreign folder stays unchanged, every delete request is refused with an error."
+                verification_criteria = "Run the clean and build steps for an output folder in each state. Check the resulting state and the errors."
+                satisfies = [SwRequirements.sw_req_delete_protection, SwRequirements.sw_req_clean]
+            }
+
+            Generic.PlantUML sw_arch_output_folder_state_diagram {
+                caption = "Output Folder States"
+                file_path = "img/output_folder_states.puml"
+            }
+
+            SwArchSpec sw_arch_state_missing {
+                description = "Missing: the output folder does not exist. This is the initial state of a fresh project and the state after the clean step. Steps writing output create the folder and change to Owned. The clean step reports that there is nothing to clean."
+                verification_criteria = "Run the clean step and a build step without output folder. Check the message and that the folder is created with the marker file."
+                satisfies = [SwRequirements.sw_req_output_folder, SwRequirements.sw_req_clean]
+            }
+
+            SwArchSpec sw_arch_state_empty {
+                description = "Empty: the output folder exists without any content, e.g. created by the user. It contains nothing that could be lost, so it is treated like a missing folder and changes to Owned when output is written."
+                verification_criteria = "Run a build step with an empty output folder. Check that the marker file is written and the build succeeds."
+                satisfies = [SwRequirements.sw_req_output_folder, SwRequirements.sw_req_delete_protection]
+            }
+
+            SwArchSpec sw_arch_state_owned {
+                description = "Owned: the output folder contains the marker file, so trlcdoc created it. Steps may delete and recreate their subfolders, and the clean step may remove the whole folder, which changes to Missing."
+                verification_criteria = "Run a build step twice and the clean step on a marked output folder. Check that the subfolders are recreated and the folder is removed."
+                satisfies = [SwRequirements.sw_req_clean, SwRequirements.sw_req_delete_protection]
+            }
+
+            SwArchSpec sw_arch_state_foreign {
+                description = "Foreign: the output folder has content but no marker file, e.g. because paths.output names a source folder by mistake. Every step that would delete something stops with a build error and exit code 2, and the folder content stays unchanged."
+                verification_criteria = "Configure a folder with content as output folder and run the clean and build steps. Check the error, the exit code and that the content is unchanged."
+                satisfies = [SwRequirements.sw_req_delete_protection, SwRequirements.sw_req_exit_code]
+            }
+        }
+    }
+}

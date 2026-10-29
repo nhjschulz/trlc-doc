@@ -69,6 +69,23 @@ See the flashcontainer
 [trlcdoc.yaml](https://github.com/nhjschulz/flashcontainer/blob/master/trlcdoc.yaml)
 for a complete example.
 
+## Trlcdoc Documentation
+
+The trlc project documentation is itself being generated using trlcdoc. Run the
+following commands to build it:
+
+```
+# setup virtual environment and install trlcdoc
+
+python3 -m venv .venv
+. .venv/bin/activate
+pip install -e .
+
+# generate documentation
+trlcdoc -c trlcdoc.yaml 
+```
+The resulting documentation is generated in folder `build/trlcdoc/html`
+
 ## License
 
 GPL-3.0, see [LICENSE](LICENSE).
