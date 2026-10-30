@@ -24,6 +24,12 @@ dependencies = [
   "sphinxcontrib-plantuml >= 0.30"
 ]
 
+[project.optional-dependencies]
+test = [
+  "pytest >= 8.0",
+  "pytest-cov >= 5.0"
+]
+
 [project.urls]
 Repository = "https://github.com/nhjschulz/trlc-doc"
 
@@ -35,3 +41,6 @@ packages = ["trlcdoc"]
 
 [tool.setuptools.package-data]
 trlcdoc = ["schema/*.json", "converters/*", "sphinx/*.py", "sphinx/_static/*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
