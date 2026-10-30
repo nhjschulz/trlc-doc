@@ -159,7 +159,7 @@ def _repository_url(cfg: Config) -> str:
         cfg (Config): Project configuration.
 
     Returns:
-        str: HTTPS repository URL.
+        str: HTTPS repository URL without '.git' suffix, the base of the file links.
 
     Raises:
         TrlcdocError: If 'auto' is configured and git has no origin remote.
@@ -171,7 +171,8 @@ def _repository_url(cfg: Config) -> str:
             raise TrlcdocError("project.repository is 'auto', but 'git remote get-url origin' failed.")
         # git@github.com:owner/repo.git -> https://github.com/owner/repo.git
         url = re.sub(r"^git@([^:]+):", r"https://\1/", url)
-    return url
+    # https://github.com/owner/repo.git -> https://github.com/owner/repo
+    return re.sub(r"\.git$", "", url)
 
 
 def _make_online(cfg: Config, report_file: Path) -> Path:
