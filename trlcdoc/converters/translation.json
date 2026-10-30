@@ -22,7 +22,7 @@
         "description": "Description",
         "verifies": "Verifies"
     },
-    "SwArchSpec":{
+    "SwArchSpec": {
         "description": "Description",
         "note": "Note",
         "satisfies": "Satisfies",

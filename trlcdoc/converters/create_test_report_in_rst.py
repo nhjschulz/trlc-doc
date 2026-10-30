@@ -1,10 +1,10 @@
-"""Project specific reStructuredText converter functions.
+"""Project specific Markdown converter functions.
 
     Author: Andreas Merkle (andreas.merkle@newtec.de)
 """
 
 # pyTRLCConverter - A tool to convert TRLC files to specific formats.
-# Copyright (c) 2024 - 2025 NewTec GmbH
+# Copyright (c) 2024 - 2026 NewTec GmbH
 #
 # This file is part of pyTRLCConverter program.
 #
@@ -24,12 +24,12 @@ from typing import Optional, Any
 from pyTRLCConverter.base_converter import RecordsPolicy
 from pyTRLCConverter.ret import Ret
 from pyTRLCConverter.rst_converter import RstConverter
+from pyTRLCConverter.rst.element import RstTable
+from pyTRLCConverter.rst.text import RstText
 from pyTRLCConverter.trlc_helper import Record_Object
 
 # Variables ********************************************************************
 
-# The name of the file containing the SW test cases.
-# This is required for creating unique reStructuredText links.
 TEST_CASES_FILE_NAME = "swe-test.rst"
 
 # Classes **********************************************************************
@@ -50,9 +50,9 @@ class CustomRstConverter(RstConverter):
 
         # Set project specific record handlers for the converter.
         self._set_project_record_handlers(
-            {
-                "SwTestCaseResult": self._append_test_case_result
-            }
+           {
+            "SwTestCaseResult": self._append_test_case_result
+           }
         )
 
         self._record_policy = RecordsPolicy.RECORD_SKIP_UNDEFINED
@@ -63,7 +63,7 @@ class CustomRstConverter(RstConverter):
     def get_description() -> str:
         """ Return converter description.
 
-        Returns:
+         Returns:
             str: Converter description
         """
         return "Convert SW test case results to reStructuredText format."
@@ -81,7 +81,7 @@ class CustomRstConverter(RstConverter):
 
         # Multiple document mode?
         if self._args.single_document is False:
-            assert self._fd is not None
+            assert self._document is not None
             self._print_test_case_results()
 
         return super().leave_file(file_name)
@@ -109,7 +109,7 @@ class CustomRstConverter(RstConverter):
         """
         # Single document mode?
         if self._args.single_document is True:
-            assert self._fd is not None
+            assert self._document is not None
             self._print_test_case_results()
 
         return super().finish()
@@ -130,25 +130,25 @@ class CustomRstConverter(RstConverter):
 
         test_case = test_case_result_attributes["relates"]
         if test_case is None:
-            test_case = self.rst_escape("N/A")
-        elif isinstance(test_case, list) is True:
+            test_case = RstText.escape("N/A")
+        elif isinstance(test_case, list):
             test_case_links = []
             for tc in test_case:
                 anchor_tag = tc.replace("SwTests.", TEST_CASES_FILE_NAME + "-").lower()
-                test_case_links.append(self.rst_create_link(tc, anchor_tag))
+                test_case_links.append(RstText.link(tc, anchor_tag))
 
             test_case = ", ".join(test_case_links)
         else:
             anchor_tag = test_case.replace("SwTests.", TEST_CASES_FILE_NAME + "-").lower()
 
-            test_case = self.rst_create_link(test_case, anchor_tag)
+            test_case = RstText.link(test_case, anchor_tag)
 
-        test_function_name = self.rst_escape(test_function_name)
+        test_function_name = RstText.escape(test_function_name)
 
         if test_result == "PASSED":
-            test_result = self.rst_role(test_result, "green")
+            test_result = RstText.role(test_result, "green")
         elif test_result == "FAILED":
-            test_result = self.rst_role(test_result, "red")
+            test_result = RstText.role(test_result, "red")
 
         row = [test_case, test_function_name, test_result]
 
@@ -157,31 +157,13 @@ class CustomRstConverter(RstConverter):
     def _print_test_case_results(self) -> None:
         """Prints the software test case results.
         """
+        assert self._document is not None
+
         column_titles = ["Test Case", "Test Function", "Test Result"]
 
-        max_widths = [len(title) for title in column_titles]
+        rows = [self._get_table_row(test_case_result) for test_case_result in self._test_case_results]
 
-        for test_case_result in self._test_case_results:
-            row = self._get_table_row(test_case_result)
-            max_widths = [max(max_widths[idx], len(row[idx])) for idx in range(len(row))]
-
-        table_head = self.rst_create_table_head(column_titles, max_widths)
-        self._fd.write(table_head)
-
-        for record in self._test_case_results:
-            self._print_test_case_result(record, max_widths)
-
-    def _print_test_case_result(self, test_case_result: Record_Object, max_widths: list[int]) -> None:
-        """Prints the software test case result.
-
-        Args:
-            test_case_result (Record_Object): Software test case result to print.
-            max_widths (list[int]): Maximum widths of the columns.
-        """
-        row = self._get_table_row(test_case_result)
-
-        markdown_table_row = self.rst_append_table_row(row, max_widths, False)
-        self._fd.write(markdown_table_row)
+        self._document.add(RstTable(column_titles, rows))
 
 # Functions ********************************************************************
 

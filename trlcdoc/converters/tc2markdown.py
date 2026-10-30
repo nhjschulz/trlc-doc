@@ -4,7 +4,7 @@
 """
 
 # pyTRLCConverter - A tool to convert TRLC files to specific formats.
-# Copyright (c) 2024 - 2025 NewTec GmbH
+# Copyright (c) 2024 - 2026 NewTec GmbH
 #
 # This file is part of pyTRLCConverter program.
 #
@@ -23,14 +23,14 @@
 from typing import Any
 from pyTRLCConverter.base_converter import RecordsPolicy
 
-# pylint: disable=wrong-import-order
+# pylint: disable-next=wrong-import-order, import-error
 from generic_rsl_markdown_converter import GenericRslMarkdownConverter
 
 # Variables ********************************************************************
 
 # Classes **********************************************************************
 
-
+# pylint: disable-next=too-few-public-methods
 class TestCaseMarkdownConverter(GenericRslMarkdownConverter):
     """Custom Project specific Markdown converter for test cases.
     """
@@ -48,7 +48,7 @@ class TestCaseMarkdownConverter(GenericRslMarkdownConverter):
            {
                 "Image": self._print_image,
                 "Info": self._print_info,
-                "PlantUML": self._print_plantuml,
+                "PlantUML": self._print_plantuml
            }
         )
         self._record_policy = RecordsPolicy.RECORD_CONVERT_ALL
