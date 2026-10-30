@@ -79,12 +79,29 @@ following commands to build it:
 
 python3 -m venv .venv
 . .venv/bin/activate
-pip install -e .
+pip install -e .[test]
 
 # generate documentation
 trlcdoc -c trlcdoc.yaml 
 ```
 The resulting documentation is generated in folder `build/trlcdoc/html`
+
+## Tests
+
+The pytest unit tests in [tests](tests) verify the software requirements. Each
+test function `test_<name>` implements the TRLC test case `tc_<name>` in
+[trlc/swe-test](trlc/swe-test), which links it to its requirements. Most tests
+run trlcdoc on a minimal example project, created in a temporary folder.
+
+```
+pip install -e .[test]
+pytest
+```
+
+The HTML site tests need a Java runtime for PlantUML. They use the jar from
+`$PLANTUML`, or download it once into the pytest cache. The
+[Tests workflow](.github/workflows/test.yml) runs the tests on every push and
+pull request on Linux and Windows.
 
 ## License
 

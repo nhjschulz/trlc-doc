@@ -1,9 +1,9 @@
 # yaml-language-server: $schema=trlcdoc/schema/trlcdoc.schema.json
 #
 # trlcdoc configuration of trlcdoc itself: builds requirements, architecture,
-# tracing report and the HTML site.
+# tests, test results, tracing report and the HTML site.
 #
-#   pip install -e .
+#   pip install -e .[test]
 #   trlcdoc            # all steps, HTML site in build/trlcdoc/html
 
 project:
@@ -36,14 +36,44 @@ documents:
       markdown: builtin:req2markdown.py
     translation: builtin:translation.json
 
+  - id: sw_test
+    title: SW-Tests
+    type: trlc
+    source: trlc/swe-test
+    include: [sw_requirements]
+    converter:
+      rst: builtin:tc2rst.py
+      markdown: builtin:tc2markdown.py
+    translation: builtin:translation.json
+
+  - id: sw_test_results
+    title: SW-Test Results
+    type: test_results
+    include: [sw_test]
+    converter:
+      rst: builtin:create_test_report_in_rst.py
+      markdown: builtin:create_test_report_in_markdown.py
+
   - id: sw_tracing_report
     title: Software Tracing Report
     type: trace_report
+
+  - id: coverage_report
+    title: Coverage Report
+    type: html
+    source: tests:coverage
 
   - id: license
     title: License information
     type: text
     source: LICENSE
+
+tests:
+  runner: pytest
+  args: [tests, -v, --cov=trlcdoc]
+  link:
+    from: "test_{name}"
+    to: "SwTests.tc_{name}"
 
 trace:
   namespace: req
@@ -51,7 +81,7 @@ trace:
     - name: SW Requirement
       document: sw_requirements
       record_type: SwRequirements.SwReq
-      requires: [SW Architecture]
+      requires: [SW Architecture, SW Test Case]
 
     - name: SW Constraint
       document: sw_requirements
@@ -63,6 +93,20 @@ trace:
       record_type: SwArch.SwArchSpec
       tags: [satisfies]
       trace_to: [SW Requirement, SW Constraint]
+
+    - name: SW Test Case
+      document: sw_test
+      record_type: SwTests.SwTestCase
+      tags: [verifies]
+      trace_to: [SW Requirement]
+      requires: [SW Test Result]
+
+    - name: SW Test Result
+      document: sw_test_results
+      record_type: SwTests.SwTestCaseResult
+      tags: [relates]
+      description_fields: [name]
+      trace_to: [SW Test Case]
 
 plantuml:
   version: 1.2024.8

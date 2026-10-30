@@ -1,0 +1,51 @@
+name: Tests
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: pytest (${{ matrix.os }}, Python ${{ matrix.python-version }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        python-version: ["3.10", "3.13"]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+
+      # PlantUML needs a Java runtime to render the diagrams of the HTML site tests.
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      # The tests download the PlantUML jar into the pytest cache once.
+      - name: Cache PlantUML
+        uses: actions/cache@v4
+        with:
+          path: .pytest_cache/d/plantuml
+          key: plantuml-${{ hashFiles('trlcdoc/plantuml.py') }}
+
+      - name: Install trlcdoc with test dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e .[test]
+
+      - name: Run tests
+        run: pytest -v --cov=trlcdoc --cov-report=term

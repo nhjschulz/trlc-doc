@@ -1,0 +1,161 @@
+package SwTests
+
+import Generic
+import SwRequirements
+
+section "SW-Tests" {
+
+    Generic.Info sw_test_info_about_sw_test {
+        description = "This file contains the software test cases of trlcdoc. There is one test case per pytest test function in the 'tests' folder: the test function test_<name> implements the test case tc_<name>. The test result report relates the pytest results to the test cases by this naming rule. Most test cases run trlcdoc on a minimal example project, created by the test fixtures in a temporary folder."
+    }
+
+    section "Command Line Interface" {
+
+        SwTestCase tc_cli {
+            description = "Run 'trlcdoc' as console script and as Python module 'python -m trlcdoc' with the check step. Check the exit code 0 and the console output (tests/test_cli.py)."
+            verifies = [SwRequirements.sw_req_cli]
+        }
+
+        SwTestCase tc_cli_help {
+            description = "Call trlcdoc with '-h' and with '--help'. Check that the usage help with all steps is shown and the exit code is 0 (tests/test_cli.py)."
+            verifies = [SwRequirements.sw_req_cli_help]
+        }
+
+        SwTestCase tc_steps {
+            description = "Call trlcdoc without step, with a single step, with 'clean all', with a configuration without tests and trace settings, and with an unknown step. Check the executed steps and the error exit code for the unknown step (tests/test_cli.py)."
+            verifies = [SwRequirements.sw_req_steps]
+        }
+
+        SwTestCase tc_step_order {
+            description = "Request steps in reverse order and request the convert step alone. Check that the steps run in the fixed order and that the plantuml step is added (tests/test_cli.py)."
+            verifies = [SwRequirements.sw_req_step_order]
+        }
+
+        SwTestCase tc_exit_code {
+            description = "Run the tests step on a project with passing and with failing tests, and the check step with a missing configuration. Check the exit codes 0, 1 and 2 (tests/test_cli.py)."
+            verifies = [SwRequirements.sw_req_exit_code]
+        }
+    }
+
+    section "Configuration" {
+
+        SwTestCase tc_config_file {
+            description = "Find trlcdoc.yaml from the project root and from a subfolder, run the check step from a subfolder, with an explicit configuration file and with a missing one. Check the used configuration and the error (tests/test_config.py)."
+            verifies = [SwRequirements.sw_req_config_file]
+        }
+
+        SwTestCase tc_config_validation {
+            description = "Load configurations violating the schema and configurations with an unknown include, a duplicate document id, a missing converter file and an undefined trace level. Check that every error is reported with its location, and that no step runs (tests/test_config.py)."
+            verifies = [SwRequirements.sw_req_config_validation]
+        }
+
+        SwTestCase tc_project_settings {
+            description = "Configure the project name, author, copyright, logo and repository. Check the settings passed to the HTML site and the default repository 'auto' (tests/test_config.py)."
+            verifies = [SwRequirements.sw_req_project_settings]
+        }
+
+        SwTestCase tc_output_folder {
+            description = "Check the default output folder, that all generated paths are inside it, a configured output folder, and the errors for the project root, its parent and the trlcdoc package folder as output folder (tests/test_config.py)."
+            verifies = [SwRequirements.sw_req_output_folder]
+        }
+    }
+
+    section "Output Folder" {
+
+        SwTestCase tc_output_marker {
+            description = "Create a missing and prepare an empty output folder. Check that both are marked as trlcdoc output folder (tests/test_output.py)."
+            verifies = [SwRequirements.sw_req_output_folder]
+        }
+
+        SwTestCase tc_clean {
+            description = "Run the clean step after creating build artifacts and once more without output folder. Check that the output folder is removed, the project files are kept and the messages (tests/test_output.py)."
+            verifies = [SwRequirements.sw_req_clean]
+        }
+
+        SwTestCase tc_delete_protection {
+            description = "Configure the project tests folder as output folder and run the clean, tests and convert steps. Clean folders outside of the output folder. Check the errors, the exit code 2 and that the folder content is unchanged (tests/test_output.py)."
+            verifies = [SwRequirements.sw_req_delete_protection, SwRequirements.sw_req_exit_code]
+        }
+    }
+
+    section "Documents" {
+
+        SwTestCase tc_plantuml {
+            description = "Provide PlantUML by a (simulated) download of the configured and the default version, a reused download, a configured jar, the PLANTUML environment variable and a missing jar. Check the selected jar, the exported environment variable and the error (tests/test_plantuml.py)."
+            verifies = [SwRequirements.sw_req_plantuml]
+        }
+
+        SwTestCase tc_trlc_conversion {
+            description = "Convert the architecture of the example project, which includes the requirements, with a project converter, translation and render configuration into reStructuredText and Markdown. Check that the architecture records are converted and the included requirements are not (tests/test_convert.py)."
+            verifies = [SwRequirements.sw_req_trlc_conversion]
+        }
+
+        SwTestCase tc_builtin_converters {
+            description = "Convert the requirements, architecture, test cases and test results of the example project with the built-in converters into both formats. Check the converted content and the error for missing test results (tests/test_convert.py)."
+            verifies = [SwRequirements.sw_req_builtin_converters]
+        }
+
+        SwTestCase tc_conversion_error {
+            description = "Convert an architecture with an unresolved requirement reference, and a document without Markdown converter. Check the build error and that only the configured format is converted (tests/test_convert.py)."
+            verifies = [SwRequirements.sw_req_trlc_conversion]
+        }
+    }
+
+    section "Tests" {
+
+        SwTestCase tc_test_run {
+            description = "Run the tests of the example project with pytest and coverage, with a failing test, with a test command and with a command not writing the result file. Check the result file, the coverage report, the test result and the error (tests/test_testrun.py)."
+            verifies = [SwRequirements.sw_req_test_run]
+        }
+
+        SwTestCase tc_test_results {
+            description = "Read a JUnit XML file with passed, failed, erroneous, parametrized, skipped, property linked and unlinked tests. Check the linked test cases, the error for the unlinked test, and that the written test result records are valid TRLC (tests/test_testrun.py)."
+            verifies = [SwRequirements.sw_req_test_results]
+        }
+    }
+
+    section "Tracing" {
+
+        SwTestCase tc_trace_levels {
+            description = "Create the tracing report of the example project. Check the generated LOBSTER policy and extraction configuration, and the traced items with their links (tests/test_trace.py)."
+            verifies = [SwRequirements.sw_req_trace_levels]
+        }
+
+        SwTestCase tc_trace_report {
+            description = "Create the tracing report offline, online with a configured repository and online with the repository derived from the git origin remote. Check the links to the repository files at the current commit (tests/test_trace.py)."
+            verifies = [SwRequirements.sw_req_trace_report]
+        }
+
+        SwTestCase tc_trace_findings {
+            description = "Create the tracing report of a project with an untraced requirement. Check the listed item, its tracing status and the exit code 1 (tests/test_trace.py)."
+            verifies = [SwRequirements.sw_req_trace_findings, SwRequirements.sw_req_exit_code]
+        }
+    }
+
+    section "HTML Site" {
+
+        Generic.Info sw_test_info_html_site {
+            description = "The HTML site test cases share one site, built with 'trlcdoc all' from the example project in a git repository. It contains a PlantUML diagram and a document of every type. They need a Java runtime for PlantUML."
+        }
+
+        SwTestCase tc_html_site {
+            description = "Check the exit code 0 of the build, the start page with the table of contents, and that every listed page exists (tests/test_html.py)."
+            verifies = [SwRequirements.sw_req_html_site]
+        }
+
+        SwTestCase tc_documents {
+            description = "Check that the pages appear in the configured order with their configured titles (tests/test_html.py)."
+            verifies = [SwRequirements.sw_req_documents]
+        }
+
+        SwTestCase tc_document_types {
+            description = "Check the content of the TRLC, test result, tracing report, HTML, reStructuredText, Markdown, text and command document pages, and the rendered diagram (tests/test_html.py)."
+            verifies = [SwRequirements.sw_req_document_types, SwRequirements.sw_req_plantuml]
+        }
+
+        SwTestCase tc_html_version_info {
+            description = "Check that every page shows the commit the site was built from (tests/test_html.py)."
+            verifies = [SwRequirements.sw_req_html_version_info]
+        }
+    }
+}
