@@ -27,6 +27,7 @@ from pathlib import Path
 from typing import Any, Dict, List
 
 import pytest
+import sphinx
 from conftest import base_config, git_init, make_project, write_config
 
 from trlcdoc import cli
@@ -54,6 +55,18 @@ TITLES = ["User Manual", "SW-Requirements", "SW-Architecture", "SW-Tests", "SW-T
 PAGES = ["manual.html", "sw_requirements/index.html", "sw_architecture/index.html", "sw_test/index.html",
          "sw_test_results/index.html", "sw_tracing_report.html", "coverage_report.html", "notes.html",
          "license.html", "api.html"]
+
+# Project owned files of the customized site, placed in the docs folder.
+CUSTOM_FILES = {
+    "index.rst": ("Welcome\n=======\n\n.. image:: {project_root}/docs/logo.png\n\n"
+                  ".. toctree::\n   :caption: Chapters:\n\n   guide\n   sw_requirements/index\n   license\n"),
+    "header.rst": ".. image:: {project_root}/docs/logo.png\n   :alt: Project Logo\n",
+    "guide.rst": "Guide\n=====\n\n.. literalinclude:: {project_root}/LICENSE\n   :language: none\n",
+    "conf.py": ("html_title = 'Custom Title'\n\n\n"
+                "def setup(app):\n"
+                "    app.connect('builder-inited', lambda app: (PROJECT_ROOT / 'setup.txt').write_text('done'))\n"),
+    "logo.png": "",
+}
 
 # Classes **********************************************************************
 
@@ -154,6 +167,53 @@ def test_document_types(site: Dict[str, Any]) -> None:
     assert "Example license text." in _page(site, "license.html")
     assert '<iframe src="api/index.html"' in _page(site, "api.html")
     assert "API reference" in _page(site, "api/index.html")
+
+
+def test_html_customization(tmp_path: Path, plantuml_jar: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """A project start page, page header and Sphinx configuration file, and a TRLC document without title.
+
+    Args:
+        tmp_path (Path): pytest temporary folder.
+        plantuml_jar (Path): The PlantUML jar.
+        monkeypatch (pytest.MonkeyPatch): pytest monkeypatch.
+    """
+    root = tmp_path / "project"
+    make_project(root)
+    (root / "docs").mkdir()
+    for name, content in CUSTOM_FILES.items():
+        (root / "docs" / name).write_text(content, encoding="utf-8")
+    # The logo must be a valid image for Sphinx, use the one of the Sphinx package.
+    (root / "docs" / "logo.png").write_bytes(next(Path(sphinx.__file__).parent.rglob("*.png")).read_bytes())
+
+    data = base_config()
+    del data["tests"], data["trace"]
+    sw_requirements = {key: value for key, value in data["documents"][0].items() if key != "title"}
+    data["documents"] = [{"id": "guide", "type": "rst", "source": "docs/guide.rst"}, sw_requirements,
+                         {"id": "license", "title": "License information", "type": "text", "source": "LICENSE"}]
+    data["html"] = {"index": "docs/index.rst", "page_header": "docs/header.rst", "conf": "docs/conf.py"}
+    monkeypatch.setenv("PLANTUML", str(plantuml_jar))
+    assert cli.main(["-c", str(write_config(root, data)), "all"]) == 0
+
+    html = root / "build" / "trlcdoc" / "html"
+    index = (html / "index.html").read_text(encoding="utf-8")
+    toc = re.findall(r'<li class="toctree-l1"><a class="reference internal" href="([^"]+)">([^<]+)</a>', index)
+    assert toc == [("guide.html", "Guide"), ("sw_requirements/index.html", "Example Requirements"),
+                   ("license.html", "License information")]
+    assert '<img alt="_images/logo.png" src="_images/logo.png" />' in index
+
+    # The page header is on the generated pages, with the path to the project root of each page.
+    requirements = (html / "sw_requirements" / "index.html").read_text(encoding="utf-8")
+    assert '<img alt="Project Logo" src="../_images/logo.png" />' in requirements
+    assert "<h1>Example Requirements" in requirements
+    assert '<img alt="Project Logo" src="_images/logo.png" />' in (html / "license.html").read_text(encoding="utf-8")
+    guide = (html / "guide.html").read_text(encoding="utf-8")
+    assert "Project Logo" not in guide
+    assert "Example license text." in guide
+
+    # The project configuration file changes values and adds its setup.
+    assert "<title>Guide &#8212; Custom Title</title>" in guide
+    assert (root / "setup.txt").read_text(encoding="utf-8") == "done"
+    assert not (html / ".doctrees").exists()
 
 
 def test_html_version_info(site: Dict[str, Any]) -> None:

@@ -81,7 +81,7 @@ section "trlcdoc SW Architecture" {
             section "PlantUML Provider" {
 
                 SwArchSpec sw_arch_comp_plantuml {
-                    description = "The PlantUML Provider component (plantuml.py) realizes the plantuml step. It selects the PlantUML jar from the PLANTUML environment variable, the configuration or a download of the configured version into the output folder, and exports the selected jar in the PLANTUML environment variable for the converters and Sphinx."
+                    description = "The PlantUML Provider component (plantuml.py) realizes the plantuml step. It selects the PlantUML jar or server from the PLANTUML environment variable, the jar from the configuration or a download of the configured version into the output folder, and exports the selection in the PLANTUML environment variable for the converters and Sphinx."
                     verification_criteria = "Run the plantuml step with the environment variable set, with a configured jar and without both. Check the exported jar path."
                     satisfies = [SwRequirements.sw_req_plantuml]
                 }
@@ -95,7 +95,7 @@ section "trlcdoc SW Architecture" {
             section "Test Runner" {
 
                 SwArchSpec sw_arch_comp_testrun {
-                    description = "The Test Runner component (testrun.py) realizes the tests step. It runs pytest, with a coverage report if requested, or the configured test command. It reads the JUnit XML results, links each test to its TRLC test case by the recorded property or the configured name mapping, and writes the results as SwTestCaseResult records into the output folder. It reports failed tests as findings and unlinked tests as error."
+                    description = "The Test Runner component (testrun.py) realizes the tests step. It runs pytest, with a coverage report if requested, or the configured test command. It reads the JUnit XML results, links each test to its TRLC test cases by the recorded properties or the configured name mapping, and writes the results as SwTestCaseResult records into the output folder. It reports failed tests as findings and unlinked tests as error."
                     verification_criteria = "Run the tests step with passing, failing, linked and unlinked tests. Check the generated test result records, the coverage report and the reported results."
                     satisfies = [SwRequirements.sw_req_test_run, SwRequirements.sw_req_test_results]
                 }
@@ -137,9 +137,9 @@ section "trlcdoc SW Architecture" {
             section "HTML Builder" {
 
                 SwArchSpec sw_arch_comp_html {
-                    description = "The HTML Builder component (html.py, sphinx/) realizes the html step. It generates the Sphinx source folder with one page per document according to its type, the start page with the table of contents and the project settings, and builds the site with Sphinx. The generic Sphinx configuration conf.py reads the project settings, copies embedded HTML sites into the site and adds the git commit to the page footer."
+                    description = "The HTML Builder component (html.py, sphinx/) realizes the html step. It generates the Sphinx source folder with one page per document according to its type, the start page with the table of contents or the project start page, and the project settings, and builds the site with Sphinx. It adds the project page header to the generated pages and replaces the project root placeholder in project pages. The generic Sphinx configuration conf.py reads the project settings, copies embedded HTML sites into the site, adds the git commit to the page footer and executes the project specific Sphinx configuration."
                     verification_criteria = "Build the site from a configuration with every document type. Check the start page, the document pages, the embedded sites and the page footer."
-                    satisfies = [SwRequirements.sw_req_documents, SwRequirements.sw_req_document_types, SwRequirements.sw_req_project_settings, SwRequirements.sw_req_html_site, SwRequirements.sw_req_html_version_info]
+                    satisfies = [SwRequirements.sw_req_documents, SwRequirements.sw_req_document_types, SwRequirements.sw_req_project_settings, SwRequirements.sw_req_html_site, SwRequirements.sw_req_html_version_info, SwRequirements.sw_req_html_customization]
                 }
 
                 Generic.PlantUML sw_arch_comp_html_diagram {

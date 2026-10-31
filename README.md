@@ -63,7 +63,23 @@ Key concepts:
 - **trace.levels** are the LOBSTER levels. Each TRLC level names its `document`;
   the lobster-trlc inputs are derived from it and its includes.
 - **tests.link** maps test results to TRLC test cases: the JUnit `property`
-  if the test records one, otherwise the `from` -> `to` name pattern.
+  if the test records one, otherwise the `from` -> `to` name pattern. A test
+  recording several test cases needs `array: true` and a model with
+  `relates SwTestCase [1 .. *]`.
+- **html** customizes the site: `theme`, `extensions`, `extra_conf`, a project
+  start page `index` (it owns the toctree; TRLC documents are named
+  `<id>/index`), a `page_header` for every generated page, and a project Sphinx
+  configuration file `conf`, executed at the end of the generated conf.py with
+  `PROJECT_ROOT` set. In these files and in `rst`/`markdown` documents,
+  `{project_root}` is replaced by the relative path from the page to the
+  project root.
+- A TRLC or test result document without `title` takes its page title from the
+  converted content.
+- **PLANTUML** environment variable: a plantuml.jar or a PlantUML server URL.
+
+The built-in converters are the project converters of
+[pyTRLCConverter](https://github.com/NewTec-GmbH/pyTRLCConverter) (`tools/converter`),
+for its 3.x API. pyTRLCConverter also determines the trlc version.
 
 See the flashcontainer
 [trlcdoc.yaml](https://github.com/nhjschulz/flashcontainer/blob/master/trlcdoc.yaml)

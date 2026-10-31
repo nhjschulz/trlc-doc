@@ -51,12 +51,16 @@
             }
         },
         "html": {
+            "description": "HTML site settings. In the files of index, page_header and documents of type rst or markdown, {project_root} is replaced by the relative path from the page to the project root.",
             "type": "object",
             "additionalProperties": false,
             "properties": {
                 "theme": {"type": "string", "default": "haiku"},
                 "extensions": {"description": "Additional Sphinx extensions.", "type": "array", "items": {"type": "string"}, "default": []},
-                "extra_conf": {"description": "Additional Sphinx configuration values, set in the generated conf.py.", "type": "object", "default": {}}
+                "extra_conf": {"description": "Additional Sphinx configuration values, set in the generated conf.py.", "type": "object", "default": {}},
+                "conf": {"description": "Project specific Python file, executed at the end of the generated conf.py in its namespace. PROJECT_ROOT holds the project root (Path). A setup(app) function in it is called after the one of trlcdoc.", "type": "string"},
+                "index": {"description": "Project owned start page (reStructuredText) used instead of the generated one. It must contain the toctree; TRLC documents are named '<id>/index', all others '<id>'.", "type": "string"},
+                "page_header": {"description": "reStructuredText inserted at the top of every page trlcdoc generates, e.g. a logo.", "type": "string"}
             }
         }
     },
@@ -96,14 +100,16 @@
                 {
                     "if": {"properties": {"type": {"const": "trlc"}}},
                     "then": {
-                        "required": ["title", "source", "converter"],
+                        "description": "Without title, the first heading of the converted content is the page title.",
+                        "required": ["source", "converter"],
                         "propertyNames": {"enum": ["id", "title", "type", "source", "include", "converter", "translation", "render_cfg"]}
                     }
                 },
                 {
                     "if": {"properties": {"type": {"const": "test_results"}}},
                     "then": {
-                        "required": ["title", "converter"],
+                        "description": "Without title, the first heading of the converted content is the page title.",
+                        "required": ["converter"],
                         "propertyNames": {"enum": ["id", "title", "type", "include", "converter", "translation", "render_cfg"]}
                     }
                 },
@@ -164,7 +170,8 @@
                     "additionalProperties": false,
                     "required": ["from", "to"],
                     "properties": {
-                        "property": {"description": "JUnit test case property holding the test case id. Used first, if present.", "type": "string", "default": "lobster-trace"},
+                        "property": {"description": "JUnit test case property holding the test case id. Used first, if present. A test may record it several times.", "type": "string", "default": "lobster-trace"},
+                        "array": {"description": "The relates component of the test result records is an array (e.g. 'SwTestCase [1 .. *]'): write the linked test cases as list. Needed for tests linked to several test cases.", "type": "boolean", "default": false},
                         "from": {"description": "Test function name pattern with a {name} placeholder.", "type": "string", "pattern": "\\{name\\}"},
                         "to": {"description": "Qualified test case id pattern (Package.record) with a {name} placeholder.", "type": "string", "pattern": "^[A-Za-z_][A-Za-z0-9_]*\\..*\\{name\\}"}
                     }
