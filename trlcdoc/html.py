@@ -44,6 +44,9 @@ INCLUDE_SUFFIX = ".inc"
 # levels with = # ~ ^ " + ', so '-' keeps the page title above the included content.
 PAGE_TITLE_CHAR = "-"
 
+# Placeholder in project owned pages, replaced by the relative path from the page to the project root.
+PROJECT_ROOT_PLACEHOLDER = "{project_root}"
+
 # Classes **********************************************************************
 
 # Functions ********************************************************************
@@ -74,8 +77,10 @@ def build_html(cfg: Config) -> Path:
     _write_sphinx_config(cfg, src_dir, copy_dirs)
 
     out_dir = clean_dir(cfg.html_dir, cfg.output)
+    # The Sphinx doctree cache is kept out of the HTML site.
+    doctrees_dir = clean_dir(cfg.output / "doctrees", cfg.output)
     print(f"Building HTML -> {out_dir}")
-    if build_main(["-b", "html", "-q", str(src_dir), str(out_dir)]) != 0:
+    if build_main(["-b", "html", "-q", "-d", str(doctrees_dir), str(src_dir), str(out_dir)]) != 0:
         raise TrlcdocError("Sphinx HTML build failed.")
     return out_dir
 
@@ -110,34 +115,83 @@ def _write_page(cfg: Config, doc: Dict[str, Any], src_dir: Path, copy_dirs: List
     """
     doc_type = doc["type"]
     page = doc["id"]
+    page_file = src_dir / f"{page}.rst"
 
     if doc_type in TRLC_DOCUMENT_TYPES:
         page = _write_converted_page(cfg, doc, src_dir)
     elif doc_type == "trace_report":
         _require(cfg.trace_report_html, "run the trace step first")
-        content = _heading(doc["title"]) + f".. raw:: html\n   :file: {cfg.trace_report_html.as_posix()}\n"
-        (src_dir / f"{page}.rst").write_text(content, encoding="utf-8")
+        _write_generated(cfg, page_file, doc, f".. raw:: html\n   :file: {cfg.trace_report_html.as_posix()}\n")
     elif doc_type in ("html", "command"):
         if doc_type == "command":
             run(doc["command"], cfg.root)
         html_source = cfg.html_source(doc)
         _require(html_source / "index.html", "generate it first")
         copy_dirs.append({"source": str(html_source), "destination": doc["id"]})
-        content = _heading(doc["title"]) + (
-            ".. raw:: html\n\n"
-            f'    <iframe src="{doc["id"]}/index.html" width="100%" height="1024px"></iframe>\n')
-        (src_dir / f"{page}.rst").write_text(content, encoding="utf-8")
+        _write_generated(cfg, page_file, doc, ".. raw:: html\n\n"
+                         f'    <iframe src="{doc["id"]}/index.html" width="100%" height="1024px"></iframe>\n')
     elif doc_type == "text":
         source = _require(cfg.path(doc["source"]), "check the source path")
         # Sphinx treats absolute include paths as relative to the source folder.
         relative = Path(os.path.relpath(source, src_dir)).as_posix()
-        content = _heading(doc["title"]) + f".. literalinclude:: {relative}\n   :language: none\n"
-        (src_dir / f"{page}.rst").write_text(content, encoding="utf-8")
+        _write_generated(cfg, page_file, doc, f".. literalinclude:: {relative}\n   :language: none\n")
     else:
         source = _require(cfg.path(doc["source"]), "check the source path")
-        shutil.copy(source, src_dir / f"{page}{'.md' if doc_type == 'markdown' else '.rst'}")
+        page_file = page_file.with_suffix(".md" if doc_type == "markdown" else ".rst")
+        _write_project_page(cfg, source, page_file)
 
     return page
+
+
+def _project_root_text(cfg: Config, text: str, page_file: Path) -> str:
+    """Replace the project root placeholder by the relative path from a page to the project root.
+
+    Args:
+        cfg (Config): Project configuration.
+        text (str): Page content with placeholders.
+        page_file (Path): The page in the Sphinx source folder.
+
+    Returns:
+        str: The content with replaced placeholders.
+    """
+    return text.replace(PROJECT_ROOT_PLACEHOLDER, Path(os.path.relpath(cfg.root, page_file.parent)).as_posix())
+
+
+def _write_project_page(cfg: Config, source: Path, page_file: Path) -> Path:
+    """Write a project owned page into the Sphinx source folder.
+
+    Args:
+        cfg (Config): Project configuration.
+        source (Path): The project page.
+        page_file (Path): The page in the Sphinx source folder.
+
+    Returns:
+        Path: The written page.
+    """
+    page_file.write_text(_project_root_text(cfg, source.read_text(encoding="utf-8"), page_file), encoding="utf-8")
+    return page_file
+
+
+def _write_generated(cfg: Config, page_file: Path, doc: Dict[str, Any], body: str) -> Path:
+    """Write a generated page: the page header, the title of the document and the body.
+
+    Args:
+        cfg (Config): Project configuration.
+        page_file (Path): The page in the Sphinx source folder.
+        doc (Dict[str, Any]): Document configuration, a page without title gets no heading.
+        body (str): Page content below the title.
+
+    Returns:
+        Path: The written page.
+    """
+    content = ""
+    if "page_header" in cfg.html:
+        header = cfg.path(cfg.html["page_header"]).read_text(encoding="utf-8")
+        content = _project_root_text(cfg, header, page_file).rstrip("\n") + "\n\n"
+    if "title" in doc:
+        content += _heading(doc["title"])
+    page_file.write_text(content + body, encoding="utf-8")
+    return page_file
 
 
 def _write_converted_page(cfg: Config, doc: Dict[str, Any], src_dir: Path) -> str:
@@ -164,11 +218,11 @@ def _write_converted_page(cfg: Config, doc: Dict[str, Any], src_dir: Path) -> st
 
     page_dir = src_dir / doc["id"]
     shutil.copytree(converted, page_dir)
-    content = _heading(doc["title"])
+    content = ""
     for rst_file in rst_files:
         include = (page_dir / rst_file.name).rename(page_dir / (rst_file.stem + INCLUDE_SUFFIX))
         content += f".. include:: {include.name}\n\n"
-    (page_dir / "index.rst").write_text(content, encoding="utf-8")
+    _write_generated(cfg, page_dir / "index.rst", doc, content)
     return f"{doc['id']}/index"
 
 
@@ -191,7 +245,7 @@ def _require(path: Path, hint: str) -> Path:
 
 
 def _write_index(cfg: Config, src_dir: Path, pages: List[str]) -> Path:
-    """Write the start page with the table of contents.
+    """Write the start page with the table of contents, or the project owned start page.
 
     Args:
         cfg (Config): Project configuration.
@@ -201,11 +255,14 @@ def _write_index(cfg: Config, src_dir: Path, pages: List[str]) -> Path:
     Returns:
         Path: The written index.rst.
     """
-    content = _heading(f"{cfg.project['name']} documentation", "=")
-    content += ".. toctree::\n   :maxdepth: 1\n   :caption: Contents:\n\n"
-    content += "".join(f"   {page}\n" for page in pages)
     index = src_dir / "index.rst"
-    index.write_text(content, encoding="utf-8")
+    if "index" in cfg.html:
+        _write_project_page(cfg, cfg.path(cfg.html["index"]), index)
+    else:
+        content = _heading(f"{cfg.project['name']} documentation", "=")
+        content += ".. toctree::\n   :maxdepth: 1\n   :caption: Contents:\n\n"
+        content += "".join(f"   {page}\n" for page in pages)
+        _write_generated(cfg, index, {}, content)
     return index
 
 
@@ -222,6 +279,7 @@ def _write_sphinx_config(cfg: Config, src_dir: Path, copy_dirs: List[Dict[str, s
     """
     logo = cfg.project.get("logo")
     favicon = cfg.project.get("favicon")
+    conf = cfg.html.get("conf")
     settings = {
         "project": cfg.project["name"],
         "author": cfg.project["author"],
@@ -231,6 +289,7 @@ def _write_sphinx_config(cfg: Config, src_dir: Path, copy_dirs: List[Dict[str, s
         "theme": cfg.html.get("theme", "haiku"),
         "extensions": cfg.html.get("extensions", []),
         "extra_conf": cfg.html.get("extra_conf", {}),
+        "conf": str(cfg.path(conf)) if conf else None,
         "copy_dirs": copy_dirs,
         "project_root": str(cfg.root),
     }

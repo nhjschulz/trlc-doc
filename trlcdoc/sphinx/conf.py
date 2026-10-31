@@ -22,11 +22,15 @@ from urllib.parse import urlparse
 
 from sphinx.errors import ConfigError
 
-# pylint: disable=invalid-name,redefined-builtin
+# pylint: disable=invalid-name,redefined-builtin,exec-used
 
 # Variables ********************************************************************
 
 _SETTINGS = json.loads((Path(__file__).parent / "trlcdoc_settings.json").read_text(encoding="utf-8"))
+
+# Project root, for the paths in the project specific Sphinx configuration file
+# (option 'html: conf:' in trlcdoc.yaml), which is executed at the end of this file.
+PROJECT_ROOT = Path(_SETTINGS["project_root"])
 
 project = _SETTINGS["project"]
 copyright = _SETTINGS["copyright"]
@@ -79,7 +83,7 @@ globals().update(_SETTINGS["extra_conf"])
 # Functions ********************************************************************
 
 
-def setup(app: Any) -> None:
+def _trlcdoc_setup(app: Any) -> None:
     """Register the trlcdoc build hooks.
 
     Args:
@@ -117,3 +121,19 @@ def _git_commit_info() -> str:
 # Main *************************************************************************
 
 html_last_updated_fmt += _git_commit_info()
+
+# The project specific configuration file may change all values above and define its own setup().
+if _SETTINGS["conf"]:
+    exec(compile(Path(_SETTINGS["conf"]).read_text(encoding="utf-8"), _SETTINGS["conf"], "exec"))
+_PROJECT_SETUP = globals().get('setup')
+
+
+def setup(app: Any) -> None:
+    """Register the trlcdoc build hooks, then call the setup() of the project specific configuration.
+
+    Args:
+        app (Any): The Sphinx application.
+    """
+    _trlcdoc_setup(app)
+    if _PROJECT_SETUP is not None:
+        _PROJECT_SETUP(app)

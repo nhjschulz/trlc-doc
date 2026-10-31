@@ -72,7 +72,7 @@ section "trlcdoc" {
         section "Documents" {
 
             SwReq sw_req_documents {
-                description = "The software shall build the documentation from a configurable, ordered list of documents. Each document has a unique id and a title."
+                description = "The software shall build the documentation from a configurable, ordered list of documents. Each document has a unique id and a title. A TRLC document may take its title from its converted content."
                 verification_criteria = "Configure documents in different orders and check the table of contents of the generated site."
                 valid_status = AbstractRequirements.VALID_STATUS.valid
             }
@@ -96,8 +96,8 @@ section "trlcdoc" {
             }
 
             SwReq sw_req_plantuml {
-                description = "The software shall provide the PlantUML renderer for the diagrams of the documents. It shall use a jar given by the environment or the configuration, otherwise download the configured PlantUML version."
-                verification_criteria = "Run the plantuml step with the PLANTUML environment variable, with a configured jar and without both. Check the used jar."
+                description = "The software shall provide the PlantUML renderer for the diagrams of the documents. It shall use a jar or a PlantUML server given by the environment, a jar given by the configuration, otherwise download the configured PlantUML version."
+                verification_criteria = "Run the plantuml step with a jar and a server URL in the PLANTUML environment variable, with a configured jar and without both. Check the used jar or server."
                 valid_status = AbstractRequirements.VALID_STATUS.valid
             }
         }
@@ -111,8 +111,8 @@ section "trlcdoc" {
             }
 
             SwReq sw_req_test_results {
-                description = "The software shall convert the test results into TRLC test result records, which reference their TRLC test cases. A test shall be linked by a property it records or by a configured name mapping. A test that cannot be linked shall be reported as error."
-                verification_criteria = "Run the tests step with tests linked by property, linked by name mapping and not linked. Check the generated records and the error."
+                description = "The software shall convert the test results into TRLC test result records, which reference their TRLC test cases. A test shall be linked by a property it records or by a configured name mapping. A test may record several test cases. A test that cannot be linked shall be reported as error."
+                verification_criteria = "Run the tests step with tests linked by property, linked to several test cases, linked by name mapping and not linked. Check the generated records and the errors."
                 valid_status = AbstractRequirements.VALID_STATUS.valid
             }
         }
@@ -149,6 +149,12 @@ section "trlcdoc" {
             SwReq sw_req_html_version_info {
                 description = "The software shall show the version control state the documentation was built from on every page."
                 verification_criteria = "Build the site in a git working copy and check the commit information on the pages."
+                valid_status = AbstractRequirements.VALID_STATUS.valid
+            }
+
+            SwReq sw_req_html_customization {
+                description = "The software shall allow the project to customize the HTML site with its own start page, a header on every generated page and a project specific Sphinx configuration. Project pages shall be able to refer to files of the project independent of their location in the site."
+                verification_criteria = "Build a site with a project start page, page header, Sphinx configuration and project pages referring to project files. Check the pages and the applied configuration."
                 valid_status = AbstractRequirements.VALID_STATUS.valid
             }
         }

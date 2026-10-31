@@ -106,12 +106,15 @@ def test_config_validation(project: Path, capsys: pytest.CaptureFixture) -> None
     data["documents"][2]["id"] = "sw_requirements"
     data["documents"][0]["converter"]["rst"] = "converters/missing.py"
     data["trace"]["levels"][1]["trace_to"] = ["Unknown Level"]
+    data["html"] = {"index": "docs/index.rst", "page_header": "docs/header.rst", "conf": "docs/conf.py"}
     errors = _config_errors(root, data)
     assert "has invalid settings" in errors
     assert "documents[sw_architecture].include: 'unknown'" in errors
     assert "documents: id 'sw_requirements' is used more than once" in errors
     assert "documents[sw_requirements].converter.rst: file 'converters/missing.py' not found" in errors
     assert "trace.levels[SW Architecture].trace_to: level 'Unknown Level' is not defined" in errors
+    for key, value in data["html"].items():
+        assert f"html.{key}: file '{value}' not found" in errors
 
     # No step runs with an invalid configuration.
     assert cli.main(["-c", str(project), "clean", "all"]) == 2

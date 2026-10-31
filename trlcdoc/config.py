@@ -272,6 +272,10 @@ def _check_references(cfg: Config) -> List[str]:
     if cfg.trace is not None:
         errors.extend(_check_levels(cfg.trace["levels"], doc_types))
 
+    for key in ("conf", "index", "page_header"):
+        if key in cfg.html and not cfg.path(cfg.html[key]).is_file():
+            errors.append(f"html.{key}: file '{cfg.html[key]}' not found.")
+
     if cfg.output.is_relative_to(PACKAGE_DIR):
         errors.append("paths.output: must not be inside the trlcdoc package folder.")
     # The clean step removes the output folder, so it must never contain the project.

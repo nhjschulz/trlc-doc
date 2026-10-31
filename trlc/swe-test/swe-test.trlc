@@ -45,7 +45,7 @@ section "SW-Tests" {
         }
 
         SwTestCase tc_config_validation {
-            description = "Load configurations violating the schema and configurations with an unknown include, a duplicate document id, a missing converter file and an undefined trace level. Check that every error is reported with its location, and that no step runs (tests/test_config.py)."
+            description = "Load configurations violating the schema and configurations with an unknown include, a duplicate document id, a missing converter file, missing HTML site files and an undefined trace level. Check that every error is reported with its location, and that no step runs (tests/test_config.py)."
             verifies = [SwRequirements.sw_req_config_validation]
         }
 
@@ -81,7 +81,7 @@ section "SW-Tests" {
     section "Documents" {
 
         SwTestCase tc_plantuml {
-            description = "Provide PlantUML by a (simulated) download of the configured and the default version, a reused download, a configured jar, the PLANTUML environment variable and a missing jar. Check the selected jar, the exported environment variable and the error (tests/test_plantuml.py)."
+            description = "Provide PlantUML by a (simulated) download of the configured and the default version, a reused download, a configured jar, a jar and a server URL in the PLANTUML environment variable and a missing jar. Check the selected jar or server, the exported environment variable and the error (tests/test_plantuml.py)."
             verifies = [SwRequirements.sw_req_plantuml]
         }
 
@@ -109,7 +109,7 @@ section "SW-Tests" {
         }
 
         SwTestCase tc_test_results {
-            description = "Read a JUnit XML file with passed, failed, erroneous, parametrized, skipped, property linked and unlinked tests. Check the linked test cases, the error for the unlinked test, and that the written test result records are valid TRLC (tests/test_testrun.py)."
+            description = "Read a JUnit XML file with passed, failed, erroneous, parametrized, skipped, property linked, unlinked tests and a test linked to two test cases. Check the linked test cases, the errors for the unlinked test and for two test cases without relates array, and that the written test result records with single and array relates are valid TRLC (tests/test_testrun.py)."
             verifies = [SwRequirements.sw_req_test_results]
         }
     }
@@ -151,6 +151,11 @@ section "SW-Tests" {
         SwTestCase tc_document_types {
             description = "Check the content of the TRLC, test result, tracing report, HTML, reStructuredText, Markdown, text and command document pages, and the rendered diagram (tests/test_html.py)."
             verifies = [SwRequirements.sw_req_document_types, SwRequirements.sw_req_plantuml]
+        }
+
+        SwTestCase tc_html_customization {
+            description = "Build a separate site with a project start page, page header and Sphinx configuration file, a project page including a project file and a TRLC document without title. Check the table of contents, the page header on the generated pages, the page titles, the applied configuration and its setup, and that the Sphinx cache is not part of the site (tests/test_html.py)."
+            verifies = [SwRequirements.sw_req_html_customization, SwRequirements.sw_req_documents]
         }
 
         SwTestCase tc_html_version_info {
