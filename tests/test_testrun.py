@@ -21,11 +21,13 @@
 
 # Imports **********************************************************************
 
+import shutil
 import sys
 from pathlib import Path
+from typing import Any, Dict, List, Tuple
 
 import pytest
-from conftest import base_config, make_project, write_config
+from conftest import MODEL_DIR, base_config, make_project, write_config
 
 from trlcdoc.config import load_config
 from trlcdoc.testrun import RESULTS_FILE, read_junit, run_tests, write_results
@@ -34,6 +36,13 @@ from trlcdoc.util import TrlcdocError, find_tool, run_unchecked
 # Variables ********************************************************************
 
 LINK = {"property": "lobster-trace", "from": "test_{name}", "to": "SwTests.tc_{name}"}
+
+TWO_CASES = """<testcase classname="tests.test_a" name="check_two_cases">
+    <properties>
+      <property name="lobster-trace" value="SwTests.tc_passing"/>
+      <property name="lobster-trace" value="SwTests.tc_other"/>
+    </properties>
+  </testcase>"""
 
 JUNIT_XML = """<?xml version="1.0" encoding="utf-8"?>
 <testsuites><testsuite name="pytest">
@@ -45,7 +54,7 @@ JUNIT_XML = """<?xml version="1.0" encoding="utf-8"?>
   <testcase classname="tests.test_a" name="check_with_property">
     <properties><property name="lobster-trace" value="SwTests.tc_other"/></properties>
   </testcase>
-  {unlinked}
+  {extra}
 </testsuite></testsuites>
 """
 
@@ -93,35 +102,63 @@ def test_test_results(tmp_path: Path) -> None:
         tmp_path (Path): pytest temporary folder.
     """
     junit = tmp_path / "junit.xml"
-    junit.write_text(JUNIT_XML.format(unlinked=""), encoding="utf-8")
+    junit.write_text(JUNIT_XML.format(extra=""), encoding="utf-8")
     results = read_junit(junit, LINK)
     assert results == [
-        ("test_passing", True, "SwTests.tc_passing"),
-        ("test_failing", False, "SwTests.tc_failing"),
-        ("test_error", False, "SwTests.tc_error"),
-        ("test_param[1-2]", True, "SwTests.tc_param"),
-        ("check_with_property", True, "SwTests.tc_other"),
+        ("test_passing", True, ["SwTests.tc_passing"]),
+        ("test_failing", False, ["SwTests.tc_failing"]),
+        ("test_error", False, ["SwTests.tc_error"]),
+        ("test_param[1-2]", True, ["SwTests.tc_param"]),
+        ("check_with_property", True, ["SwTests.tc_other"]),
     ]
 
-    (tmp_path / "results").mkdir()
-    trlc_file = write_results(results, tmp_path / "results" / RESULTS_FILE, LINK["to"])
-    content = trlc_file.read_text(encoding="utf-8")
+    content = _write_valid_results(tmp_path / "single", results, LINK, "relates SwTestCase")
     assert content.startswith("package SwTests")
     assert "SwTestCaseResult test_param_1_2__result {" in content
     assert "result = SwTestResult.FAILED\n        relates = SwTests.tc_failing" in content
     assert "relates = SwTests.tc_other" in content
 
-    # The records are valid TRLC with the test model.
-    model = Path(__file__).resolve().parents[1] / "trlc" / "model"
-    (tmp_path / "results" / "cases.trlc").write_text(
-        "package SwTests\n" + "".join(f"SwTestCase tc_{name} {{ description = \"x\" verifies = [] }}\n"
-                                      for name in ("passing", "failing", "error", "param", "other")),
-        encoding="utf-8")
-    assert run_unchecked([find_tool("trlc"), str(model), str(tmp_path / "results")], tmp_path) == 0
+    # A test linked to several test cases needs a relates array.
+    junit.write_text(JUNIT_XML.format(extra=TWO_CASES), encoding="utf-8")
+    with pytest.raises(TrlcdocError, match="check_two_cases"):
+        read_junit(junit, LINK)
+    array_link = {**LINK, "array": True}
+    results = read_junit(junit, array_link)
+    assert results[-1] == ("check_two_cases", True, ["SwTests.tc_passing", "SwTests.tc_other"])
+    content = _write_valid_results(tmp_path / "array", results, array_link, "relates SwTestCase [1 .. *]")
+    assert "relates = [SwTests.tc_failing]" in content
+    assert "relates = [SwTests.tc_passing, SwTests.tc_other]" in content
 
-    junit.write_text(JUNIT_XML.format(unlinked='<testcase classname="x" name="check_unlinked"/>'),
+    junit.write_text(JUNIT_XML.format(extra='<testcase classname="x" name="check_unlinked"/>'),
                      encoding="utf-8")
     with pytest.raises(TrlcdocError, match="check_unlinked"):
         read_junit(junit, LINK)
+
+
+def _write_valid_results(folder: Path, results: List[Tuple[str, bool, List[str]]], link: Dict[str, Any],
+                         relates: str) -> str:
+    """Write the test results and check that they are valid TRLC with the test model.
+
+    Args:
+        folder (Path): Folder for the model and the records, created.
+        results (List[Tuple[str, bool, List[str]]]): Test results from read_junit().
+        link (Dict[str, Any]): The tests.link configuration.
+        relates (str): Declaration of the relates component in the model.
+
+    Returns:
+        str: The written test result records.
+    """
+    shutil.copytree(MODEL_DIR, folder / "model")
+    model_file = folder / "model" / "swe-test.rsl"
+    model_file.write_text(model_file.read_text(encoding="utf-8").replace("relates SwTestCase", relates),
+                          encoding="utf-8")
+    (folder / "results").mkdir()
+    (folder / "results" / "cases.trlc").write_text(
+        "package SwTests\n" + "".join(f"SwTestCase tc_{name} {{ description = \"x\" verifies = [] }}\n"
+                                      for name in ("passing", "failing", "error", "param", "other")),
+        encoding="utf-8")
+    content = write_results(results, folder / "results" / RESULTS_FILE, link).read_text(encoding="utf-8")
+    assert run_unchecked([find_tool("trlc"), str(folder / "model"), str(folder / "results")], folder) == 0
+    return content
 
 # Main *************************************************************************

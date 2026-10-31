@@ -25,7 +25,7 @@ import re
 import sys
 import xml.etree.ElementTree as ET
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Tuple
 
 from .config import Config
 from .util import TrlcdocError, clean_dir, run_unchecked
@@ -74,7 +74,7 @@ def run_tests(cfg: Config) -> bool:
         raise TrlcdocError(f"Test result file {cfg.junit_file} was not created.")
 
     results = read_junit(cfg.junit_file, tests["link"])
-    write_results(results, clean_dir(cfg.test_results_dir, cfg.output) / RESULTS_FILE, tests["link"]["to"])
+    write_results(results, clean_dir(cfg.test_results_dir, cfg.output) / RESULTS_FILE, tests["link"])
 
     failed = [name for name, passed, _ in results if not passed]
     print(f"Tests: {len(results)} results, {len(failed)} failed.")
@@ -83,7 +83,7 @@ def run_tests(cfg: Config) -> bool:
     return not failed
 
 
-def read_junit(junit_file: Path, link: Dict[str, Any]) -> List[Tuple[str, bool, str]]:
+def read_junit(junit_file: Path, link: Dict[str, Any]) -> List[Tuple[str, bool, List[str]]]:
     """Read the test results and link them to their TRLC test cases.
 
     Skipped tests have no result and are not part of the list.
@@ -93,76 +93,81 @@ def read_junit(junit_file: Path, link: Dict[str, Any]) -> List[Tuple[str, bool, 
         link (Dict[str, Any]): The tests.link configuration.
 
     Returns:
-        List[Tuple[str, bool, str]]: (test name, passed, qualified test case id) per test.
+        List[Tuple[str, bool, List[str]]]: (test name, passed, qualified test case ids) per test.
 
     Raises:
-        TrlcdocError: If a test cannot be linked to a test case.
+        TrlcdocError: If a test cannot be linked to a test case, or to several
+        test cases while tests.link.array is not set.
     """
-    results: List[Tuple[str, bool, str]] = []
+    results: List[Tuple[str, bool, List[str]]] = []
     unlinked: List[str] = []
+    ambiguous: List[str] = []
     for testcase in ET.parse(junit_file).getroot().iter("testcase"):
         name = testcase.get("name", "")
         skipped = testcase.find("skipped") is not None
         if not skipped:
             passed = testcase.find("failure") is None and testcase.find("error") is None
-            test_case_id = _linked_test_case(testcase, link)
-            if test_case_id is None:
+            test_case_ids = _linked_test_cases(testcase, link)
+            if not test_case_ids:
                 unlinked.append(name)
+            elif len(test_case_ids) > 1 and not link.get("array", False):
+                ambiguous.append(name)
             else:
-                results.append((name, passed, test_case_id))
+                results.append((name, passed, test_case_ids))
 
     if unlinked:
         raise TrlcdocError(
             f"Tests not matching tests.link.from '{link['from']}' and without "
             f"'{link.get('property', 'lobster-trace')}' property: {', '.join(unlinked)}")
+    if ambiguous:
+        raise TrlcdocError(
+            f"Tests linked to several test cases, which needs tests.link.array: {', '.join(ambiguous)}")
     return results
 
 
-def _linked_test_case(testcase: ET.Element, link: Dict[str, Any]) -> Optional[str]:
-    """Get the qualified TRLC test case id of a JUnit test case.
+def _linked_test_cases(testcase: ET.Element, link: Dict[str, Any]) -> List[str]:
+    """Get the qualified TRLC test case ids of a JUnit test case.
 
     Args:
         testcase (ET.Element): JUnit testcase element.
         link (Dict[str, Any]): The tests.link configuration.
 
     Returns:
-        Optional[str]: The test case id, or None if the test cannot be linked.
+        List[str]: The test case ids, empty if the test cannot be linked.
     """
     property_name = link.get("property", "lobster-trace")
-    result = None
-    for prop in testcase.iter("property"):
-        if prop.get("name") == property_name:
-            result = prop.get("value")
+    result = [prop.get("value", "") for prop in testcase.iter("property") if prop.get("name") == property_name]
 
-    if result is None:
+    if not result:
         # Remove pytest parametrization, e.g. test_foo[1-2] -> test_foo.
         name = testcase.get("name", "").split("[")[0]
         pattern = "^" + re.escape(link["from"]).replace(re.escape("{name}"), r"(?P<name>\w+)") + "$"
         match = re.match(pattern, name)
         if match is not None:
-            result = link["to"].format(name=match.group("name"))
+            result = [link["to"].format(name=match.group("name"))]
     return result
 
 
-def write_results(results: List[Tuple[str, bool, str]], trlc_file: Path, to_pattern: str) -> Path:
+def write_results(results: List[Tuple[str, bool, List[str]]], trlc_file: Path, link: Dict[str, Any]) -> Path:
     """Write the test results as TRLC SwTestCaseResult records.
 
     The records are written into the package of the test cases, taken from tests.link.to.
 
     Args:
-        results (List[Tuple[str, bool, str]]): (test name, passed, qualified test case id) per test.
+        results (List[Tuple[str, bool, List[str]]]): (test name, passed, qualified test case ids) per test.
         trlc_file (Path): TRLC file to write.
-        to_pattern (str): The tests.link.to pattern, e.g. 'SwTests.tc_{name}'.
+        link (Dict[str, Any]): The tests.link configuration. With 'array' the relates
+            component is written as list, otherwise as single reference.
 
     Returns:
         Path: The written file.
     """
-    package = to_pattern.split(".")[0]
+    package = link["to"].split(".")[0]
     used_ids: Dict[str, int] = {}
     with open(trlc_file, "w", encoding="utf-8") as file:
         file.write(f"package {package}\n\n")
         file.write('section "SW Test Results" {\n\n')
-        for name, passed, test_case_id in results:
+        for name, passed, test_case_ids in results:
             record_id = re.sub(r"\W", "_", name) + "_result"
             used_ids[record_id] = used_ids.get(record_id, 0) + 1
             if used_ids[record_id] > 1:
@@ -171,7 +176,8 @@ def write_results(results: List[Tuple[str, bool, str]], trlc_file: Path, to_patt
             file.write(f"    SwTestCaseResult {record_id} {{\n")
             file.write(f'        name = "{name}"\n')
             file.write(f"        result = SwTestResult.{result}\n")
-            file.write(f"        relates = {test_case_id}\n")
+            relates = f"[{', '.join(test_case_ids)}]" if link.get("array", False) else test_case_ids[0]
+            file.write(f"        relates = {relates}\n")
             file.write("    }\n\n")
         file.write("}\n")
     return trlc_file
