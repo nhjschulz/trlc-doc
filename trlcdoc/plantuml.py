@@ -24,6 +24,8 @@
 import os
 import urllib.request
 from pathlib import Path
+from typing import Union
+from urllib.parse import urlparse
 
 from .config import Config
 from .util import TrlcdocError, prepare_output
@@ -38,26 +40,28 @@ DOWNLOAD_URL = "https://github.com/plantuml/plantuml/releases/download/v{version
 # Functions ********************************************************************
 
 
-def provide_plantuml(cfg: Config) -> Path:
+def provide_plantuml(cfg: Config) -> Union[Path, str]:
     """Locate or download plantuml.jar and export it in the PLANTUML environment variable.
 
-    The PLANTUML environment variable has precedence over the configured jar,
-    which has precedence over a download of the configured version.
+    The PLANTUML environment variable, a jar or a PlantUML server URL, has precedence
+    over the configured jar, which has precedence over a download of the configured version.
 
     Args:
         cfg (Config): Project configuration.
 
     Returns:
-        Path: The plantuml.jar file.
+        Union[Path, str]: The plantuml.jar file, or the PlantUML server URL.
 
     Raises:
         TrlcdocError: If the jar is missing and cannot be downloaded.
     """
-    env_jar = os.environ.get("PLANTUML")
+    env_jar = os.environ.get("PLANTUML", "")
     cfg_jar = cfg.plantuml.get("jar")
     version = cfg.plantuml.get("version", DEFAULT_VERSION)
 
-    if env_jar and Path(env_jar).is_file():
+    if urlparse(env_jar).scheme in ("http", "https"):
+        jar = env_jar
+    elif env_jar and Path(env_jar).is_file():
         jar = Path(env_jar).resolve()
     elif cfg_jar:
         jar = cfg.path(cfg_jar)
@@ -67,7 +71,7 @@ def provide_plantuml(cfg: Config) -> Path:
             prepare_output(cfg.output)
             _download(DOWNLOAD_URL.format(version=version), jar)
 
-    if not jar.is_file():
+    if isinstance(jar, Path) and not jar.is_file():
         raise TrlcdocError(f"PlantUML jar {jar} not found.")
 
     os.environ["PLANTUML"] = str(jar)
