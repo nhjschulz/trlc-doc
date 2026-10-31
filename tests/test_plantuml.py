@@ -87,6 +87,12 @@ def test_plantuml(project: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("PLANTUML", str(env_jar))
     assert provide_plantuml(load_config(write_config(root, data))) == env_jar
 
+    # A PlantUML server URL in the environment variable is kept, nothing is downloaded.
+    monkeypatch.setenv("PLANTUML", "https://plantuml.example.com/plantuml")
+    assert provide_plantuml(load_config(write_config(root, data))) == "https://plantuml.example.com/plantuml"
+    assert os.environ["PLANTUML"] == "https://plantuml.example.com/plantuml"
+    assert len(downloads) == 2
+
     # A configured jar that does not exist is an error.
     monkeypatch.delenv("PLANTUML")
     data["plantuml"] = {"jar": "missing.jar"}
