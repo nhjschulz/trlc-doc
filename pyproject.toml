@@ -16,9 +16,9 @@ authors = [
 dependencies = [
   "PyYAML >= 6.0",
   "jsonschema >= 4.18",
-  "trlc == 2.0.*",
+  # pyTRLCConverter determines the trlc version.
+  "pyTRLCConverter >= 3.0.0",
   "bmw-lobster == 1.0.*",
-  "pyTRLCConverter >= 2.0.0",
   "Sphinx >= 8.1.3",
   "myst-parser >= 4.0.0",
   "sphinxcontrib-plantuml >= 0.30"
