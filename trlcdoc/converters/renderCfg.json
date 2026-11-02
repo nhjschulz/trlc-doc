@@ -1,5 +1,5 @@
 {
-    "renderCfg": 
+    "renderCfg":
     [
         {
             "package": ".*",
@@ -9,9 +9,21 @@
         },
         {
             "package": ".*",
-            "type": "SwArchSpec",
-            "attribute": "description",
+            "type": "^(SwReq|SwReqNonFunc|SwConstraint)$",
+            "attribute": "^(description|verification_criteria)$",
+            "format": "gfm"
+        },
+        {
+            "package": ".*",
+            "type": "^SwArchSpec$",
+            "attribute": "^(description|verification_criteria)$",
+            "format": "gfm"
+        },
+        {
+            "package": ".*",
+            "type": "^SwTestCase$",
+            "attribute": "^description$",
             "format": "gfm"
         }
-    ]   
+    ]
 }
