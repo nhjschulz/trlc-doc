@@ -84,7 +84,7 @@ section "trlcdoc" {
             }
 
             SwReq sw_req_trlc_conversion {
-                description = "The software shall convert TRLC documents with pyTRLCConverter into reStructuredText or Markdown, using the converter, translation and render configuration configured per document. Records of included documents shall be available for resolving references, without being part of the output."
+                description = "The software shall convert TRLC documents with pyTRLCConverter into reStructuredText or Markdown, using the converter, translation and render configuration of the pyTRLCConverter options of each document. Records of included documents shall be available for resolving references, without being part of the output."
                 verification_criteria = "Convert a document referencing records of an included document into both formats. Check the output and that the included records are not part of it."
                 valid_status = AbstractRequirements.VALID_STATUS.valid
             }

@@ -21,38 +21,45 @@ documents:
     title: SW-Requirements
     type: trlc
     source: trlc/swe-req
-    converter:
-      rst: builtin:req2rst.py
-      markdown: builtin:req2markdown.py
-    translation: builtin:translation.json
+    pytrlcconverter:
+      converter:
+        rst: builtin:req2rst.py
+        markdown: builtin:req2markdown.py
+      translation: builtin:translation.json
+      render_cfg: builtin:renderCfg.json
+
 
   - id: sw_architecture
     title: SW-Architecture
     type: trlc
     source: trlc/swe-arch
     include: [sw_requirements]
-    converter:
-      rst: builtin:req2rst.py
-      markdown: builtin:req2markdown.py
-    translation: builtin:translation.json
+    pytrlcconverter:
+      converter:
+        rst: builtin:req2rst.py
+        markdown: builtin:req2markdown.py
+      translation: builtin:translation.json
+      render_cfg: builtin:renderCfg.json
 
   - id: sw_test
     title: SW-Tests
     type: trlc
     source: trlc/swe-test
     include: [sw_requirements]
-    converter:
-      rst: builtin:tc2rst.py
-      markdown: builtin:tc2markdown.py
-    translation: builtin:translation.json
+    pytrlcconverter:
+      converter:
+        rst: builtin:tc2rst.py
+        markdown: builtin:tc2markdown.py
+      translation: builtin:translation.json
 
   - id: sw_test_results
     title: SW-Test Results
     type: test_results
     include: [sw_test]
-    converter:
-      rst: builtin:create_test_report_in_rst.py
-      markdown: builtin:create_test_report_in_markdown.py
+    pytrlcconverter:
+      converter:
+        rst: builtin:create_test_report_in_rst.py
+        markdown: builtin:create_test_report_in_markdown.py
 
   - id: sw_tracing_report
     title: Software Tracing Report

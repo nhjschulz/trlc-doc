@@ -96,22 +96,28 @@ def test_config_validation(project: Path, capsys: pytest.CaptureFixture) -> None
     data = base_config()
     data["documents"][0]["type"] = "pdf"
     del data["project"]["author"]
+    # pyTRLCConverter options belong into the pytrlcconverter block of the document.
+    data["documents"][1]["translation"] = "builtin:translation.json"
     errors = _config_errors(root, data)
     assert "does not match the schema" in errors
     assert "documents/0/type" in errors
     assert "project: 'author' is a required property" in errors
+    assert "documents/1: 'translation' is not one of" in errors
 
     data = base_config()
     data["documents"][1]["include"] = ["unknown"]
     data["documents"][2]["id"] = "sw_requirements"
-    data["documents"][0]["converter"]["rst"] = "converters/missing.py"
+    data["documents"][0]["pytrlcconverter"]["converter"]["rst"] = "converters/missing.py"
+    data["documents"][0]["pytrlcconverter"]["render_cfg"] = "missing.json"
     data["trace"]["levels"][1]["trace_to"] = ["Unknown Level"]
     data["html"] = {"index": "docs/index.rst", "page_header": "docs/header.rst", "conf": "docs/conf.py"}
     errors = _config_errors(root, data)
     assert "has invalid settings" in errors
     assert "documents[sw_architecture].include: 'unknown'" in errors
     assert "documents: id 'sw_requirements' is used more than once" in errors
-    assert "documents[sw_requirements].converter.rst: file 'converters/missing.py' not found" in errors
+    assert ("documents[sw_requirements].pytrlcconverter.converter.rst: file 'converters/missing.py' not found"
+            in errors)
+    assert "documents[sw_requirements].pytrlcconverter.render_cfg: file 'missing.json' not found" in errors
     assert "trace.levels[SW Architecture].trace_to: level 'Unknown Level' is not defined" in errors
     for key, value in data["html"].items():
         assert f"html.{key}: file '{value}' not found" in errors

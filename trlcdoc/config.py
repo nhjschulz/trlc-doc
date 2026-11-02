@@ -303,8 +303,9 @@ def _check_document(cfg: Config, doc: Dict[str, Any], doc_types: Dict[str, str])
         if doc_types.get(inc) not in TRLC_DOCUMENT_TYPES:
             errors.append(f"{where}.include: '{inc}' is no document of type trlc or test_results.")
 
-    files = {f"converter.{fmt}": value for fmt, value in doc.get("converter", {}).items()}
-    files.update({key: doc[key] for key in ("translation", "render_cfg") if key in doc})
+    options = doc.get("pytrlcconverter", {})
+    files = {f"pytrlcconverter.converter.{fmt}": value for fmt, value in options.get("converter", {}).items()}
+    files.update({f"pytrlcconverter.{key}": options[key] for key in ("translation", "render_cfg") if key in options})
     for key, value in files.items():
         if not cfg.file_reference(value).is_file():
             errors.append(f"{where}.{key}: file '{value}' not found.")

@@ -42,7 +42,9 @@ links), `2` build error. All generated files go to `paths.output`
 
 ## Configuration
 
-The project configuration `trlcdoc.yaml` lives in the project root. Its schema
+The project configuration `trlcdoc.yaml` lives in the project root. See
+[configuration.md](configuration.md) which explains every section and key with
+examples. The schema of the configuration
 is [trlcdoc/schema/trlcdoc.schema.json](trlcdoc/schema/trlcdoc.schema.json);
 editors with YAML language support validate against it with this first line:
 
@@ -50,12 +52,18 @@ editors with YAML language support validate against it with this first line:
 # yaml-language-server: $schema=tools/trlc-doc/trlcdoc/schema/trlcdoc.schema.json
 ```
 
+Users of Visual Studio Code can use the 
+[redhat.vscode-yaml](https://marketplace.visualstudio.com/items?itemName=redhat.vscode-yaml)
+extension to get schema validation for `trlcdoc.yaml` files: 
+
 Key concepts:
 
 - **documents** are the pages of the site, in table of contents order. Their
   `id` is the key used everywhere else. Types: `trlc`, `test_results`,
   `trace_report`, `html`, `rst`, `markdown`, `text`, `command`.
-- **converter** names the pyTRLCConverter project file per output format.
+- **pytrlcconverter** holds the pyTRLCConverter options of a `trlc` or
+  `test_results` document: the project `converter` per output format, the
+  `translation` and the render configuration `render_cfg`.
   `builtin:<file>` refers to [trlcdoc/converters](trlcdoc/converters), any other
   path is relative to the project root.
 - **include** lists the documents whose TRLC files are needed to resolve

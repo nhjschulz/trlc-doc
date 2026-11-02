@@ -67,12 +67,23 @@
     "$defs": {
         "id": {"type": "string", "pattern": "^[a-z][a-z0-9_]*$"},
         "converterPath": {
-            "description": "pyTRLCConverter project file. 'builtin:<file>' refers to the converters shipped with trlcdoc, any other path is relative to the project root.",
+            "description": "pyTRLCConverter input file. 'builtin:<file>' refers to the files shipped with trlcdoc, any other path is relative to the project root.",
             "type": "string",
             "minLength": 1
         },
+        "pytrlcconverter": {
+            "description": "Options of the pyTRLCConverter run that converts the document.",
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["converter"],
+            "properties": {
+                "converter": {"$ref": "#/$defs/converter"},
+                "translation": {"description": "Translation of the attribute names (--translation).", "$ref": "#/$defs/converterPath"},
+                "render_cfg": {"description": "Render configuration of the attribute formats (--renderCfg).", "$ref": "#/$defs/converterPath"}
+            }
+        },
         "converter": {
-            "description": "Converter per output format. 'rst' is required for the HTML site.",
+            "description": "pyTRLCConverter project converter (--project) per output format. 'rst' is required for the HTML site.",
             "type": "object",
             "additionalProperties": false,
             "required": ["rst"],
@@ -90,9 +101,7 @@
                 "type": {"enum": ["trlc", "test_results", "trace_report", "html", "rst", "markdown", "text", "command"]},
                 "source": {"type": "string", "minLength": 1},
                 "include": {"description": "Ids of documents whose TRLC files are needed to resolve references.", "type": "array", "items": {"$ref": "#/$defs/id"}, "uniqueItems": true},
-                "converter": {"$ref": "#/$defs/converter"},
-                "translation": {"$ref": "#/$defs/converterPath"},
-                "render_cfg": {"$ref": "#/$defs/converterPath"},
+                "pytrlcconverter": {"$ref": "#/$defs/pytrlcconverter"},
                 "command": {"type": "array", "minItems": 1, "items": {"type": "string"}},
                 "output": {"type": "string", "minLength": 1}
             },
@@ -101,16 +110,16 @@
                     "if": {"properties": {"type": {"const": "trlc"}}},
                     "then": {
                         "description": "Without title, the first heading of the converted content is the page title.",
-                        "required": ["source", "converter"],
-                        "propertyNames": {"enum": ["id", "title", "type", "source", "include", "converter", "translation", "render_cfg"]}
+                        "required": ["source", "pytrlcconverter"],
+                        "propertyNames": {"enum": ["id", "title", "type", "source", "include", "pytrlcconverter"]}
                     }
                 },
                 {
                     "if": {"properties": {"type": {"const": "test_results"}}},
                     "then": {
                         "description": "Without title, the first heading of the converted content is the page title.",
-                        "required": ["converter"],
-                        "propertyNames": {"enum": ["id", "title", "type", "include", "converter", "translation", "render_cfg"]}
+                        "required": ["pytrlcconverter"],
+                        "propertyNames": {"enum": ["id", "title", "type", "include", "pytrlcconverter"]}
                     }
                 },
                 {
