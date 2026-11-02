@@ -45,7 +45,7 @@ section "SW-Tests" {
         }
 
         SwTestCase tc_config_validation {
-            description = "Load configurations violating the schema and configurations with an unknown include, a duplicate document id, a missing converter file, missing HTML site files and an undefined trace level. Check that every error is reported with its location, and that no step runs (tests/test_config.py)."
+            description = "Load configurations violating the schema, including a pyTRLCConverter option outside the pyTRLCConverter options of a document, and configurations with an unknown include, a duplicate document id, a missing converter file, missing HTML site files and an undefined trace level. Check that every error is reported with its location, and that no step runs (tests/test_config.py)."
             verifies = [SwRequirements.sw_req_config_validation]
         }
 

@@ -46,7 +46,7 @@ def convert_documents(cfg: Config, fmt: str) -> int:
     converted = 0
     for doc in cfg.documents:
         if doc["type"] in TRLC_DOCUMENT_TYPES:
-            if fmt in doc["converter"]:
+            if fmt in doc["pytrlcconverter"]["converter"]:
                 convert_document(cfg, doc, fmt)
                 converted += 1
             else:
@@ -80,11 +80,12 @@ def convert_document(cfg: Config, doc: Dict[str, Any], fmt: str) -> List[str]:
     cmd.append(f"--include={cfg.trlc_model}")
     for source in cfg.included_sources(doc):
         cmd.extend([f"--include={source}", f"--exclude={source}"])
-    cmd.extend([f"--out={out_dir}", f"--project={cfg.file_reference(doc['converter'][fmt])}"])
-    if "translation" in doc:
-        cmd.append(f"--translation={cfg.file_reference(doc['translation'])}")
-    if "render_cfg" in doc:
-        cmd.append(f"--renderCfg={cfg.file_reference(doc['render_cfg'])}")
+    options = doc["pytrlcconverter"]
+    cmd.extend([f"--out={out_dir}", f"--project={cfg.file_reference(options['converter'][fmt])}"])
+    if "translation" in options:
+        cmd.append(f"--translation={cfg.file_reference(options['translation'])}")
+    if "render_cfg" in options:
+        cmd.append(f"--renderCfg={cfg.file_reference(options['render_cfg'])}")
     cmd.append(fmt)
 
     run(cmd, cfg.root)

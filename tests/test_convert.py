@@ -35,7 +35,8 @@ from trlcdoc.util import TrlcdocError
 # Variables ********************************************************************
 
 BUILTIN_CONVERTERS = ["req2rst.py", "req2markdown.py", "tc2rst.py", "tc2markdown.py",
-                      "create_test_report_in_rst.py", "create_test_report_in_markdown.py", "translation.json"]
+                      "create_test_report_in_rst.py", "create_test_report_in_markdown.py", "translation.json",
+                      "renderCfg.json"]
 
 # Classes **********************************************************************
 
@@ -69,9 +70,9 @@ def test_trlc_conversion(project: Path, fmt: str, pattern: str) -> None:
     shutil.copytree(BUILTIN_DIR, root / "converters", ignore=shutil.ignore_patterns("__pycache__"))
     (root / "render.yaml").write_text("{}\n", encoding="utf-8")
     data = base_config()
-    data["documents"][1].update({"converter": {"rst": "converters/req2rst.py",
-                                               "markdown": "converters/req2markdown.py"},
-                                 "translation": "converters/translation.json", "render_cfg": "render.yaml"})
+    data["documents"][1]["pytrlcconverter"] = {
+        "converter": {"rst": "converters/req2rst.py", "markdown": "converters/req2markdown.py"},
+        "translation": "converters/translation.json", "render_cfg": "render.yaml"}
     cfg = load_config(write_config(root, data))
 
     cmd = convert_document(cfg, cfg.document("sw_architecture"), fmt)
@@ -120,7 +121,7 @@ def test_conversion_error(tmp_path: Path) -> None:
         convert_document(cfg, cfg.document("sw_architecture"), "rst")
 
     data = base_config()
-    del data["documents"][0]["converter"]["markdown"]
+    del data["documents"][0]["pytrlcconverter"]["converter"]["markdown"]
     cfg = load_config(write_config(cfg.root, data))
     assert convert_document(cfg, cfg.document("sw_requirements"), "rst")
     assert "sw_requirements" not in [path.name for path in (cfg.output / "convert").glob("markdown/*")]
