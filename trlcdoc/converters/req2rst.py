@@ -31,6 +31,7 @@ from generic_rsl_rst_converter import GenericRslRstConverter
 
 # pylint: disable=too-few-public-methods
 class ProjectRstConverter(GenericRslRstConverter):
+    # lobster-trace: SwRequirements.sw_req_builtin_converters
     """Custom Project specific reStructuredText Converter.
     """
 

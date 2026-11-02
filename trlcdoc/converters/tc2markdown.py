@@ -32,6 +32,7 @@ from generic_rsl_markdown_converter import GenericRslMarkdownConverter
 
 # pylint: disable-next=too-few-public-methods
 class TestCaseMarkdownConverter(GenericRslMarkdownConverter):
+    # lobster-trace: SwRequirements.sw_req_builtin_converters
     """Custom Project specific Markdown converter for test cases.
     """
     def __init__(self, args: Any) -> None:

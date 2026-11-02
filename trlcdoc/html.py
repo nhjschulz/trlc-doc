@@ -53,6 +53,7 @@ PROJECT_ROOT_PLACEHOLDER = "{project_root}"
 
 
 def build_html(cfg: Config) -> Path:
+    # lobster-trace: SwRequirements.sw_req_html_site
     """Generate the Sphinx source folder and build the HTML site.
 
     Args:
@@ -86,6 +87,7 @@ def build_html(cfg: Config) -> Path:
 
 
 def _heading(title: str, char: str = PAGE_TITLE_CHAR) -> str:
+    # lobster-trace: SwRequirements.sw_req_html_site
     """Create a reStructuredText heading.
 
     Args:
@@ -99,6 +101,8 @@ def _heading(title: str, char: str = PAGE_TITLE_CHAR) -> str:
 
 
 def _write_page(cfg: Config, doc: Dict[str, Any], src_dir: Path, copy_dirs: List[Dict[str, str]]) -> str:
+    # lobster-trace: SwRequirements.sw_req_documents
+    # lobster-trace: SwRequirements.sw_req_document_types
     """Write the Sphinx page of a document.
 
     Args:
@@ -144,6 +148,7 @@ def _write_page(cfg: Config, doc: Dict[str, Any], src_dir: Path, copy_dirs: List
 
 
 def _project_root_text(cfg: Config, text: str, page_file: Path) -> str:
+    # lobster-trace: SwRequirements.sw_req_html_customization
     """Replace the project root placeholder by the relative path from a page to the project root.
 
     Args:
@@ -158,6 +163,8 @@ def _project_root_text(cfg: Config, text: str, page_file: Path) -> str:
 
 
 def _write_project_page(cfg: Config, source: Path, page_file: Path) -> Path:
+    # lobster-trace: SwRequirements.sw_req_document_types
+    # lobster-trace: SwRequirements.sw_req_html_customization
     """Write a project owned page into the Sphinx source folder.
 
     Args:
@@ -173,6 +180,8 @@ def _write_project_page(cfg: Config, source: Path, page_file: Path) -> Path:
 
 
 def _write_generated(cfg: Config, page_file: Path, doc: Dict[str, Any], body: str) -> Path:
+    # lobster-trace: SwRequirements.sw_req_documents
+    # lobster-trace: SwRequirements.sw_req_html_customization
     """Write a generated page: the page header, the title of the document and the body.
 
     Args:
@@ -195,6 +204,8 @@ def _write_generated(cfg: Config, page_file: Path, doc: Dict[str, Any], body: st
 
 
 def _write_converted_page(cfg: Config, doc: Dict[str, Any], src_dir: Path) -> str:
+    # lobster-trace: SwRequirements.sw_req_documents
+    # lobster-trace: SwRequirements.sw_req_document_types
     """Write the page of a converted TRLC document.
 
     The converter output and its images are placed into a folder per document,
@@ -227,6 +238,7 @@ def _write_converted_page(cfg: Config, doc: Dict[str, Any], src_dir: Path) -> st
 
 
 def _require(path: Path, hint: str) -> Path:
+    # lobster-trace: SwRequirements.sw_req_document_types
     """Ensure an input file exists.
 
     Args:
@@ -245,6 +257,8 @@ def _require(path: Path, hint: str) -> Path:
 
 
 def _write_index(cfg: Config, src_dir: Path, pages: List[str]) -> Path:
+    # lobster-trace: SwRequirements.sw_req_html_site
+    # lobster-trace: SwRequirements.sw_req_html_customization
     """Write the start page with the table of contents, or the project owned start page.
 
     Args:
@@ -267,6 +281,8 @@ def _write_index(cfg: Config, src_dir: Path, pages: List[str]) -> Path:
 
 
 def _write_sphinx_config(cfg: Config, src_dir: Path, copy_dirs: List[Dict[str, str]]) -> Path:
+    # lobster-trace: SwRequirements.sw_req_project_settings
+    # lobster-trace: SwRequirements.sw_req_html_customization
     """Write the project settings read by the generic conf.py.
 
     Args:

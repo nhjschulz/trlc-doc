@@ -34,6 +34,8 @@ from pyTRLCConverter.plantuml import PlantUML
 
 def convert_plantuml_to_image(plantuml_file: str, dest_dir: str, directories: List[str],
                               image_format: str = "svg") -> Optional[Path]:
+    # lobster-trace: SwRequirements.sw_req_builtin_converters
+    # lobster-trace: SwRequirements.sw_req_plantuml
     """Convert PlantUML diagram to an image file.
 
     Args:
@@ -75,6 +77,7 @@ def convert_plantuml_to_image(plantuml_file: str, dest_dir: str, directories: Li
 
 
 def locate_file(file_path: str, directories: List[str]) -> Optional[str]:
+    # lobster-trace: SwRequirements.sw_req_builtin_converters
     """
     Locate a file by searching through the sources list if it 
     cannot be accessed by the given file_path.

@@ -89,7 +89,7 @@ trace:
     - name: SW Requirement
       document: sw_requirements
       record_type: SwRequirements.SwReq
-      requires: [SW Architecture, SW Test Case]
+      requires: [SW Architecture, SW Code, SW Test Case]
 
     - name: SW Constraint
       document: sw_requirements
@@ -101,6 +101,12 @@ trace:
       record_type: SwArch.SwArchSpec
       tags: [satisfies]
       trace_to: [SW Requirement, SW Constraint]
+
+    - name: SW Code
+      kind: implementation
+      extractor: lobster-python
+      sources: [trlcdoc]
+      trace_to: [SW Requirement]
 
     - name: SW Test Case
       document: sw_test

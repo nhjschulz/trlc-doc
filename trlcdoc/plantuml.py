@@ -41,6 +41,7 @@ DOWNLOAD_URL = "https://github.com/plantuml/plantuml/releases/download/v{version
 
 
 def provide_plantuml(cfg: Config) -> Union[Path, str]:
+    # lobster-trace: SwRequirements.sw_req_plantuml
     """Locate or download plantuml.jar and export it in the PLANTUML environment variable.
 
     The PLANTUML environment variable, a jar or a PlantUML server URL, has precedence
@@ -80,6 +81,7 @@ def provide_plantuml(cfg: Config) -> Union[Path, str]:
 
 
 def _download(url: str, target: Path) -> Path:
+    # lobster-trace: SwRequirements.sw_req_plantuml
     """Download a file.
 
     Args:

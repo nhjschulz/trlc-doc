@@ -43,6 +43,7 @@ PYTEST_OK_CODES = (0, 1)
 
 
 def run_tests(cfg: Config) -> bool:
+    # lobster-trace: SwRequirements.sw_req_test_run
     """Run the tests and create the TRLC test result records.
 
     Args:
@@ -84,6 +85,7 @@ def run_tests(cfg: Config) -> bool:
 
 
 def read_junit(junit_file: Path, link: Dict[str, Any]) -> List[Tuple[str, bool, List[str]]]:
+    # lobster-trace: SwRequirements.sw_req_test_results
     """Read the test results and link them to their TRLC test cases.
 
     Skipped tests have no result and are not part of the list.
@@ -126,6 +128,7 @@ def read_junit(junit_file: Path, link: Dict[str, Any]) -> List[Tuple[str, bool, 
 
 
 def _linked_test_cases(testcase: ET.Element, link: Dict[str, Any]) -> List[str]:
+    # lobster-trace: SwRequirements.sw_req_test_results
     """Get the qualified TRLC test case ids of a JUnit test case.
 
     Args:
@@ -149,6 +152,7 @@ def _linked_test_cases(testcase: ET.Element, link: Dict[str, Any]) -> List[str]:
 
 
 def write_results(results: List[Tuple[str, bool, List[str]]], trlc_file: Path, link: Dict[str, Any]) -> Path:
+    # lobster-trace: SwRequirements.sw_req_test_results
     """Write the test results as TRLC SwTestCaseResult records.
 
     The records are written into the package of the test cases, taken from tests.link.to.

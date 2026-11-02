@@ -44,6 +44,9 @@ class TrlcdocError(Exception):
 
 
 def find_tool(name: str) -> str:
+    # lobster-trace: SwRequirements.sw_req_trlc_conversion
+    # lobster-trace: SwRequirements.sw_req_test_run
+    # lobster-trace: SwRequirements.sw_req_trace_report
     """Find a console script, preferring the one of the running Python environment.
 
     Args:
@@ -64,6 +67,7 @@ def find_tool(name: str) -> str:
 
 
 def run(cmd: List[str], cwd: Path, env: Optional[Dict[str, str]] = None) -> int:
+    # lobster-trace: SwRequirements.sw_req_exit_code
     """Run an external command and stop the build if it fails.
 
     Args:
@@ -84,6 +88,7 @@ def run(cmd: List[str], cwd: Path, env: Optional[Dict[str, str]] = None) -> int:
 
 
 def run_unchecked(cmd: List[str], cwd: Path, env: Optional[Dict[str, str]] = None) -> int:
+    # lobster-trace: SwRequirements.sw_req_test_run
     """Run an external command and return its exit code.
 
     Args:
@@ -101,6 +106,7 @@ def run_unchecked(cmd: List[str], cwd: Path, env: Optional[Dict[str, str]] = Non
 
 
 def _check_owned(output: Path) -> Path:
+    # lobster-trace: SwRequirements.sw_req_delete_protection
     """Ensure the output folder was created by trlcdoc, before anything in it is deleted.
 
     A missing or empty folder is accepted. Any other folder must contain the marker file.
@@ -124,6 +130,8 @@ def _check_owned(output: Path) -> Path:
 
 
 def prepare_output(output: Path) -> Path:
+    # lobster-trace: SwRequirements.sw_req_output_folder
+    # lobster-trace: SwRequirements.sw_req_delete_protection
     """Create the output folder if needed and mark it as owned by trlcdoc.
 
     Args:
@@ -141,6 +149,8 @@ def prepare_output(output: Path) -> Path:
 
 
 def clean_dir(folder: Path, output: Path) -> Path:
+    # lobster-trace: SwRequirements.sw_req_output_folder
+    # lobster-trace: SwRequirements.sw_req_delete_protection
     """Create an empty folder inside the output folder, removing previous content.
 
     Args:
@@ -163,6 +173,8 @@ def clean_dir(folder: Path, output: Path) -> Path:
 
 
 def remove_output(output: Path) -> bool:
+    # lobster-trace: SwRequirements.sw_req_clean
+    # lobster-trace: SwRequirements.sw_req_delete_protection
     """Remove the output folder with all its content.
 
     Args:
@@ -181,6 +193,7 @@ def remove_output(output: Path) -> bool:
 
 
 def git_output(args: List[str], cwd: Path) -> Optional[str]:
+    # lobster-trace: SwRequirements.sw_req_trace_report
     """Run a git command and return its output.
 
     Args:

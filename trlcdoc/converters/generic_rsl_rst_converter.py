@@ -42,6 +42,7 @@ from image_processing import convert_plantuml_to_image, locate_file
 
 
 class GenericRslRstConverter(RstConverter):
+    # lobster-trace: SwRequirements.sw_req_builtin_converters
     """Project specific reStructuredText converter subclass for generic.rsl types.
     """
 

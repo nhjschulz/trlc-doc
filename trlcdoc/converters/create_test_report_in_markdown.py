@@ -34,6 +34,7 @@ from pyTRLCConverter.trlc_helper import Record_Object
 
 
 class CustomMarkdownConverter(MarkdownConverter):
+    # lobster-trace: SwRequirements.sw_req_builtin_converters
     """Custom Project specific Markdown converter responsible for converting the
         SW test case results into Markdown format.
     """

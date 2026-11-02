@@ -44,6 +44,10 @@ STEPS = ["clean", "check", "plantuml", "tests", "convert", "trace", "html"]
 
 
 def _parse_args(argv: Optional[List[str]]) -> argparse.Namespace:
+    # lobster-trace: SwRequirements.sw_req_cli
+    # lobster-trace: SwRequirements.sw_req_cli_help
+    # lobster-trace: SwRequirements.sw_req_steps
+    # lobster-trace: SwRequirements.sw_req_config_file
     """Parse the command line arguments.
 
     Args:
@@ -74,6 +78,8 @@ def _parse_args(argv: Optional[List[str]]) -> argparse.Namespace:
 
 
 def _selected_steps(cfg: Config, requested: List[str]) -> List[str]:
+    # lobster-trace: SwRequirements.sw_req_steps
+    # lobster-trace: SwRequirements.sw_req_step_order
     """Determine the steps to run, in execution order.
 
     Args:
@@ -96,6 +102,9 @@ def _selected_steps(cfg: Config, requested: List[str]) -> List[str]:
 
 
 def _run_step(step: str, cfg: Config, args: argparse.Namespace) -> bool:
+    # lobster-trace: SwRequirements.sw_req_steps
+    # lobster-trace: SwRequirements.sw_req_clean
+    # lobster-trace: SwRequirements.sw_req_exit_code
     """Run one step.
 
     Args:
@@ -134,6 +143,9 @@ def _run_step(step: str, cfg: Config, args: argparse.Namespace) -> bool:
 
 
 def main(argv: Optional[List[str]] = None) -> int:
+    # lobster-trace: SwRequirements.sw_req_cli
+    # lobster-trace: SwRequirements.sw_req_config_validation
+    # lobster-trace: SwRequirements.sw_req_exit_code
     """Run the requested trlcdoc steps.
 
     Args:
