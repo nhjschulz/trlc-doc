@@ -8,8 +8,8 @@ section "trlcdoc SW Architecture" {
     Generic.Info sw_arch_info_about {
         description =
             '''
-            This file contains the high level software architecture of trlcdoc, the configurable documentation tooling
-            for TRLC based projects.
+            This file contains the high level software architecture of trlcdoc, a configurable documentation
+            generator for NewTec TRLC based projects.
             '''
     }
 
@@ -18,16 +18,30 @@ section "trlcdoc SW Architecture" {
         SwArchSpec sw_arch_trlcdoc_tool {
             description =
                 '''
-                trlcdoc is a Python 3 package providing the console application 'trlcdoc'. It builds the documentation
-                of a TRLC based project as static HTML site from the project configuration trlcdoc.yaml, the TRLC model
-                and records, the PlantUML diagrams, and the project sources and tests. It contains no project specific
-                content and orchestrates the external toolchain: pytest runs the tests, pyTRLCConverter converts the
-                TRLC records, LOBSTER creates the tracing report, PlantUML renders the diagrams, Sphinx builds the site
-                and git provides version information. All generated files are written into the output folder.
+                **trlcdoc documentation tool**
+
+                trlcdoc is a Python 3 package providing the console application `trlcdoc`. It builds documentation
+                for a TRLC based project as static HTML site from:
+
+                - project configuration `trlcdoc.yaml`
+                - TRLC model and records
+                - PlantUML diagrams
+                - project sources and tests
+
+                It contains no project specific content and orchestrates the external toolchain:
+
+                - pytest runs the tests
+                - pyTRLCConverter converts the TRLC records
+                - LOBSTER creates the tracing report
+                - PlantUML renders the diagrams
+                - Sphinx builds the site
+                - git provides version information
+
+                All generated files are written into the output folder.
                 '''
             verification_criteria =
                 '''
-                Build the documentation of a reference project with 'trlcdoc'. Check the generated site and the console
+                Build the documentation of a reference project with `trlcdoc`. Check the generated site and the console
                 output.
                 '''
             satisfies = [
@@ -51,10 +65,19 @@ section "trlcdoc SW Architecture" {
         Generic.Info sw_arch_info_static_view {
             description =
                 '''
+                **Component overview**
+
                 The software consists of eight components. The CLI runs the build steps, each step is realized by one
-                component: PlantUML Provider, Test Runner, TRLC Conversion, Trace Report and HTML Builder. All steps get
-                their settings and paths from the Configuration component and use the Common Services for running
-                external tools and managing the output folder.
+                component:
+
+                - PlantUML Provider
+                - Test Runner
+                - TRLC Conversion
+                - Trace Report
+                - HTML Builder
+
+                All steps get their settings and paths from the Configuration component and use the Common Services
+                for running external tools and managing the output folder.
                 '''
         }
 
@@ -70,16 +93,27 @@ section "trlcdoc SW Architecture" {
                 SwArchSpec sw_arch_comp_cli {
                     description =
                         '''
-                        The CLI component (cli.py, __main__.py) is the application entry point. It parses the command
-                        line with argparse, locates and loads the configuration, determines the steps to run in their
-                        fixed order, including the steps they depend on, and runs them. The clean step removes the
-                        output folder, the check step reports the valid configuration, all other steps are delegated to
-                        their components. It maps the step results to the exit codes 0 (success), 1 (findings) and 2
-                        (build error).
+                        **CLI component** (`cli.py`, `__main__.py`)
+
+                        The CLI provides the application entry point. It
+
+                        - parses the command line with argparse
+                        - locates and loads the configuration
+                        - determines the steps to run in their fixed order, including the steps they depend on
+                        - runs them
+
+                        The clean step removes the output folder, the check step reports the valid configuration, all
+                        other steps are delegated to their components.
+
+                        It maps the step results to the exit codes:
+
+                        - 0: success
+                        - 1: findings
+                        - 2: build error
                         '''
                     verification_criteria =
                         '''
-                        Call 'trlcdoc' with different step selections, with '--help' and with an invalid configuration.
+                        Call `trlcdoc` with different step selections, with `--help` and with an invalid configuration
                         Check the executed steps, the console output and the exit code.
                         '''
                     satisfies = [
@@ -103,18 +137,27 @@ section "trlcdoc SW Architecture" {
                 SwArchSpec sw_arch_comp_config {
                     description =
                         '''
-                        The Configuration component (config.py, schema/trlcdoc.schema.json) finds and loads the YAML
-                        configuration, validates it against the JSON schema and checks the references between documents,
-                        includes, converter files and trace levels, as well as the location of the output folder. It
-                        provides the validated settings as Config object, which resolves all paths: the configured
-                        inputs relative to the project root, and the generated files in fixed subfolders of the output
-                        folder.
+                        **Configuration component** (`config.py`, `schema/trlcdoc.schema.json`)
+
+                        Finds and loads a YAML configuration, validates it against the JSON schema and checks
+
+                        - the references between documents, includes, converter files and trace levels
+                        - the location of the output folder
+
+                        It provides the validated settings as a `Config` object, which resolves all paths:
+
+                        - the configured inputs relative to the project root
+                        - the generated files in fixed subfolders of the output folder
                         '''
                     verification_criteria =
                         '''
-                        Load valid configurations, configurations violating the schema and configurations with
-                        unresolved references or a forbidden output folder. Check the resolved paths and the error
-                        messages.
+                        Load
+
+                        - valid configurations
+                        - configurations violating the schema
+                        - configurations with unresolved references or a forbidden output folder
+
+                        Check the resolved paths and the error messages.
                         '''
                     satisfies = [
                         SwRequirements.sw_req_config_file,
@@ -136,11 +179,18 @@ section "trlcdoc SW Architecture" {
                 SwArchSpec sw_arch_comp_util {
                     description =
                         '''
-                        The Common Services component (util.py) provides the services shared by all steps: locating the
-                        toolchain executables of the running Python environment, running external commands, querying
-                        git, and managing the output folder. Build errors are reported with the TrlcdocError exception.
-                        The output folder management creates the output folder with a marker file and deletes only
-                        folders inside a marked output folder.
+                        **Common Services component** (`util.py`)
+
+                        Provides services shared by all steps:
+
+                        - locating the toolchain executables of the running Python environment
+                        - running external commands
+                        - querying git
+                        - managing the output folder
+
+                        Build errors are reported with the `TrlcdocError` exception. The output folder management
+                        creates the output folder with a marker file and deletes only folders inside a marked output
+                        folder.
                         '''
                     verification_criteria =
                         '''
@@ -166,10 +216,15 @@ section "trlcdoc SW Architecture" {
                 SwArchSpec sw_arch_comp_plantuml {
                     description =
                         '''
-                        The PlantUML Provider component (plantuml.py) realizes the plantuml step. It selects the
-                        PlantUML jar or server from the PLANTUML environment variable, the jar from the configuration or
-                        a download of the configured version into the output folder, and exports the selection in the
-                        PLANTUML environment variable for the converters and Sphinx.
+                        **PlantUML Provider component** (`plantuml.py`)
+
+                        Realizes the plantuml step. It selects, in this order,
+
+                        - the PlantUML jar or server from the `PLANTUML` environment variable
+                        - the jar from the configuration
+                        - a download of the configured version into the output folder
+
+                        It exports the selection in the `PLANTUML` environment variable for the converters and Sphinx.
                         '''
                     verification_criteria =
                         '''
@@ -190,16 +245,24 @@ section "trlcdoc SW Architecture" {
                 SwArchSpec sw_arch_comp_testrun {
                     description =
                         '''
-                        The Test Runner component (testrun.py) realizes the tests step. It runs pytest, with a coverage
-                        report if requested, or the configured test command. It reads the JUnit XML results, links each
-                        test to its TRLC test cases by the recorded properties or the configured name mapping, and
-                        writes the results as SwTestCaseResult records into the output folder. It reports failed tests
-                        as findings and unlinked tests as error.
+                        **Test Runner component** (`testrun.py`)
+
+                        Realizes the tests step. It
+
+                        - runs pytest, with a coverage report if requested, or the configured test command
+                        - reads the JUnit XML results
+                        - links each test to its TRLC test cases by recorded properties or the configured name mapping
+                        - writes the results as `SwTestCaseResult` records into the output folder
+
+                        It reports failed tests as findings and unlinked tests as error.
                         '''
                     verification_criteria =
                         '''
-                        Run the tests step with passing, failing, linked and unlinked tests. Check the generated test
-                        result records, the coverage report and the reported results.
+                        Run the tests step with passing, failing, linked and unlinked tests. Check
+
+                        - the generated test result records
+                        - the coverage report
+                        - the reported results
                         '''
                     satisfies = [SwRequirements.sw_req_test_run, SwRequirements.sw_req_test_results]
                 }
@@ -215,12 +278,21 @@ section "trlcdoc SW Architecture" {
                 SwArchSpec sw_arch_comp_convert {
                     description =
                         '''
-                        The TRLC Conversion component (convert.py, converters/) realizes the convert step. It runs
-                        pyTRLCConverter per TRLC document with the document sources, the TRLC model and the records of
-                        the included documents, using the configured converter, translation and render configuration.
+                        **TRLC Conversion component** (`convert.py`, `converters/`)
+
+                        Realizes the convert step. It runs pyTRLCConverter per TRLC document with
+
+                        - the document sources
+                        - the TRLC model
+                        - the records of the included documents
+                        - the configured converter, translation and render configuration
+
                         The built-in converters extend the pyTRLCConverter reStructuredText and Markdown converters for
-                        the Generic types (information, images, PlantUML diagrams), requirements, test cases and test
-                        results.
+
+                        - the NewTec Generic types (information, images, PlantUML diagrams)
+                        - requirements
+                        - test cases
+                        - test results
                         '''
                     verification_criteria =
                         '''
@@ -245,11 +317,17 @@ section "trlcdoc SW Architecture" {
                 SwArchSpec sw_arch_comp_trace {
                     description =
                         '''
-                        The Trace Report component (trace.py) realizes the trace step. It extracts the trace data per
-                        configured level with lobster-trlc or the code extractor, generates the LOBSTER policy from the
-                        level relations, runs lobster-report and creates the HTML tracing report with
-                        lobster-html-report. For online reports it links the items to the repository with
-                        lobster-online-report. It lists the items with missing trace links and reports them as findings.
+                        **Trace Report component** (`trace.py`)
+
+                        Realizes the trace step. It
+
+                        - extracts the trace data per configured level with lobster-trlc or the code extractor
+                        - generates the LOBSTER policy from the level relations
+                        - runs lobster-report
+                        - creates the HTML tracing report with lobster-html-report
+                        - links the items to the repository with lobster-online-report for online reports
+
+                        It lists the items with missing trace links and reports them as findings.
                         '''
                     verification_criteria =
                         '''
@@ -274,18 +352,32 @@ section "trlcdoc SW Architecture" {
                 SwArchSpec sw_arch_comp_html {
                     description =
                         '''
-                        The HTML Builder component (html.py, sphinx/) realizes the html step. It generates the Sphinx
-                        source folder with one page per document according to its type, the start page with the table of
-                        contents or the project start page, and the project settings, and builds the site with Sphinx.
-                        It adds the project page header to the generated pages and replaces the project root placeholder
-                        in project pages. The generic Sphinx configuration conf.py reads the project settings, copies
-                        embedded HTML sites into the site, adds the git commit to the page footer and executes the
-                        project specific Sphinx configuration.
+                        **HTML Builder component** (`html.py`, `sphinx/`)
+
+                        Realizes the html step. It generates the Sphinx source folder with
+
+                        - one page per document according to its type
+                        - the start page with the table of contents or the project start page
+                        - the project settings
+
+                        It builds the site with Sphinx. It adds the project page header to the generated pages and
+                        replaces the project root placeholder in project pages.
+
+                        The generic Sphinx configuration `conf.py`
+
+                        - reads the project settings
+                        - copies embedded HTML sites into the site
+                        - adds the git commit to the page footer
+                        - executes the project specific Sphinx configuration
                         '''
                     verification_criteria =
                         '''
-                        Build the site from a configuration with every document type. Check the start page, the document
-                        pages, the embedded sites and the page footer.
+                        Build the site from a configuration with every document type. Check
+
+                        - the start page
+                        - the document pages
+                        - the embedded sites
+                        - the page footer
                         '''
                     satisfies = [
                         SwRequirements.sw_req_documents,
@@ -310,10 +402,15 @@ section "trlcdoc SW Architecture" {
         SwArchSpec sw_arch_build_flow {
             description =
                 '''
+                **Build flow**
+
                 A trlcdoc run loads and validates the configuration first and stops with exit code 2 if it is invalid.
-                It then runs the selected steps in their fixed order. A build error stops the run with exit code 2.
-                Findings of the tests and trace steps do not stop the run, so the site still documents them, and lead to
-                exit code 1.
+                It then runs the selected steps in their fixed order.
+
+                - A build error stops the run with exit code 2
+                - Findings of the tests and trace steps lead to exit code 1, but do not stop the run
+
+                So the site still documents the findings.
                 '''
             verification_criteria =
                 '''
@@ -337,11 +434,14 @@ section "trlcdoc SW Architecture" {
             SwArchSpec sw_arch_output_folder_states {
                 description =
                     '''
+                    **Output folder states**
+
                     Before deleting anything, trlcdoc classifies the configured output folder into one of the states
-                    Missing, Empty, Owned or Foreign. Creating the output folder (prepare_output) changes Missing and
-                    Empty to Owned by writing the marker file. Cleaning subfolders keeps the folder Owned, removing it
-                    (clean step) changes it to Missing. A Foreign folder stays unchanged, every delete request is
-                    refused with an error.
+                    Missing, Empty, Owned or Foreign.
+
+                    - Creating the folder (`prepare_output`) writes the marker file: Missing and Empty change to Owned
+                    - Cleaning subfolders keeps the folder Owned, removing it (clean step) changes it to Missing
+                    - A Foreign folder stays unchanged, every delete request is refused with an error
                     '''
                 verification_criteria =
                     '''
@@ -359,9 +459,13 @@ section "trlcdoc SW Architecture" {
             SwArchSpec sw_arch_state_missing {
                 description =
                     '''
-                    Missing: the output folder does not exist. This is the initial state of a fresh project and the
-                    state after the clean step. Steps writing output create the folder and change to Owned. The clean
-                    step reports that there is nothing to clean.
+                    **State Missing**
+
+                    The output folder does not exist. This is the initial state of a fresh project and the state after
+                    the clean step.
+
+                    - Steps writing output create the folder and change to Owned
+                    - The clean step reports that there is nothing to clean
                     '''
                 verification_criteria =
                     '''
@@ -374,9 +478,10 @@ section "trlcdoc SW Architecture" {
             SwArchSpec sw_arch_state_empty {
                 description =
                     '''
-                    Empty: the output folder exists without any content, e.g. created by the user. It contains nothing
-                    that could be lost, so it is treated like a missing folder and changes to Owned when output is
-                    written.
+                    **State Empty**
+
+                    The output folder exists without any content, e.g. created by the user. It contains nothing that
+                    could be lost, so it is treated like a missing folder and changes to Owned when output is written.
                     '''
                 verification_criteria =
                     '''
@@ -389,8 +494,12 @@ section "trlcdoc SW Architecture" {
             SwArchSpec sw_arch_state_owned {
                 description =
                     '''
-                    Owned: the output folder contains the marker file, so trlcdoc created it. Steps may delete and
-                    recreate their subfolders, and the clean step may remove the whole folder, which changes to Missing.
+                    **State Owned**
+
+                    The output folder contains the marker file, so trlcdoc created it.
+
+                    - Steps may delete and recreate their subfolders
+                    - The clean step may remove the whole folder, which changes to Missing
                     '''
                 verification_criteria =
                     '''
@@ -403,9 +512,11 @@ section "trlcdoc SW Architecture" {
             SwArchSpec sw_arch_state_foreign {
                 description =
                     '''
-                    Foreign: the output folder has content but no marker file, e.g. because paths.output names a source
-                    folder by mistake. Every step that would delete something stops with a build error and exit code 2,
-                    and the folder content stays unchanged.
+                    **State Foreign**
+
+                    The output folder has content but no marker file, e.g. because `paths.output` names a source folder
+                    by mistake. Every step that would delete something stops with a build error and exit code 2, and
+                    the folder content stays unchanged.
                     '''
                 verification_criteria =
                     '''
