@@ -436,7 +436,7 @@ The built-in files are the project converters of pyTRLCConverter
 | `tc2rst.py`, `tc2markdown.py`          | Test case records |
 | `create_test_report_in_rst.py`, `create_test_report_in_markdown.py` | Test result records (`test_results` documents) |
 | `translation.json`                     | Display names of the attributes used by these converters |
-| `renderCfg.json`                       | Renders the `description` of `Info` and `SwArchSpec` records as GitHub Flavored Markdown |
+| `renderCfg.json`                       | Renders the `description` of `Info`, `SwReq`, `SwReqNonFunc`, `SwConstraint`, `SwArchSpec` and `SwTestCase` records and the `verification_criteria` of `SwReq` and `SwArchSpec` records as GitHub Flavored Markdown |
 
 They expect the record types of the NewTec TRLC model (`SwReq`,
 `SwConstraint`, `SwArchSpec`, `SwTestCase`, `SwTestCaseResult`, and
