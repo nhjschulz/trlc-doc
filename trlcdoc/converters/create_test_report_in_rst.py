@@ -36,6 +36,7 @@ TEST_CASES_FILE_NAME = "swe-test.rst"
 
 
 class CustomRstConverter(RstConverter):
+    # lobster-trace: SwRequirements.sw_req_builtin_converters
     """Custom Project specific reStructuredText converter responsible for converting the
         SW test case results into reStructuredText format.
     """

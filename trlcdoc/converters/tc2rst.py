@@ -32,6 +32,7 @@ from generic_rsl_rst_converter import GenericRslRstConverter
 
 # pylint: disable-next=too-few-public-methods
 class TestCaseRstConverter(GenericRslRstConverter):
+    # lobster-trace: SwRequirements.sw_req_builtin_converters
     """Custom Project specific reStructuredText converter for test cases.
     """
     def __init__(self, args: Any) -> None:

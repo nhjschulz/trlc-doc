@@ -48,6 +48,8 @@ class Config:
     """Validated project configuration with resolved paths."""
 
     def __init__(self, data: Dict[str, Any], config_file: Path) -> None:
+        # lobster-trace: SwRequirements.sw_req_project_settings
+        # lobster-trace: SwRequirements.sw_req_documents
         """Construct the configuration.
 
         Args:
@@ -67,6 +69,7 @@ class Config:
     # Paths ********************************************************************
 
     def path(self, value: str) -> Path:
+        # lobster-trace: SwRequirements.sw_req_config_file
         """Resolve a configured path against the project root.
 
         Args:
@@ -79,20 +82,26 @@ class Config:
 
     @property
     def output(self) -> Path:
+        # lobster-trace: SwRequirements.sw_req_output_folder
         """Folder for all generated files."""
         return self.path(self.data["paths"].get("output", "build/trlcdoc"))
 
     @property
     def trlc_model(self) -> Path:
+        # lobster-trace: SwRequirements.sw_req_trlc_conversion
         """Folder with the TRLC model files."""
         return self.path(self.data["paths"]["trlc_model"])
 
     @property
     def plantuml_dir(self) -> Path:
+        # lobster-trace: SwRequirements.sw_req_plantuml
+        # lobster-trace: SwRequirements.sw_req_output_folder
         """Folder for the downloaded PlantUML jar."""
         return self.output / "plantuml"
 
     def convert_dir(self, fmt: str, doc_id: str) -> Path:
+        # lobster-trace: SwRequirements.sw_req_trlc_conversion
+        # lobster-trace: SwRequirements.sw_req_output_folder
         """Output folder of a converted document.
 
         Args:
@@ -106,11 +115,14 @@ class Config:
 
     @property
     def tests_dir(self) -> Path:
+        # lobster-trace: SwRequirements.sw_req_test_run
+        # lobster-trace: SwRequirements.sw_req_output_folder
         """Output folder of the tests step."""
         return self.output / "tests"
 
     @property
     def junit_file(self) -> Path:
+        # lobster-trace: SwRequirements.sw_req_test_run
         """JUnit XML file with the test results."""
         result = self.tests_dir / "junit.xml"
         if self.tests is not None and self.tests["runner"] == "command":
@@ -119,6 +131,7 @@ class Config:
 
     @property
     def coverage_dir(self) -> Path:
+        # lobster-trace: SwRequirements.sw_req_test_run
         """HTML coverage report folder."""
         result = self.tests_dir / "coverage"
         if self.tests is not None and "coverage" in self.tests:
@@ -127,32 +140,41 @@ class Config:
 
     @property
     def test_results_dir(self) -> Path:
+        # lobster-trace: SwRequirements.sw_req_test_results
         """Folder with the TRLC test result records generated from the JUnit XML."""
         return self.tests_dir / "results"
 
     @property
     def trace_dir(self) -> Path:
+        # lobster-trace: SwRequirements.sw_req_trace_report
+        # lobster-trace: SwRequirements.sw_req_output_folder
         """Output folder of the trace step."""
         return self.output / "trace"
 
     @property
     def trace_report_html(self) -> Path:
+        # lobster-trace: SwRequirements.sw_req_trace_report
         """The HTML tracing report."""
         return self.trace_dir / "tracing_report.html"
 
     @property
     def sphinx_dir(self) -> Path:
+        # lobster-trace: SwRequirements.sw_req_html_site
+        # lobster-trace: SwRequirements.sw_req_output_folder
         """Generated Sphinx source folder."""
         return self.output / "sphinx"
 
     @property
     def html_dir(self) -> Path:
+        # lobster-trace: SwRequirements.sw_req_html_site
+        # lobster-trace: SwRequirements.sw_req_output_folder
         """Generated HTML site."""
         return self.output / "html"
 
     # Documents ****************************************************************
 
     def document(self, doc_id: str) -> Dict[str, Any]:
+        # lobster-trace: SwRequirements.sw_req_documents
         """Get a document by its id.
 
         Args:
@@ -164,6 +186,7 @@ class Config:
         return next(doc for doc in self.documents if doc["id"] == doc_id)
 
     def trlc_sources(self, doc: Dict[str, Any]) -> List[Path]:
+        # lobster-trace: SwRequirements.sw_req_trlc_conversion
         """Get the TRLC source folders of a TRLC document.
 
         Args:
@@ -178,6 +201,7 @@ class Config:
         return result
 
     def included_documents(self, doc: Dict[str, Any]) -> List[Dict[str, Any]]:
+        # lobster-trace: SwRequirements.sw_req_trlc_conversion
         """Get all documents included by a document, transitively.
 
         Args:
@@ -197,6 +221,7 @@ class Config:
         return result
 
     def included_sources(self, doc: Dict[str, Any]) -> List[Path]:
+        # lobster-trace: SwRequirements.sw_req_trlc_conversion
         """Get the TRLC source folders of all documents included by a document.
 
         Args:
@@ -211,6 +236,8 @@ class Config:
         return result
 
     def file_reference(self, value: str) -> Path:
+        # lobster-trace: SwRequirements.sw_req_trlc_conversion
+        # lobster-trace: SwRequirements.sw_req_builtin_converters
         """Resolve a converter, translation or render configuration file reference.
 
         Args:
@@ -225,6 +252,7 @@ class Config:
         return result
 
     def html_source(self, doc: Dict[str, Any]) -> Path:
+        # lobster-trace: SwRequirements.sw_req_document_types
         """Resolve the HTML folder of a document of type html or command.
 
         Args:
@@ -244,6 +272,8 @@ class Config:
 
     @property
     def repository(self) -> str:
+        # lobster-trace: SwRequirements.sw_req_project_settings
+        # lobster-trace: SwRequirements.sw_req_trace_report
         """Configured repository URL or 'auto'."""
         return self.project.get("repository", "auto")
 
@@ -251,6 +281,8 @@ class Config:
 
 
 def _check_references(cfg: Config) -> List[str]:
+    # lobster-trace: SwRequirements.sw_req_config_validation
+    # lobster-trace: SwRequirements.sw_req_output_folder
     """Check the cross references, which the JSON schema cannot express.
 
     Args:
@@ -286,6 +318,7 @@ def _check_references(cfg: Config) -> List[str]:
 
 
 def _check_document(cfg: Config, doc: Dict[str, Any], doc_types: Dict[str, str]) -> List[str]:
+    # lobster-trace: SwRequirements.sw_req_config_validation
     """Check the references of one document.
 
     Args:
@@ -319,6 +352,8 @@ def _check_document(cfg: Config, doc: Dict[str, Any], doc_types: Dict[str, str])
 
 
 def _check_levels(levels: List[Dict[str, Any]], doc_types: Dict[str, str]) -> List[str]:
+    # lobster-trace: SwRequirements.sw_req_config_validation
+    # lobster-trace: SwRequirements.sw_req_trace_levels
     """Check the trace level references.
 
     Args:
@@ -346,6 +381,8 @@ def _check_levels(levels: List[Dict[str, Any]], doc_types: Dict[str, str]) -> Li
 
 
 def load_config(config_file: Path) -> Config:
+    # lobster-trace: SwRequirements.sw_req_config_file
+    # lobster-trace: SwRequirements.sw_req_config_validation
     """Load and validate the project configuration.
 
     Args:
@@ -382,6 +419,7 @@ def load_config(config_file: Path) -> Config:
 
 
 def find_config(start: Path) -> Path:
+    # lobster-trace: SwRequirements.sw_req_config_file
     """Find the default configuration file trlcdoc.yaml in a folder or its parents.
 
     Args:

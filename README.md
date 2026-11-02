@@ -110,6 +110,23 @@ trlcdoc -c trlcdoc.yaml
 ```
 The resulting documentation is generated in folder `build/trlcdoc/html`
 
+## Code Tracing
+
+Every function of the [trlcdoc](trlcdoc) package traces to the software
+requirements it implements with a comment before its docstring:
+
+```python
+def find_config(start: Path) -> Path:
+    # lobster-trace: SwRequirements.sw_req_config_file
+    """Find the default configuration file trlcdoc.yaml in a folder or its parents.
+```
+
+The built-in converters in [trlcdoc/converters](trlcdoc/converters) carry the
+comment on the class instead, which covers all its methods. The trace level
+`SW Code` in [trlcdoc.yaml](trlcdoc.yaml) extracts the comments with
+lobster-python. A function without comment is reported as finding by the trace
+step, and so is a requirement without implementing function.
+
 ## Tests
 
 The pytest unit tests in [tests](tests) verify the software requirements. Each

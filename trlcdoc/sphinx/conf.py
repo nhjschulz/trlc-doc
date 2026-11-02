@@ -84,6 +84,7 @@ globals().update(_SETTINGS["extra_conf"])
 
 
 def _trlcdoc_setup(app: Any) -> None:
+    # lobster-trace: SwRequirements.sw_req_html_site
     """Register the trlcdoc build hooks.
 
     Args:
@@ -93,6 +94,7 @@ def _trlcdoc_setup(app: Any) -> None:
 
 
 def _copy_dirs(app: Any) -> None:
+    # lobster-trace: SwRequirements.sw_req_document_types
     """Copy the configured HTML folders, e.g. the coverage report, into the site.
 
     Args:
@@ -103,6 +105,7 @@ def _copy_dirs(app: Any) -> None:
 
 
 def _git_commit_info() -> str:
+    # lobster-trace: SwRequirements.sw_req_html_version_info
     """Get the commit the documentation was built from.
 
     Returns:
@@ -129,6 +132,7 @@ _PROJECT_SETUP = globals().get('setup')
 
 
 def setup(app: Any) -> None:
+    # lobster-trace: SwRequirements.sw_req_html_customization
     """Register the trlcdoc build hooks, then call the setup() of the project specific configuration.
 
     Args:

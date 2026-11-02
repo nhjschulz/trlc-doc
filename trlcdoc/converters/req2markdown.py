@@ -31,6 +31,7 @@ from generic_rsl_markdown_converter import GenericRslMarkdownConverter
 
 # pylint: disable=too-few-public-methods
 class ProjectMarkdownConverter(GenericRslMarkdownConverter):
+    # lobster-trace: SwRequirements.sw_req_builtin_converters
     """Custom Project specific Markdown Converter.
     """
 

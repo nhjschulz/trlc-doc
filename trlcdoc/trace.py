@@ -39,6 +39,8 @@ from .util import TrlcdocError, clean_dir, find_tool, git_output, run
 
 
 def build_trace_report(cfg: Config, online: bool) -> int:
+    # lobster-trace: SwRequirements.sw_req_trace_report
+    # lobster-trace: SwRequirements.sw_req_trace_findings
     """Extract the trace data of all levels and create the HTML tracing report.
 
     Args:
@@ -71,6 +73,7 @@ def build_trace_report(cfg: Config, online: bool) -> int:
 
 
 def _slug(name: str) -> str:
+    # lobster-trace: SwRequirements.sw_req_trace_levels
     """Convert a level name into a file name.
 
     Args:
@@ -83,6 +86,7 @@ def _slug(name: str) -> str:
 
 
 def _extract_trlc(cfg: Config, level: Dict[str, Any], out_file: Path) -> Path:
+    # lobster-trace: SwRequirements.sw_req_trace_levels
     """Extract a TRLC requirements level with lobster-trlc.
 
     Args:
@@ -114,6 +118,7 @@ def _extract_trlc(cfg: Config, level: Dict[str, Any], out_file: Path) -> Path:
 
 
 def _extract_code(cfg: Config, level: Dict[str, Any], out_file: Path) -> Path:
+    # lobster-trace: SwRequirements.sw_req_trace_levels
     """Extract an implementation level from source code.
 
     Args:
@@ -130,6 +135,7 @@ def _extract_code(cfg: Config, level: Dict[str, Any], out_file: Path) -> Path:
 
 
 def _write_policy(cfg: Config, sources: Dict[str, Path], policy_file: Path) -> Path:
+    # lobster-trace: SwRequirements.sw_req_trace_levels
     """Write the lobster-report policy for the configured levels.
 
     Args:
@@ -153,6 +159,7 @@ def _write_policy(cfg: Config, sources: Dict[str, Path], policy_file: Path) -> P
 
 
 def _repository_url(cfg: Config) -> str:
+    # lobster-trace: SwRequirements.sw_req_trace_report
     """Get the repository URL for online links.
 
     Args:
@@ -176,6 +183,7 @@ def _repository_url(cfg: Config) -> str:
 
 
 def _make_online(cfg: Config, report_file: Path) -> Path:
+    # lobster-trace: SwRequirements.sw_req_trace_report
     """Replace the local file references of the report by repository links.
 
     Args:
@@ -204,6 +212,7 @@ def _make_online(cfg: Config, report_file: Path) -> Path:
 
 
 def _print_summary(report_file: Path) -> int:
+    # lobster-trace: SwRequirements.sw_req_trace_findings
     """Print the number of items per level that are not traced as required.
 
     Args:

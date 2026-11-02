@@ -34,6 +34,7 @@ from .util import TrlcdocError, clean_dir, find_tool, run
 
 
 def convert_documents(cfg: Config, fmt: str) -> int:
+    # lobster-trace: SwRequirements.sw_req_trlc_conversion
     """Convert all TRLC documents into the given format.
 
     Args:
@@ -55,6 +56,7 @@ def convert_documents(cfg: Config, fmt: str) -> int:
 
 
 def convert_document(cfg: Config, doc: Dict[str, Any], fmt: str) -> List[str]:
+    # lobster-trace: SwRequirements.sw_req_trlc_conversion
     """Convert one TRLC document.
 
     Args:
