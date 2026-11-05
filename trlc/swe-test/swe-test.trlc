@@ -377,6 +377,7 @@ section "SW-Tests" {
 
                 - a project start page, page header and Sphinx configuration file
                 - a project page including a project file
+                - a project page with disabled placeholder replacement
                 - a TRLC document without title
 
                 Check
@@ -384,6 +385,7 @@ section "SW-Tests" {
                 - the table of contents
                 - the page header on the generated pages
                 - the page titles
+                - that the placeholder is kept on the page with disabled replacement
                 - the applied configuration and its setup
                 - that the Sphinx cache is not part of the site
                 '''

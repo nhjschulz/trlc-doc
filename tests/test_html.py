@@ -74,9 +74,10 @@ the [module](../hello.py), the [tests](../tests/) and the [web site](https://exa
 # Project owned files of the customized site, placed in the docs folder.
 CUSTOM_FILES = {
     "index.rst": ("Welcome\n=======\n\n.. image:: {project_root}/docs/logo.png\n\n"
-                  ".. toctree::\n   :caption: Chapters:\n\n   guide\n   sw_requirements/index\n   license\n"),
+                  ".. toctree::\n   :caption: Chapters:\n\n   guide\n   placeholder\n   sw_requirements/index\n   license\n"),
     "header.rst": ".. image:: {project_root}/docs/logo.png\n   :alt: Project Logo\n",
     "guide.rst": "Guide\n=====\n\n.. literalinclude:: {project_root}/LICENSE\n   :language: none\n",
+    "placeholder.md": "# Placeholder\n\nWrite `{project_root}/docs/logo.png` for the logo.\n",
     "conf.py": ("html_title = 'Custom Title'\n\n\n"
                 "def setup(app):\n"
                 "    app.connect('builder-inited', lambda app: (PROJECT_ROOT / 'setup.txt').write_text('done'))\n"),
@@ -201,7 +202,8 @@ def test_document_types(site: Dict[str, Any]) -> None:
 
 
 def test_html_customization(tmp_path: Path, plantuml_jar: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    """A project start page, page header and Sphinx configuration file, and a TRLC document without title.
+    """A project start page, page header, Sphinx configuration file, a page without placeholder replacement and a
+    TRLC document without title.
 
     Args:
         tmp_path (Path): pytest temporary folder.
@@ -218,7 +220,9 @@ def test_html_customization(tmp_path: Path, plantuml_jar: Path, monkeypatch: pyt
     data = base_config()
     del data["tests"], data["trace"]
     sw_requirements = {key: value for key, value in data["documents"][0].items() if key != "title"}
-    data["documents"] = [{"id": "guide", "type": "rst", "source": "docs/guide.rst"}, sw_requirements,
+    data["documents"] = [{"id": "guide", "type": "rst", "source": "docs/guide.rst"},
+                         {"id": "placeholder", "type": "markdown", "source": "docs/placeholder.md", "placeholders": False},
+                         sw_requirements,
                          {"id": "license", "title": "License information", "type": "text", "source": "LICENSE"}]
     data["html"] = {"index": "docs/index.rst", "page_header": "docs/header.rst", "conf": "docs/conf.py"}
     monkeypatch.setenv("PLANTUML", str(plantuml_jar))
@@ -227,7 +231,8 @@ def test_html_customization(tmp_path: Path, plantuml_jar: Path, monkeypatch: pyt
     html = root / "build" / "trlcdoc" / "html"
     index = (html / "index.html").read_text(encoding="utf-8")
     toc = re.findall(r'<li class="toctree-l1"><a class="reference internal" href="([^"]+)">([^<]+)</a>', index)
-    assert toc == [("guide.html", "Guide"), ("sw_requirements/index.html", "Example Requirements"),
+    assert toc == [("guide.html", "Guide"), ("placeholder.html", "Placeholder"),
+                   ("sw_requirements/index.html", "Example Requirements"),
                    ("license.html", "License information")]
     assert '<img alt="_images/logo.png" src="_images/logo.png" />' in index
 
@@ -239,6 +244,10 @@ def test_html_customization(tmp_path: Path, plantuml_jar: Path, monkeypatch: pyt
     guide = (html / "guide.html").read_text(encoding="utf-8")
     assert "Project Logo" not in guide
     assert "Example license text." in guide
+
+    # A page with disabled placeholder replacement keeps the placeholder text.
+    placeholder = (html / "placeholder.html").read_text(encoding="utf-8")
+    assert "{project_root}/docs/logo.png" in placeholder
 
     # The project configuration file changes values and adds its setup.
     assert "<title>Guide &#8212; Custom Title</title>" in guide
