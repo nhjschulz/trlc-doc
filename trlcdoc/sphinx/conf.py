@@ -39,6 +39,7 @@ author = _SETTINGS["author"]
 extensions = [
     'myst_parser',              # https://www.sphinx-doc.org/en/master/usage/markdown.html
     'sphinxcontrib.plantuml',   # https://github.com/sphinx-contrib/plantuml
+    'trlcdoc.sphinx_links',     # relative links and images of Markdown pages
     *_SETTINGS["extensions"]
 ]
 
@@ -52,6 +53,9 @@ rst_prolog = """
 """
 
 myst_heading_anchors = 6
+
+# Settings of the trlcdoc.sphinx_links extension.
+trlcdoc_links = _SETTINGS["links"]
 
 html_theme = _SETTINGS["theme"]
 html_static_path = ['_static']

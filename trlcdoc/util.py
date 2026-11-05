@@ -22,6 +22,7 @@
 # Imports **********************************************************************
 
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -211,5 +212,31 @@ def git_output(args: List[str], cwd: Path) -> Optional[str]:
     except OSError:
         result = None
     return result
+
+
+def repository_url(repository: str, root: Path) -> str:
+    # lobster-trace: SwRequirements.sw_req_trace_report
+    # lobster-trace: SwRequirements.sw_req_markdown_links
+    """Get the repository URL for links to project files.
+
+    Args:
+        repository (str): Configured repository URL or 'auto' for the origin remote.
+        root (Path): Project root, the git working directory.
+
+    Returns:
+        str: HTTPS repository URL without '.git' suffix, the base of the file links.
+
+    Raises:
+        TrlcdocError: If 'auto' is configured and git has no origin remote.
+    """
+    url = repository
+    if url == "auto":
+        url = git_output(["remote", "get-url", "origin"], root)
+        if url is None:
+            raise TrlcdocError("project.repository is 'auto', but 'git remote get-url origin' failed.")
+        # git@github.com:owner/repo.git -> https://github.com/owner/repo.git
+        url = re.sub(r"^git@([^:]+):", r"https://\1/", url)
+    # https://github.com/owner/repo.git -> https://github.com/owner/repo
+    return re.sub(r"\.git$", "", url)
 
 # Main *************************************************************************

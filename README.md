@@ -7,6 +7,8 @@ test results and lobster trace report into a static project report
 web site. It is  driven by a configuration yaml file that defines
 the project specific content to process.
 
+![Overview](./overview.svg)
+
 Status: prototype. Projects add this repository as git submodule, e.g. in
 `tools/trlc-doc`, and install it into their virtual environment.
 

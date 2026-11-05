@@ -29,7 +29,7 @@ from typing import Any, Dict, List
 import yaml
 
 from .config import Config
-from .util import TrlcdocError, clean_dir, find_tool, git_output, run
+from .util import TrlcdocError, clean_dir, find_tool, git_output, repository_url, run
 
 # Variables ********************************************************************
 
@@ -158,30 +158,6 @@ def _write_policy(cfg: Config, sources: Dict[str, Path], policy_file: Path) -> P
     return policy_file
 
 
-def _repository_url(cfg: Config) -> str:
-    # lobster-trace: SwRequirements.sw_req_trace_report
-    """Get the repository URL for online links.
-
-    Args:
-        cfg (Config): Project configuration.
-
-    Returns:
-        str: HTTPS repository URL without '.git' suffix, the base of the file links.
-
-    Raises:
-        TrlcdocError: If 'auto' is configured and git has no origin remote.
-    """
-    url = cfg.repository
-    if url == "auto":
-        url = git_output(["remote", "get-url", "origin"], cfg.root)
-        if url is None:
-            raise TrlcdocError("project.repository is 'auto', but 'git remote get-url origin' failed.")
-        # git@github.com:owner/repo.git -> https://github.com/owner/repo.git
-        url = re.sub(r"^git@([^:]+):", r"https://\1/", url)
-    # https://github.com/owner/repo.git -> https://github.com/owner/repo
-    return re.sub(r"\.git$", "", url)
-
-
 def _make_online(cfg: Config, report_file: Path) -> Path:
     # lobster-trace: SwRequirements.sw_req_trace_report
     """Replace the local file references of the report by repository links.
@@ -203,7 +179,7 @@ def _make_online(cfg: Config, report_file: Path) -> Path:
     online_cfg = report_file.with_name("online_report_config.yaml")
     with open(online_cfg, "w", encoding="utf-8") as file:
         yaml.safe_dump({"report": str(report_file), "commit_id": commit_id,
-                        "repo_root": str(cfg.root), "base_url": _repository_url(cfg)}, file)
+                        "repo_root": str(cfg.root), "base_url": repository_url(cfg.repository, cfg.root)}, file)
 
     online_report = report_file.with_suffix(".online")
     run([find_tool("lobster-online-report"), "--config", str(online_cfg), "--out", str(online_report)], cfg.root)

@@ -407,6 +407,28 @@ section "trlcdoc" {
                     '''
                 valid_status = AbstractRequirements.VALID_STATUS.valid
             }
+
+            SwReq sw_req_markdown_links {
+                description =
+                    '''
+                    **Relative links of Markdown pages**
+
+                    The software shall resolve the relative links and images of a Markdown page against the location
+                    of its Markdown file in the project:
+
+                    - an image shall be shown in the site
+                    - a link to the file or folder of a site page shall link to that page
+                    - a link to another project file or folder shall link to it in the repository at the built commit
+                    - without a repository, such a link shall be shown as text with a warning
+                    '''
+                verification_criteria =
+                    '''
+                    Build a site with a Markdown page linking to a site page, a TRLC document folder, a project file
+                    and a project folder, and showing a project image. Check the links and the image, with and without
+                    a repository.
+                    '''
+                valid_status = AbstractRequirements.VALID_STATUS.valid
+            }
         }
 
         section "Output" {
