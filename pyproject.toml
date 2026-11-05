@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools", "wheel"]
+requires = ["setuptools >= 77"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -8,9 +8,12 @@ version = "0.2.0"
 requires-python = ">=3.10"
 description = "Configurable documentation tooling for TRLC based projects"
 readme = "README.md"
-license = {file = "LICENSE"}
+license = "GPL-3.0-or-later"
+license-files = ["LICENSE", "trlcdoc/converters/LICENSE"]
 authors = [
-  {name = "Norbert Schulz", email = "norbert.schulz@newtec.de"}
+  {name = "Norbert Schulz", email = "norbert.schulz@newtec.de"},
+  {name = "Andreas Merkle", email = "andreas.merkle@newtec.de"}
+  
 ]
 
 dependencies = [
@@ -36,8 +39,9 @@ Repository = "https://github.com/nhjschulz/trlc-doc"
 [project.scripts]
 trlcdoc = "trlcdoc.cli:main"
 
-[tool.setuptools]
-packages = ["trlcdoc"]
+[tool.setuptools.packages.find]
+include = ["trlcdoc*"]
+namespaces = true
 
 [tool.setuptools.package-data]
 trlcdoc = ["schema/*.json", "converters/*", "sphinx/*.py", "sphinx/_static/*"]
