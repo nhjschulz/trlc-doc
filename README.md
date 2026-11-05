@@ -54,6 +54,13 @@ editors with YAML language support validate against it with this first line:
 # yaml-language-server: $schema=tools/trlc-doc/trlcdoc/schema/trlcdoc.schema.json
 ```
 
+Without the submodule, use the published schema of your trlcdoc release
+(one copy per tag `Vx.y.z`):
+
+```yaml
+# yaml-language-server: $schema=https://nhjschulz.github.io/trlc-doc/schema/V0.1.0/trlcdoc.schema.json
+```
+
 Users of Visual Studio Code can use the 
 [redhat.vscode-yaml](https://marketplace.visualstudio.com/items?itemName=redhat.vscode-yaml)
 extension to get schema validation for `trlcdoc.yaml` files: 

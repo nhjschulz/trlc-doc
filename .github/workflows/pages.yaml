@@ -3,6 +3,7 @@ name: Deploy documentation
 on:
   push:
     branches: [main]
+    tags: ["V*.*.*"]
   workflow_dispatch:
 
 permissions:
@@ -18,7 +19,12 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
+      # Always build the site from main, also when triggered by a tag push.
+      # Full history is needed to read the schema of every release tag.
       - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
 
       - uses: actions/setup-python@v5
         with:
@@ -30,6 +36,7 @@ jobs:
           java-version: "21"
 
       - uses: actions/configure-pages@v5
+        id: pages
 
       - name: Install trlcdoc
         run: |
@@ -38,6 +45,32 @@ jobs:
 
       - name: Build documentation
         run: trlcdoc
+
+      # The Pages deployment replaces the whole site, so every schema version
+      # is regenerated from the git tags on each run.
+      #   schema/trlcdoc.schema.json          -> latest (main)
+      #   schema/Vx.y.z/trlcdoc.schema.json   -> release Vx.y.z
+      - name: Publish schemas
+        env:
+          BASE_URL: ${{ steps.pages.outputs.base_url }}
+        run: |
+          set -euo pipefail
+          src=trlcdoc/schema/trlcdoc.schema.json
+          out=build/trlcdoc/html/schema
+          mkdir -p "$out"
+          jq --arg id "$BASE_URL/schema/trlcdoc.schema.json" '."$id" = $id' \
+            "$src" > "$out/trlcdoc.schema.json"
+          for tag in $(git tag -l 'V*' | grep -E '^V(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$'); do
+            if git cat-file -e "$tag:$src" 2>/dev/null; then
+              mkdir -p "$out/$tag"
+              git show "$tag:$src" \
+                | jq --arg id "$BASE_URL/schema/$tag/trlcdoc.schema.json" '."$id" = $id' \
+                > "$out/$tag/trlcdoc.schema.json"
+              echo "Published schema for $tag"
+            else
+              echo "::warning::$tag has no $src, skipped"
+            fi
+          done
 
       - uses: actions/upload-pages-artifact@v3
         with:

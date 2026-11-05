@@ -1,6 +1,6 @@
 {
     "$schema": "https://json-schema.org/draft/2020-12/schema",
-    "$id": "https://github.com/NewTec-GmbH/trlcdoc/schema/trlcdoc.schema.json",
+    "$id": "https://nhjschulz.github.io/trlc-doc/schema/trlcdoc.schema.json",
     "title": "trlcdoc project configuration",
     "description": "Project specific configuration of the trlcdoc documentation tooling. Relative paths are resolved against the directory of the configuration file (the project root). Cross references (document ids, level names) are checked by trlcdoc after the schema validation.",
     "type": "object",
