@@ -1,0 +1,44 @@
+@startuml comp_convert
+
+package "TRLC Conversion" {
+    class "convert" as convert <<module>> {
+        + convert_documents(cfg, fmt): int
+        + convert_document(cfg, doc, fmt): List[str]
+    }
+
+    package "converters" {
+        class "GenericRslRstConverter" as genrst <<module>>
+        class "GenericRslMarkdownConverter" as genmd <<module>>
+        class "req2rst" as req_rst <<module>>
+        class "req2markdown" as req_md <<module>>
+        class "tc2rst" as tc_rst <<module>>
+        class "tc2markdown" as tc_md <<module>>
+
+        class "create_test_report_\nin_markdown" as report_md <<module>>
+        class "create_test_report_\nin_rst" as report_rst <<module>>
+        class "image_processing" as img <<module>>
+    }
+}
+
+package "pyTRLCConverter" {
+    class "RstConverter" as rst <<module>>
+    class "MarkdownConverter" as md <<module>>
+}
+
+class "Config" as cfg
+class "util" as util <<module>>
+
+genrst -up-|> rst
+genmd -up-|> md
+req_rst -up-|> genrst
+req_md -up-|> genmd
+tc_rst -up-|> genrst
+tc_md -up-|> genmd
+report_rst -up-|> rst
+report_md -up-|> md
+genrst ..> img : <<use>>
+genmd ..> img : <<use>>
+
+convert ..> cfg : documents, converter files
+convert ..> rst : pyTRLCConverter --project
+@enduml

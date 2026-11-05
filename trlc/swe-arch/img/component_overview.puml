@@ -1,0 +1,37 @@
+@startuml component_overview
+skinparam componentStyle uml2
+
+package "trlcdoc" {
+    [CLI] as cli <<component>>
+    [Configuration] as cfg <<component>>
+    [PlantUML Provider] as puml <<component>>
+    [Test Runner] as tests <<component>>
+    [TRLC Conversion] as conv <<component>>
+    [Trace Report] as trace <<component>>
+    [HTML Builder] as html <<component>>
+    [Util] as util <<component>>
+}
+
+
+cli --> cfg
+cli --> puml
+cli --> tests
+cli --> conv
+cli --> trace
+cli --> html
+cli --> util
+
+puml --> cfg
+tests --> cfg
+conv --> cfg
+trace --> cfg
+html --> cfg
+
+
+
+'puml ..> plantuml : <<use>>
+'tests ..> pytest : <<use>>
+'conv ..> pytrlc : <<use>>
+'trace ..> lobster : <<use>>
+'html ..> sphinx : <<use>>
+@enduml

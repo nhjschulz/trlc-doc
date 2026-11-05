@@ -1,0 +1,56 @@
+@startuml trlcdoc_sequence
+autoactivate on
+
+actor "User" as user
+participant "CLI" as cli <<component>>
+participant "Configuration" as cfg <<component>>
+participant "PlantUML Provider" as puml <<component>>
+participant "Test Runner" as tests <<component>>
+participant "TRLC Conversion" as conv <<component>>
+participant "Trace Report" as trace <<component>>
+participant "HTML Builder" as html <<component>>
+
+user -> cli : trlcdoc [steps]
+    cli -> cfg : load_config(trlcdoc.yaml)
+        cfg -> cfg : validate schema and references
+        return
+    return Config or error
+
+    alt configuration invalid
+        cli --> user : exit 2
+    else configuration valid
+        cli -> cli : select and order steps
+        return
+
+        opt plantuml
+            cli -> puml : provide_plantuml()
+            return jar
+        end
+        opt tests
+            cli -> tests : run_tests()
+            return all passed
+        end
+        opt convert
+            loop for each TRLC document
+                cli -> conv : convert_document()
+                return
+            end
+        end
+        opt trace
+            cli -> trace : build_trace_report()
+            return untraced items
+        end
+        opt html
+            cli -> html : build_html()
+            return site
+        end
+
+        alt build error
+            cli --> user : exit 2
+        else findings
+            cli --> user : exit 1
+        else success
+            cli --> user : exit 0
+        end
+    end
+@enduml

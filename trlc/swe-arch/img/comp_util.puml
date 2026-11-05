@@ -1,0 +1,28 @@
+@startuml comp_util
+
+package "Common Services" {
+    class "util" as util <<module>> {
+        + MARKER_FILE
+        + find_tool(name): str
+        + run(cmd, cwd, env): int
+        + run_unchecked(cmd, cwd, env): int
+        + prepare_output(output): Path
+        + clean_dir(folder, output): Path
+        + remove_output(output): bool
+        + git_output(args, cwd): Optional[str]
+    }
+
+    class "TrlcdocError" as error
+
+    class "Exception" as exception
+}
+
+class "subprocess" as subprocess <<module>>
+class "shutil" as shutil <<module>>
+
+error -up-|> exception
+util .l.> error : raises
+util ..> subprocess : <<use>>
+util ..> shutil : <<use>>
+
+@enduml

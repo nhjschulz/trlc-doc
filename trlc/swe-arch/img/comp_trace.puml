@@ -1,0 +1,35 @@
+@startuml comp_trace
+
+package "Trace Report" {
+    class "trace" as trace <<module>> {
+        + build_trace_report(cfg, online): int
+        - _extract_trlc(cfg, level, out_file): Path
+        - _extract_code(cfg, level, out_file): Path
+        - _write_policy(cfg, sources, policy_file): Path
+        - _make_online(cfg, report_file): Path
+        - _print_summary(report_file): int
+    }
+}
+
+package "LOBSTER" {
+    class "lobster-trlc" as ltrlc <<SOUP>>
+    class "lobster-python" as lpython <<SOUP>>
+    class "lobster-report" as lreport <<SOUP>>
+    class "lobster-online-report" as lonline <<SOUP>>
+    class "lobster-html-report" as lhtml <<SOUP>>
+}
+
+class "Config" as cfg
+class "util" as util <<module>>
+
+class "tracing_report.html" as html <<file>>
+
+trace ..> cfg : trace.levels
+trace ..> util : run(),\ngit_output()
+trace ..> ltrlc : TRLC levels
+trace ..> lpython : code levels
+trace ..> lreport : policy from levels
+trace ..> lonline : optional
+trace ..> lhtml
+lhtml --> html
+@enduml

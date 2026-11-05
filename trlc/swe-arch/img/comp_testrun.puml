@@ -1,0 +1,32 @@
+@startuml comp_testrun
+
+package "Test Runner" {
+    class "testrun" as testrun <<module>> {
+        + run_tests(cfg): bool
+        + read_junit(junit_file, link): List[Tuple]
+        + write_results(results, trlc_file, to_pattern): Path
+        - _linked_test_case(testcase, link): Optional[str]
+    }
+}
+
+class "Config" as cfg
+class "util" as util <<module>>
+
+package "Toolchain" {
+    class "pytest" as pytest <<SOUP>>
+    class "pytest-cov" as cov <<SOUP>>
+}
+
+class "junit.xml" as junit <<file>>
+class "sw_test_result_report.trlc" as results <<file>>
+class "coverage" as covdir <<folder>>
+
+testrun ..> cfg : tests\nsettings
+testrun ..> util : run_unchecked(),\nclean_dir()
+testrun ..> pytest : runs
+pytest ..> cov : <<use>>
+pytest --> junit
+cov --> covdir
+testrun ..> junit : reads
+testrun --> results : SwTestCaseResult records
+@enduml

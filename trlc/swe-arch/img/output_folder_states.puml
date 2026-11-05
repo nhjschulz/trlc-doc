@@ -1,0 +1,19 @@
+@startuml output_folder_states
+hide empty description
+
+state "Missing" as missing
+state "Empty" as empty
+state "Owned" as owned : marker file present
+state "Foreign" as foreign : content without marker file
+
+[*] --> missing
+[*] --> empty
+[*] --> owned
+[*] --> foreign
+
+missing --> owned : prepare_output()
+empty --> owned : prepare_output()
+owned --> owned : clean_dir() of a subfolder
+owned --> missing : remove_output()
+foreign --> foreign : any delete request / TrlcdocError
+@enduml

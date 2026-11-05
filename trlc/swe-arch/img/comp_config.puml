@@ -1,0 +1,43 @@
+@startuml comp_config
+
+package "Configuration" {
+    class "config" as config <<module>> {
+        + load_config(config_file): Config
+        + find_config(start): Path
+        - _check_references(cfg): List[str]
+    }
+
+    class "Config" as cfg {
+        + root: Path
+        + project, documents, tests, trace, html, plantuml
+        + path(value): Path
+        + output, convert_dir(), tests_dir, trace_dir, sphinx_dir, html_dir: Path
+        + document(doc_id): Dict
+        + trlc_sources(doc): List[Path]
+        + included_sources(doc): List[Path]
+        + file_reference(value): Path
+        + html_source(doc): Path
+    }
+
+    class "trlcdoc.schema.json" as schema <<file>>
+}
+
+package "Python Packages" {
+    class "yaml" as yaml <<module>>
+    class "jsonschema" as jsonschema <<module>>
+}
+
+json "trlcdoc.yaml" as yamlfile {
+   "project":"",
+   "path":"",
+   "documents": ["sw-req", "sw-arch"],
+   "trace:":"",
+   "...":""
+}
+
+config --> cfg : creates
+config ..> yaml : safe_load()
+config ..> jsonschema : validate
+jsonschema ..> schema
+config -l-> yamlfile : reads
+@enduml

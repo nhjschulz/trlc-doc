@@ -1,0 +1,29 @@
+{
+    "renderCfg":
+    [
+        {
+            "package": ".*",
+            "type": "Info",
+            "attribute": "description",
+            "format": "gfm"
+        },
+        {
+            "package": ".*",
+            "type": "^(SwReq|SwReqNonFunc|SwConstraint)$",
+            "attribute": "^(description|verification_criteria)$",
+            "format": "gfm"
+        },
+        {
+            "package": ".*",
+            "type": "^SwArchSpec$",
+            "attribute": "^(description|verification_criteria)$",
+            "format": "gfm"
+        },
+        {
+            "package": ".*",
+            "type": "^SwTestCase$",
+            "attribute": "^description$",
+            "format": "gfm"
+        }
+    ]
+}
