@@ -7,13 +7,12 @@ name = "trlcdoc"
 version = "0.2.0"
 requires-python = ">=3.10"
 description = "Configurable documentation tooling for TRLC based projects"
-readme = "README.md"
+readme = "PYPI.md"
 license = "GPL-3.0-or-later"
 license-files = ["LICENSE", "trlcdoc/converters/LICENSE"]
 authors = [
   {name = "Norbert Schulz", email = "norbert.schulz@newtec.de"},
   {name = "Andreas Merkle", email = "andreas.merkle@newtec.de"}
-  
 ]
 
 dependencies = [
@@ -34,6 +33,7 @@ test = [
 ]
 
 [project.urls]
+Documentation = "https://nhjschulz.github.io/trlc-doc/"
 Repository = "https://github.com/nhjschulz/trlc-doc"
 
 [project.scripts]

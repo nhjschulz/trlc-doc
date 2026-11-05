@@ -17,10 +17,15 @@ paths:
   output: build/trlcdoc
 
 documents:
-  - id: trlddoc_readme
+  - id: trlcdoc_readme
     title: About trlcdoc
     type: markdown
     source: README.md
+
+  - id: configuration
+    title: Configuration Reference
+    type: markdown
+    source: configuration.md
 
   - id: sw_requirements
     title: SW-Requirements
