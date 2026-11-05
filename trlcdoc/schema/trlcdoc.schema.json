@@ -97,7 +97,7 @@
             "required": ["id", "type"],
             "properties": {
                 "id": {"$ref": "#/$defs/id"},
-                "title": {"type": "string", "minLength": 1},
+                "title": {"description": "Page title and table of contents entry. Written as page heading for generated pages. For rst and markdown pages it replaces the first heading of the file as title in the table of contents, navigation and browser title; the heading in the page is kept.", "type": "string", "minLength": 1},
                 "type": {"enum": ["trlc", "test_results", "trace_report", "html", "rst", "markdown", "text", "command"]},
                 "source": {"type": "string", "minLength": 1},
                 "include": {"description": "Ids of documents whose TRLC files are needed to resolve references.", "type": "array", "items": {"$ref": "#/$defs/id"}, "uniqueItems": true},
