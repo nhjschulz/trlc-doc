@@ -395,6 +395,8 @@ a detailed design, release notes.
   [`{project_root}`](#85-the-project_root-placeholder) placeholder for images
   and includes from the project:
   `.. image:: {project_root}/doc/images/context.svg`.
+- **`placeholders: false`** copies the file without replacing the
+  placeholder, for a page that explains it, like this configuration reference.
 
 ### 4.8 type: text
 
@@ -582,7 +584,7 @@ true` is set. With `array`, every result record gets a list
 (`relates = [SwTests.a, SwTests.b]`), even for one test case, so the TRLC
 model must declare the component as array:
 
-```trlc
+```text
 type SwTestCaseResult {
     name    String
     result  SwTestResult
@@ -596,7 +598,7 @@ Without `array`, the model uses a single reference: `relates SwTestCase`.
 
 The `tests` step writes `<output>/tests/results/sw_test_result_report.trlc`:
 
-```trlc
+```text
 package SwTests
 
 section "SW Test Results" {
@@ -612,7 +614,7 @@ section "SW Test Results" {
 
 Your TRLC model must therefore define, in the package of `link.to`:
 
-```trlc
+```text
 enum SwTestResult {
     FAILED
     PASSED
@@ -924,7 +926,8 @@ the page to the project root:
 
 - `html.index`,
 - `html.page_header` (separately for each page it is inserted into),
-- documents of type `rst` and `markdown`.
+- documents of type `rst` and `markdown`, unless they set
+  `placeholders: false` ([4.7](#47-type-rst-and-type-markdown)).
 
 ```rst
 .. image:: {project_root}/doc/images/architecture.svg

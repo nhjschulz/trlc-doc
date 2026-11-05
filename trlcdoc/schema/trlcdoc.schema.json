@@ -103,7 +103,8 @@
                 "include": {"description": "Ids of documents whose TRLC files are needed to resolve references.", "type": "array", "items": {"$ref": "#/$defs/id"}, "uniqueItems": true},
                 "pytrlcconverter": {"$ref": "#/$defs/pytrlcconverter"},
                 "command": {"type": "array", "minItems": 1, "items": {"type": "string"}},
-                "output": {"type": "string", "minLength": 1}
+                "output": {"type": "string", "minLength": 1},
+                "placeholders": {"description": "Replace the {project_root} placeholder in the page. Set to false for a page that explains the placeholder itself.", "type": "boolean", "default": true}
             },
             "allOf": [
                 {
@@ -142,7 +143,7 @@
                     "then": {
                         "description": "A project owned page, used as is. Its own first heading is the page title.",
                         "required": ["source"],
-                        "propertyNames": {"enum": ["id", "title", "type", "source"]}
+                        "propertyNames": {"enum": ["id", "title", "type", "source", "placeholders"]}
                     }
                 },
                 {

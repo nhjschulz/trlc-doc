@@ -395,7 +395,7 @@ section "trlcdoc" {
                     - a project specific Sphinx configuration
 
                     Project pages shall be able to refer to files of the project independent of their location in the
-                    site.
+                    site. A project page shall be able to disable this, to show the placeholder text itself.
                     '''
                 verification_criteria =
                     '''
@@ -405,6 +405,7 @@ section "trlcdoc" {
                     - a page header
                     - a Sphinx configuration
                     - project pages referring to project files
+                    - a project page with disabled placeholder replacement
 
                     Check the pages and the applied configuration.
                     '''

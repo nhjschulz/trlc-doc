@@ -142,7 +142,7 @@ def _write_page(cfg: Config, doc: Dict[str, Any], src_dir: Path, copy_dirs: List
     else:
         source = _require(cfg.path(doc["source"]), "check the source path")
         page_file = page_file.with_suffix(".md" if doc_type == "markdown" else ".rst")
-        _write_project_page(cfg, source, page_file)
+        _write_project_page(cfg, source, page_file, doc.get("placeholders", True))
 
     return page
 
@@ -162,7 +162,7 @@ def _project_root_text(cfg: Config, text: str, page_file: Path) -> str:
     return text.replace(PROJECT_ROOT_PLACEHOLDER, Path(os.path.relpath(cfg.root, page_file.parent)).as_posix())
 
 
-def _write_project_page(cfg: Config, source: Path, page_file: Path) -> Path:
+def _write_project_page(cfg: Config, source: Path, page_file: Path, placeholders: bool = True) -> Path:
     # lobster-trace: SwRequirements.sw_req_document_types
     # lobster-trace: SwRequirements.sw_req_html_customization
     """Write a project owned page into the Sphinx source folder.
@@ -171,11 +171,15 @@ def _write_project_page(cfg: Config, source: Path, page_file: Path) -> Path:
         cfg (Config): Project configuration.
         source (Path): The project page.
         page_file (Path): The page in the Sphinx source folder.
+        placeholders (bool): Replace the project root placeholder, False copies the page unchanged.
 
     Returns:
         Path: The written page.
     """
-    page_file.write_text(_project_root_text(cfg, source.read_text(encoding="utf-8"), page_file), encoding="utf-8")
+    text = source.read_text(encoding="utf-8")
+    if placeholders:
+        text = _project_root_text(cfg, text, page_file)
+    page_file.write_text(text, encoding="utf-8")
     return page_file
 
 
