@@ -35,6 +35,12 @@ jobs:
           distribution: temurin
           java-version: "21"
 
+      # PlantUML needs Graphviz (dot) for all diagrams except sequence diagrams.
+      - name: Install Graphviz
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends graphviz
+
       - uses: actions/configure-pages@v5
         id: pages
 
