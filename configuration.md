@@ -68,11 +68,16 @@ extension). The path is relative to the configuration file:
 # yaml-language-server: $schema=tools/trlc-doc/trlcdoc/schema/trlcdoc.schema.json
 ```
 
-A project without the submodule can reference the published schema instead:
+A project without the submodule can reference the published schema instead.
+Each release tag `Vx.y.z` has its own copy, so pick the one that matches the
+trlcdoc version you use (the configuration may change incompatibly before 1.0):
 
 ```yaml
-# yaml-language-server: $schema=https://raw.githubusercontent.com/nhjschulz/trlc-doc/main/trlcdoc/schema/trlcdoc.schema.json
+# yaml-language-server: $schema=https://nhjschulz.github.io/trlc-doc/schema/V0.1.0/trlcdoc.schema.json
 ```
+
+The schema of the current `main` branch is available without a version:
+`https://nhjschulz.github.io/trlc-doc/schema/trlcdoc.schema.json`.
 
 ### 1.2 Top level anatomy
 
@@ -981,7 +986,7 @@ cases, test results, code tracing and a customized site. It is the one of
 pyTRLCConverter, slightly shortened:
 
 ```yaml
-# yaml-language-server: $schema=https://raw.githubusercontent.com/nhjschulz/trlc-doc/main/trlcdoc/schema/trlcdoc.schema.json
+# yaml-language-server: $schema=https://nhjschulz.github.io/trlc-doc/schema/V0.1.0/trlcdoc.schema.json
 
 project:
   name: pyTRLCConverter

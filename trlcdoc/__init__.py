@@ -21,9 +21,15 @@
 
 # Imports **********************************************************************
 
+from importlib.metadata import PackageNotFoundError, version
+
 # Variables ********************************************************************
 
-__version__ = "0.1.0"
+# Single source of truth is the version in pyproject.toml.
+try:
+    __version__ = version("trlcdoc")
+except PackageNotFoundError:  # pragma: no cover - running from a source tree without install
+    __version__ = "0.0.0+unknown"
 
 # Classes **********************************************************************
 
