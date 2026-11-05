@@ -17,6 +17,10 @@ paths:
   output: build/trlcdoc
 
 documents:
+  - id: trlddoc_readme
+    title: README
+    type: markdown
+    source: README.md
   - id: sw_requirements
     title: SW-Requirements
     type: trlc

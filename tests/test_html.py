@@ -56,6 +56,17 @@ PAGES = ["manual.html", "sw_requirements/index.html", "sw_architecture/index.htm
          "sw_test_results/index.html", "sw_tracing_report.html", "coverage_report.html", "notes.html",
          "license.html", "api.html"]
 
+# Markdown page in the docs folder, with relative links and an image of the project.
+NOTES_MD = """# Release Notes
+
+First release.
+
+See the [manual](manual.rst#user-manual), the [license](../LICENSE), the [requirements](../trlc/swe-req),
+the [module](../hello.py), the [tests](../tests/) and the [web site](https://example.com).
+
+![Logo](logo.png)
+"""
+
 # Project owned files of the customized site, placed in the docs folder.
 CUSTOM_FILES = {
     "index.rst": ("Welcome\n=======\n\n.. image:: {project_root}/docs/logo.png\n\n"
@@ -88,7 +99,8 @@ def fixture_site(tmp_path_factory: pytest.TempPathFactory, plantuml_jar: Path) -
     make_project(root, diagram=True)
     (root / "docs").mkdir()
     (root / "docs" / "manual.rst").write_text("User Manual\n===========\n\nRead the manual.\n", encoding="utf-8")
-    (root / "docs" / "notes.md").write_text("# Release Notes\n\nFirst release.\n", encoding="utf-8")
+    (root / "docs" / "notes.md").write_text(NOTES_MD, encoding="utf-8")
+    (root / "docs" / "logo.png").write_bytes(_sphinx_png())
 
     data = base_config()
     # The project page comes first, to check that the configured order is kept.
@@ -101,6 +113,15 @@ def fixture_site(tmp_path_factory: pytest.TempPathFactory, plantuml_jar: Path) -
         exit_code = cli.main(["-c", str(config_file), "all"])
 
     return {"exit_code": exit_code, "root": root, "html": root / "build" / "trlcdoc" / "html", "commit": commit}
+
+
+def _sphinx_png() -> bytes:
+    """Get a valid PNG image for Sphinx, the one of the Sphinx package.
+
+    Returns:
+        bytes: The image.
+    """
+    return next(Path(sphinx.__file__).parent.rglob("*.png")).read_bytes()
 
 
 def _page(site: Dict[str, Any], name: str) -> str:
@@ -182,8 +203,7 @@ def test_html_customization(tmp_path: Path, plantuml_jar: Path, monkeypatch: pyt
     (root / "docs").mkdir()
     for name, content in CUSTOM_FILES.items():
         (root / "docs" / name).write_text(content, encoding="utf-8")
-    # The logo must be a valid image for Sphinx, use the one of the Sphinx package.
-    (root / "docs" / "logo.png").write_bytes(next(Path(sphinx.__file__).parent.rglob("*.png")).read_bytes())
+    (root / "docs" / "logo.png").write_bytes(_sphinx_png())
 
     data = base_config()
     del data["tests"], data["trace"]
@@ -224,5 +244,49 @@ def test_html_version_info(site: Dict[str, Any]) -> None:
     """
     for page in ["index.html", *PAGES]:
         assert f"from commit {site['commit']}" in _page(site, page), page
+
+
+def test_markdown_links(site: Dict[str, Any]) -> None:
+    """The relative links and images of a Markdown page are resolved against its location in the project.
+
+    Args:
+        site (Dict[str, Any]): The built site.
+    """
+    notes = _page(site, "notes.html")
+    blob = f"https://github.com/example/example/blob/{site['commit']}"
+    tree = f"https://github.com/example/example/tree/{site['commit']}"
+    links = re.findall(r'<a class="reference (internal|external)" href="([^"]+)">', notes)
+    assert links == [("internal", "manual.html#user-manual"), ("internal", "license.html"),
+                     ("internal", "sw_requirements/index.html"), ("external", f"{blob}/hello.py"),
+                     ("external", f"{tree}/tests"), ("external", "https://example.com")]
+    assert '<img alt="Logo" src="_images/logo.png" />' in notes
+    assert (site["html"] / "_images" / "logo.png").is_file()
+
+
+def test_markdown_links_as_text(tmp_path: Path, plantuml_jar: Path, monkeypatch: pytest.MonkeyPatch,
+                                capfd: pytest.CaptureFixture[str]) -> None:
+    """Without repository, a link to a project file of a Markdown page is shown as text with a warning.
+
+    Args:
+        tmp_path (Path): pytest temporary folder, not a git repository.
+        plantuml_jar (Path): The PlantUML jar.
+        monkeypatch (pytest.MonkeyPatch): pytest monkeypatch.
+        capfd (pytest.CaptureFixture[str]): pytest output capture.
+    """
+    root = tmp_path / "project"
+    make_project(root)
+    (root / "docs").mkdir()
+    (root / "docs" / "readme.md").write_text("# Readme\n\nSee [the module](../hello.py).\n", encoding="utf-8")
+
+    data = base_config()
+    del data["tests"], data["trace"]
+    data["documents"] = [{"id": "readme", "type": "markdown", "source": "docs/readme.md"}]
+    monkeypatch.setenv("PLANTUML", str(plantuml_jar))
+    assert cli.main(["-c", str(write_config(root, data)), "all"]) == 0
+
+    readme = (root / "build" / "trlcdoc" / "html" / "readme.html").read_text(encoding="utf-8")
+    assert "<p>See <span>the module</span>.</p>" in readme
+    assert "hello.py" not in readme
+    assert "Link to project file 'hello.py' shown as text" in capfd.readouterr().err
 
 # Main *************************************************************************

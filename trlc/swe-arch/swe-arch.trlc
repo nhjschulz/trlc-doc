@@ -369,6 +369,10 @@ section "trlcdoc SW Architecture" {
                         - copies embedded HTML sites into the site
                         - adds the git commit to the page footer
                         - executes the project specific Sphinx configuration
+
+                        The Sphinx extension `sphinx_links.py` resolves the relative links and images of Markdown pages
+                        against the location of the Markdown file in the project: page links for site pages,
+                        repository links at the built commit for other project files, text if there is no repository.
                         '''
                     verification_criteria =
                         '''
@@ -385,7 +389,8 @@ section "trlcdoc SW Architecture" {
                         SwRequirements.sw_req_project_settings,
                         SwRequirements.sw_req_html_site,
                         SwRequirements.sw_req_html_version_info,
-                        SwRequirements.sw_req_html_customization
+                        SwRequirements.sw_req_html_customization,
+                        SwRequirements.sw_req_markdown_links
                     ]
                 }
 

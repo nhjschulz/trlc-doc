@@ -30,7 +30,7 @@ from typing import Any, Dict, List
 from sphinx.cmd.build import build_main
 
 from .config import PACKAGE_DIR, TRLC_DOCUMENT_TYPES, Config
-from .util import TrlcdocError, clean_dir, run
+from .util import TrlcdocError, clean_dir, git_output, repository_url, run
 
 # Variables ********************************************************************
 
@@ -308,9 +308,42 @@ def _write_sphinx_config(cfg: Config, src_dir: Path, copy_dirs: List[Dict[str, s
         "conf": str(cfg.path(conf)) if conf else None,
         "copy_dirs": copy_dirs,
         "project_root": str(cfg.root),
+        "links": _link_settings(cfg),
     }
     settings_file = src_dir / "trlcdoc_settings.json"
     settings_file.write_text(json.dumps(settings, indent=4), encoding="utf-8")
     return settings_file
+
+
+def _link_settings(cfg: Config) -> Dict[str, Any]:
+    # lobster-trace: SwRequirements.sw_req_markdown_links
+    """Collect the settings to resolve the relative links of Markdown pages against the project.
+
+    Args:
+        cfg (Config): Project configuration.
+
+    Returns:
+        Dict[str, Any]: The project root, the Markdown file of each Markdown page, the site page
+            of each project file and folder shown in the site, and the repository and commit for
+            links to other project files (None if not available).
+    """
+    pages: Dict[str, str] = {}
+    markdown_sources: Dict[str, str] = {}
+    for doc in cfg.documents:
+        if "source" in doc and doc["type"] in ("trlc", "rst", "markdown", "text"):
+            source = Path(os.path.relpath(cfg.path(doc["source"]), cfg.root)).as_posix()
+            pages[source] = f"{doc['id']}/index" if doc["type"] == "trlc" else doc["id"]
+            if doc["type"] == "markdown":
+                markdown_sources[doc["id"]] = source
+
+    commit = git_output(["rev-parse", "HEAD"], cfg.root)
+    repository = None
+    if commit is not None:
+        try:
+            repository = repository_url(cfg.repository, cfg.root)
+        except TrlcdocError:
+            repository = None
+    return {"root": str(cfg.root), "markdown_sources": markdown_sources, "pages": pages,
+            "repository": repository, "commit": commit}
 
 # Main *************************************************************************

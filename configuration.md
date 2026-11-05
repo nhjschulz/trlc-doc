@@ -181,7 +181,7 @@ project:
 | `name`       | yes      |         | Sphinx `project`. Appears in the browser title of every page and in the heading `<name> documentation` of the generated start page. |
 | `author`     | yes      |         | Sphinx `author`. |
 | `copyright`  | yes      |         | Sphinx `copyright`, shown in the page footer. Quote it if it contains a colon or starts with a number followed by special characters. |
-| `repository` | no       | `auto`  | Repository URL. Used only by `trlcdoc trace --online` to turn the file references of the tracing report into links to the repository. `auto` takes the URL from `git remote get-url origin`. SSH URLs (`git@host:owner/repo.git`) are converted to HTTPS, a trailing `.git` is removed. |
+| `repository` | no       | `auto`  | Repository URL. Used by `trlcdoc trace --online` to turn the file references of the tracing report into links to the repository, and for the links of Markdown pages to project files ([4.7](#47-type-rst-and-type-markdown)). `auto` takes the URL from `git remote get-url origin`. SSH URLs (`git@host:owner/repo.git`) are converted to HTTPS, a trailing `.git` is removed. |
 | `logo`       | no       | none    | Image file shown by the theme as site logo (Sphinx `html_logo`). |
 | `favicon`    | no       | none    | Browser tab icon (Sphinx `html_favicon`). |
 
@@ -371,8 +371,21 @@ a detailed design, release notes.
   ignored, and the page header ([8.4](#84-page_header)) is not added, because
   the file is used as is.
 - The file is copied, so relative paths in it would point into the output
-  folder. Use the [`{project_root}`](#85-the-project_root-placeholder)
-  placeholder for images and includes from the project:
+  folder. In **Markdown** files, relative links and images are resolved against
+  the location of the Markdown file in the project, so a file that renders in
+  the repository renders in the site as well:
+
+  | Relative target | Becomes |
+  |---|---|
+  | An image | The image, copied into the site. |
+  | The `source` of a document of type `trlc`, `rst`, `markdown` or `text` | A link to that page. An anchor (`file.md#section`) is kept. |
+  | Any other project file or folder | A link to it in the repository at the commit the site is built from (`<repository>/blob/<commit>/<path>`, `tree` for folders), see `project.repository`. |
+  | Any other project file or folder, without git repository or repository URL | Plain text, with a warning. |
+  | A target that does not exist, or lies outside the project | Left to MyST, which warns about it. |
+
+  In reStructuredText files, use the
+  [`{project_root}`](#85-the-project_root-placeholder) placeholder for images
+  and includes from the project:
   `.. image:: {project_root}/doc/images/context.svg`.
 
 ### 4.8 type: text

@@ -395,5 +395,29 @@ section "SW-Tests" {
                 '''
             verifies = [SwRequirements.sw_req_html_version_info]
         }
+
+        SwTestCase tc_markdown_links {
+            description =
+                '''
+                **Relative links of Markdown pages** (`tests/test_html.py`)
+
+                Build the site of a git repository with a Markdown page in a sub folder. Check
+
+                - the links to a site page and to a TRLC document folder link to their pages
+                - the links to a project file and folder link to the repository at the built commit
+                - the anchor of a link is kept
+                - the project image is shown
+                '''
+            verifies = [SwRequirements.sw_req_markdown_links]
+        }
+
+        SwTestCase tc_markdown_links_as_text {
+            description =
+                '''
+                Build a site without git repository with a Markdown page linking to a project file. Check that the
+                link is shown as text and a warning is reported (`tests/test_html.py`).
+                '''
+            verifies = [SwRequirements.sw_req_markdown_links]
+        }
     }
 }
