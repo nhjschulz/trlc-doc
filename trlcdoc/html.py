@@ -309,6 +309,9 @@ def _write_sphinx_config(cfg: Config, src_dir: Path, copy_dirs: List[Dict[str, s
         "copy_dirs": copy_dirs,
         "project_root": str(cfg.root),
         "links": _link_settings(cfg),
+        # Configured titles of project pages, which override the first heading of the file.
+        "page_titles": {doc["id"]: doc["title"] for doc in cfg.documents
+                        if doc["type"] in ("rst", "markdown") and "title" in doc},
     }
     settings_file = src_dir / "trlcdoc_settings.json"
     settings_file.write_text(json.dumps(settings, indent=4), encoding="utf-8")

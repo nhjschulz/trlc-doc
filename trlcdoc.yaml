@@ -18,9 +18,10 @@ paths:
 
 documents:
   - id: trlddoc_readme
-    title: README
+    title: About trlcdoc
     type: markdown
     source: README.md
+
   - id: sw_requirements
     title: SW-Requirements
     type: trlc

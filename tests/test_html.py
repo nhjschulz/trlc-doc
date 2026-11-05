@@ -41,7 +41,8 @@ API_COMMAND = ("import pathlib; p = pathlib.Path('apidoc'); p.mkdir(exist_ok=Tru
 EXTRA_DOCUMENTS: List[Dict[str, Any]] = [
     {"id": "coverage_report", "title": "Coverage Report", "type": "html", "source": "tests:coverage"},
     {"id": "manual", "type": "rst", "source": "docs/manual.rst"},
-    {"id": "notes", "type": "markdown", "source": "docs/notes.md"},
+    # A configured title replaces the first heading 'Release Notes' as page title.
+    {"id": "notes", "title": "Changes", "type": "markdown", "source": "docs/notes.md"},
     {"id": "license", "title": "License information", "type": "text", "source": "LICENSE"},
     {"id": "api", "title": "API Reference", "type": "command", "command": [sys.executable, "-c", API_COMMAND],
      "output": "apidoc"},
@@ -49,7 +50,10 @@ EXTRA_DOCUMENTS: List[Dict[str, Any]] = [
 
 # Expected page titles in table of contents order.
 TITLES = ["User Manual", "SW-Requirements", "SW-Architecture", "SW-Tests", "SW-Test Results",
-          "Software Tracing Report", "Coverage Report", "Release Notes", "License information", "API Reference"]
+          "Software Tracing Report", "Coverage Report", "Changes", "License information", "API Reference"]
+
+# Page headings, the Markdown page keeps its own heading.
+HEADINGS = [*TITLES[:7], "Release Notes", *TITLES[8:]]
 
 # Generated pages of the documents in table of contents order.
 PAGES = ["manual.html", "sw_requirements/index.html", "sw_architecture/index.html", "sw_test/index.html",
@@ -159,8 +163,14 @@ def test_documents(site: Dict[str, Any]) -> None:
     Args:
         site (Dict[str, Any]): The built site.
     """
-    for page, title in zip(PAGES, TITLES):
-        assert f"<h1>{title}" in _page(site, page)
+    for page, heading in zip(PAGES, HEADINGS):
+        assert f"<h1>{heading}" in _page(site, page)
+
+    # The configured title of a Markdown page is its navigation and browser title.
+    assert '<link rel="next" title="Changes" href="notes.html" />' in _page(site, "coverage_report.html")
+    assert "<title>Changes &#8212; example" in _page(site, "notes.html")
+    # Without configured title, the first heading is the title.
+    assert "<title>User Manual &#8212; example" in _page(site, "manual.html")
 
     # The next page link follows the configured order.
     assert '<link rel="next" title="SW-Requirements" href="sw_requirements/index.html" />' in _page(site, "manual.html")

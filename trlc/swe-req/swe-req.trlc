@@ -168,10 +168,13 @@ section "trlcdoc" {
 
                     The software shall build the documentation from a configurable, ordered list of documents. Each
                     document has a unique id and a title. A TRLC document may take its title from its converted content.
+                    A reStructuredText or Markdown document takes its title from its first heading, unless a title is
+                    configured.
                     '''
                 verification_criteria =
                     '''
                     Configure documents in different orders and check the table of contents of the generated site.
+                    Check the title of Markdown documents with and without configured title.
                     '''
                 valid_status = AbstractRequirements.VALID_STATUS.valid
             }

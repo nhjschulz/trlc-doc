@@ -340,7 +340,9 @@ section "SW-Tests" {
             description =
                 '''
                 Check that the pages appear in the configured order with their configured titles
-                (`tests/test_html.py`).
+                (`tests/test_html.py`). A Markdown page with configured title shows it in the table of contents,
+                the navigation links and the browser title, and keeps its own heading in the page. A page without
+                configured title is listed with its first heading.
                 '''
             verifies = [SwRequirements.sw_req_documents]
         }

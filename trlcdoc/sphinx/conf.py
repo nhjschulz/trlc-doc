@@ -20,6 +20,7 @@ from pathlib import Path
 from typing import Any
 from urllib.parse import urlparse
 
+from docutils import nodes
 from sphinx.errors import ConfigError
 
 # pylint: disable=invalid-name,redefined-builtin,exec-used
@@ -95,6 +96,34 @@ def _trlcdoc_setup(app: Any) -> None:
         app (Any): The Sphinx application.
     """
     app.connect('builder-inited', _copy_dirs)
+    # After the Sphinx title collector (priority 500), which takes the title from the first heading.
+    app.connect('doctree-read', _page_title, priority=600)
+
+
+def _page_title(app: Any, doctree: Any) -> None:
+    # lobster-trace: SwRequirements.sw_req_documents
+    """Use the configured title of a project page instead of its first heading.
+
+    The title is used in the table of contents, the navigation links and the browser title.
+    The heading in the page itself is kept.
+
+    Args:
+        app (Any): The Sphinx application.
+        doctree (Any): The doctree of the read page, unused.
+    """
+    del doctree
+    docname = app.env.docname
+    title = _SETTINGS["page_titles"].get(docname)
+    if title is not None:
+        app.env.titles[docname] = nodes.title(title, title)
+        app.env.longtitles[docname] = nodes.title(title, title)
+        # The table of contents entries are taken from the section tree of the page, its first
+        # entry is the first heading.
+        toc = app.env.tocs.get(docname)
+        reference = next(toc.findall(nodes.reference), None) if toc is not None else None
+        if reference is not None:
+            del reference[:]
+            reference += nodes.Text(title)
 
 
 def _copy_dirs(app: Any) -> None:
