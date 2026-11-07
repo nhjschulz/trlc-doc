@@ -7,20 +7,28 @@ package "Project" {
     file "TRLC model and\nrecords (.rsl/.trlc)" as trlc
     file "PlantUML\ndiagrams (.puml)" as puml
     file "Sources and tests" as src
+    file "Documents (.rst/.md)" as doc
 }
 
+rectangle "Tools" {
+    component "LOBSTER"
+    component "TRLC"
+    component "PlantUML"
+    component "Sphinx"
+}
 [trlcdoc] as trlcdoc <<tool>> #lightgreen
 
 
 
-Database "HTML Documentation" as out {
+Database "HTML Documentation" as out #lightblue {
 }
 
 
 trlc --> trlcdoc
 puml --> trlcdoc
 src --> trlcdoc
+doc --> trlcdoc
 
-
-trlcdoc --> out
+trlcdoc -l--> Tools :use
+trlcdoc --> out :generate
 @enduml

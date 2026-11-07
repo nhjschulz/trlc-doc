@@ -9,7 +9,7 @@
 project:
   name: trlcdoc
   author: Norbert Schulz
-  copyright: "2026, NewTec GmbH"
+  copyright: "2026, Norbert Schulz"
   repository: https://github.com/nhjschulz/trlc-doc.git
 
 paths:

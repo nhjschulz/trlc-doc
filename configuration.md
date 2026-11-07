@@ -1,4 +1,4 @@
-# trlcdoc Configuration Reference
+# trlcdoc Configuration Reference <!-- omit from toc -->
 
 This document explains the trlcdoc project configuration file `trlcdoc.yaml`
 section by section: what every key means, which step uses it, and what changes
@@ -73,7 +73,7 @@ Each release tag `Vx.y.z` has its own copy, so pick the one that matches the
 trlcdoc version you use (the configuration may change incompatibly before 1.0):
 
 ```yaml
-# yaml-language-server: $schema=https://nhjschulz.github.io/trlc-doc/schema/V0.1.0/trlcdoc.schema.json
+# yaml-language-server: $schema=https://nhjschulz.github.io/trlc-doc/schema/V0.3.0/trlcdoc.schema.json
 ```
 
 The schema of the current `main` branch is available without a version:
@@ -984,12 +984,11 @@ so stale files of a previous run do not remain.
 
 ## 11. Complete examples
 
-A configuration using all sections, with requirements, architecture, test
-cases, test results, code tracing and a customized site. It is the one of
-pyTRLCConverter, slightly shortened:
+A configuration example using all sections, with requirements, architecture, test
+cases, test results, code tracing and a customized site.
 
 ```yaml
-# yaml-language-server: $schema=https://nhjschulz.github.io/trlc-doc/schema/V0.1.0/trlcdoc.schema.json
+# yaml-language-server: $schema=https://nhjschulz.github.io/trlc-doc/schema/V0.3.0/trlcdoc.schema.json
 
 project:
   name: pyTRLCConverter
@@ -1128,5 +1127,3 @@ More configurations in use:
   pattern test linking, default site.
 - [flashcontainer](https://github.com/nhjschulz/flashcontainer/blob/master/trlcdoc.yaml):
   the same structure with property based test linking.
-- [pyTRLCConverter](https://github.com/NewTec-GmbH/pyTRLCConverter/blob/main/trlcdoc.yaml):
-  the complete version of the example above.
