@@ -1,6 +1,5 @@
 """Shared fixtures of the trlcdoc tests: a minimal TRLC example project and the PlantUML jar.
 
-    Author: Norbert Schulz (norbert.schulz@newtec.de)
 """
 
 # trlcdoc - A utility for producing project documentation from TRLC and LOBSTER contents.

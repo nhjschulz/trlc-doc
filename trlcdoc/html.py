@@ -1,6 +1,5 @@
 """Generate the Sphinx sources from the configured documents and build the HTML site.
 
-    Author: Norbert Schulz (norbert.schulz@newtec.de)
 """
 
 # trlcdoc - A utility for producing project documentation from TRLC and LOBSTER contents.

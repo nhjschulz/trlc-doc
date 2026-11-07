@@ -1,6 +1,5 @@
 """Tests of the test runner and the conversion of the test results into TRLC records.
 
-    Author: Norbert Schulz (norbert.schulz@newtec.de)
 """
 
 # trlcdoc - A utility for producing project documentation from TRLC and LOBSTER contents.

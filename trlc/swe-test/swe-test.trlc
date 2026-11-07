@@ -33,8 +33,8 @@ section "SW-Tests" {
         SwTestCase tc_cli_help {
             description =
                 '''
-                Call trlcdoc with `-h` and with `--help`. Check that the usage help with all steps is shown and the exit
-                code is 0 (`tests/test_cli.py`).
+                Call trlcdoc with `-h` and with `--help`. Check that the usage help with all steps, the copyright and the
+                repository link is shown and the exit code is 0 (`tests/test_cli.py`).
                 '''
             verifies = [SwRequirements.sw_req_cli_help]
         }

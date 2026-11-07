@@ -3,7 +3,6 @@
     All project specific values are read from trlcdoc_settings.json, which
     trlcdoc writes next to this file from the project configuration.
 
-    Author: Norbert Schulz (norbert.schulz@newtec.de)
 """
 
 # *******************************************************************************

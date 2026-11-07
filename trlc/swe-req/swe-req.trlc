@@ -37,11 +37,12 @@ section "trlcdoc" {
                 description =
                     '''
                     The software shall show usage help information when called with the command line argument `-h` or
-                    `--help`
+                    `--help`. The help shall end with the copyright and the link to the source repository.
                     '''
                 verification_criteria =
                     '''
-                    Call trlcdoc with `-h` and `--help` and check that the usage help is shown.
+                    Call trlcdoc with `-h` and `--help` and check that the usage help with copyright and repository link
+                    is shown.
                     '''
                 valid_status = AbstractRequirements.VALID_STATUS.valid
             }

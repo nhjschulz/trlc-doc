@@ -1,6 +1,5 @@
 """Tests of the trlcdoc configuration: discovery, validation and project settings.
 
-    Author: Norbert Schulz (norbert.schulz@newtec.de)
 """
 
 # trlcdoc - A utility for producing project documentation from TRLC and LOBSTER contents.

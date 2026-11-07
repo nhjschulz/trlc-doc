@@ -1,6 +1,5 @@
 """Run the tests and convert the JUnit XML results into TRLC test result records.
 
-    Author: Norbert Schulz (norbert.schulz@newtec.de)
 """
 
 # trlcdoc - A utility for producing project documentation from TRLC and LOBSTER contents.
