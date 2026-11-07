@@ -1,6 +1,5 @@
 """Tests of the trlcdoc command line interface: steps, their order and the exit codes.
 
-    Author: Norbert Schulz (norbert.schulz@newtec.de)
 """
 
 # trlcdoc - A utility for producing project documentation from TRLC and LOBSTER contents.
@@ -81,6 +80,8 @@ def test_cli_help(option: str, capsys: pytest.CaptureFixture) -> None:
     assert "usage: trlcdoc" in out
     for step in cli.STEPS:
         assert step in out
+    assert cli.COPYRIGHT in out
+    assert cli.REPOSITORY in out
 
 
 def test_steps(project: Path, monkeypatch: pytest.MonkeyPatch) -> None:

@@ -1,6 +1,5 @@
 """Tests of the HTML site, built once from an example project with every document type.
 
-    Author: Norbert Schulz (norbert.schulz@newtec.de)
 """
 
 # trlcdoc - A utility for producing project documentation from TRLC and LOBSTER contents.

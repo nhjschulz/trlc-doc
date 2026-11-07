@@ -1,6 +1,5 @@
 """Create the LOBSTER tracing report from the configured trace levels.
 
-    Author: Norbert Schulz (norbert.schulz@newtec.de)
 """
 
 # trlcdoc - A utility for producing project documentation from TRLC and LOBSTER contents.

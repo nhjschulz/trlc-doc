@@ -1,6 +1,5 @@
 """Image file procesing tools.
 
-    Author: Norbert Schulz (norbert.schulz@newtec.de)
 """
 
 # pyTRLCConverter - A tool to convert TRLC files to specific formats.

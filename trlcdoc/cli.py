@@ -1,6 +1,5 @@
 """Command line interface of trlcdoc.
 
-    Author: Norbert Schulz (norbert.schulz@newtec.de)
 """
 
 # trlcdoc - A utility for producing project documentation from TRLC and LOBSTER contents.
@@ -38,6 +37,9 @@ from .util import TrlcdocError, remove_output
 # Steps in execution order. 'all' runs every step the configuration needs, except clean.
 STEPS = ["clean", "check", "plantuml", "tests", "convert", "trace", "html"]
 
+COPYRIGHT = "Copyright (c) 2026 Norbert Schulz"
+REPOSITORY = "https://github.com/nhjschulz/trlc-doc"
+
 # Classes **********************************************************************
 
 # Functions ********************************************************************
@@ -58,8 +60,10 @@ def _parse_args(argv: Optional[List[str]]) -> argparse.Namespace:
     """
     parser = argparse.ArgumentParser(
         prog="trlcdoc",
-        description="Build the TRLC based project documentation: requirements, architecture, "
-                    "tests, test results, tracing report and HTML site.")
+        description="Build project documentation for TRLC based projects: requirements, architecture,\n"
+                    "tests, test results, tracing report and HTML site.",
+        epilog=f"{COPYRIGHT} - see {REPOSITORY} for further information.",
+        formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("steps", nargs="*", metavar="step",
                         help=f"steps to run: {', '.join(STEPS)} or all (default: all)")
     parser.add_argument("-c", "--config", type=Path,
