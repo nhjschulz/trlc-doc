@@ -1,4 +1,4 @@
-# trlcdoc Configuration Reference
+# trlcdoc Configuration Reference <!-- omit from toc -->
 
 This document explains the trlcdoc project configuration file `trlcdoc.yaml`
 section by section: what every key means, which step uses it, and what changes
@@ -73,7 +73,7 @@ Each release tag `Vx.y.z` has its own copy, so pick the one that matches the
 trlcdoc version you use (the configuration may change incompatibly before 1.0):
 
 ```yaml
-# yaml-language-server: $schema=https://nhjschulz.github.io/trlc-doc/schema/V0.1.0/trlcdoc.schema.json
+# yaml-language-server: $schema=https://nhjschulz.github.io/trlc-doc/schema/V0.3.0/trlcdoc.schema.json
 ```
 
 The schema of the current `main` branch is available without a version:
@@ -174,6 +174,7 @@ Project metadata for the HTML site and the online tracing report.
 ```yaml
 project:
   name: pyTRLCConverter
+  version: "3.0.0"
   author: NewTec GmbH
   copyright: 2024 - 2026, NewTec GmbH
   repository: https://github.com/NewTec-GmbH/pyTRLCConverter
@@ -183,7 +184,8 @@ project:
 
 | Key          | Required | Default | Meaning and impact |
 |--------------|----------|---------|--------------------|
-| `name`       | yes      |         | Sphinx `project`. Appears in the browser title of every page and in the heading `<name> documentation` of the generated start page. |
+| `name`       | yes      |         | Sphinx `project`. Appears in the page header, the browser title of every page and in the heading `<name> documentation` of the generated start page. |
+| `version`    | no       | none    | Sphinx `version` and `release`. Follows the name in the page header, the browser title and the start page heading: `<name> <version> documentation`. Quote it (`"1.0"`): YAML reads an unquoted `1.0` as a number, which the schema rejects. |
 | `author`     | yes      |         | Sphinx `author`. |
 | `copyright`  | yes      |         | Sphinx `copyright`, shown in the page footer. Quote it if it contains a colon or starts with a number followed by special characters. |
 | `repository` | no       | `auto`  | Repository URL. Used by `trlcdoc trace --online` to turn the file references of the tracing report into links to the repository, and for the links of Markdown pages to project files ([4.7](#47-type-rst-and-type-markdown)). `auto` takes the URL from `git remote get-url origin`. SSH URLs (`git@host:owner/repo.git`) are converted to HTTPS, a trailing `.git` is removed. |
@@ -395,6 +397,8 @@ a detailed design, release notes.
   [`{project_root}`](#85-the-project_root-placeholder) placeholder for images
   and includes from the project:
   `.. image:: {project_root}/doc/images/context.svg`.
+- **`placeholders: false`** copies the file without replacing the
+  placeholder, for a page that explains it, like this configuration reference.
 
 ### 4.8 type: text
 
@@ -582,7 +586,7 @@ true` is set. With `array`, every result record gets a list
 (`relates = [SwTests.a, SwTests.b]`), even for one test case, so the TRLC
 model must declare the component as array:
 
-```trlc
+```text
 type SwTestCaseResult {
     name    String
     result  SwTestResult
@@ -596,7 +600,7 @@ Without `array`, the model uses a single reference: `relates SwTestCase`.
 
 The `tests` step writes `<output>/tests/results/sw_test_result_report.trlc`:
 
-```trlc
+```text
 package SwTests
 
 section "SW Test Results" {
@@ -612,7 +616,7 @@ section "SW Test Results" {
 
 Your TRLC model must therefore define, in the package of `link.to`:
 
-```trlc
+```text
 enum SwTestResult {
     FAILED
     PASSED
@@ -924,7 +928,8 @@ the page to the project root:
 
 - `html.index`,
 - `html.page_header` (separately for each page it is inserted into),
-- documents of type `rst` and `markdown`.
+- documents of type `rst` and `markdown`, unless they set
+  `placeholders: false` ([4.7](#47-type-rst-and-type-markdown)).
 
 ```rst
 .. image:: {project_root}/doc/images/architecture.svg
@@ -981,12 +986,11 @@ so stale files of a previous run do not remain.
 
 ## 11. Complete examples
 
-A configuration using all sections, with requirements, architecture, test
-cases, test results, code tracing and a customized site. It is the one of
-pyTRLCConverter, slightly shortened:
+A configuration example using all sections, with requirements, architecture, test
+cases, test results, code tracing and a customized site.
 
 ```yaml
-# yaml-language-server: $schema=https://nhjschulz.github.io/trlc-doc/schema/V0.1.0/trlcdoc.schema.json
+# yaml-language-server: $schema=https://nhjschulz.github.io/trlc-doc/schema/V0.3.0/trlcdoc.schema.json
 
 project:
   name: pyTRLCConverter
@@ -1125,5 +1129,3 @@ More configurations in use:
   pattern test linking, default site.
 - [flashcontainer](https://github.com/nhjschulz/flashcontainer/blob/master/trlcdoc.yaml):
   the same structure with property based test linking.
-- [pyTRLCConverter](https://github.com/NewTec-GmbH/pyTRLCConverter/blob/main/trlcdoc.yaml):
-  the complete version of the example above.

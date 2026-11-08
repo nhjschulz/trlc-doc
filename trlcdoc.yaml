@@ -8,8 +8,9 @@
 
 project:
   name: trlcdoc
+  version: "0.3.0"
   author: Norbert Schulz
-  copyright: "2026, NewTec GmbH"
+  copyright: "2026, Norbert Schulz"
   repository: https://github.com/nhjschulz/trlc-doc.git
 
 paths:
@@ -17,10 +18,16 @@ paths:
   output: build/trlcdoc
 
 documents:
-  - id: trlddoc_readme
+  - id: trlcdoc_readme
     title: About trlcdoc
     type: markdown
     source: README.md
+
+  - id: configuration
+    title: Configuration Reference
+    type: markdown
+    source: configuration.md
+    placeholders: false  # the page explains the {project_root} placeholder
 
   - id: sw_requirements
     title: SW-Requirements

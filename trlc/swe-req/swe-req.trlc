@@ -37,11 +37,25 @@ section "trlcdoc" {
                 description =
                     '''
                     The software shall show usage help information when called with the command line argument `-h` or
-                    `--help`
+                    `--help`. The help shall end with the copyright and the link to the source repository.
                     '''
                 verification_criteria =
                     '''
-                    Call trlcdoc with `-h` and `--help` and check that the usage help is shown.
+                    Call trlcdoc with `-h` and `--help` and check that the usage help with copyright and repository link
+                    is shown.
+                    '''
+                valid_status = AbstractRequirements.VALID_STATUS.valid
+            }
+
+            SwReq sw_req_cli_version {
+                description =
+                    '''
+                    The software shall show its version and exit successfully when called with the command line
+                    argument `-v` or `--version`.
+                    '''
+                verification_criteria =
+                    '''
+                    Call trlcdoc with `-v` and `--version` and check that the version is shown and the exit code is 0.
                     '''
                 valid_status = AbstractRequirements.VALID_STATUS.valid
             }
@@ -148,8 +162,9 @@ section "trlcdoc" {
             SwReq sw_req_project_settings {
                 description =
                     '''
-                    The software shall take project metadata (name, author, copyright, repository, logo) from the
-                    configuration.
+                    The software shall take project metadata (name, optional version, author, copyright, repository,
+                    logo) from the configuration. A configured version shall follow the project name in the HTML
+                    title.
                     '''
                 verification_criteria =
                     '''
@@ -395,7 +410,7 @@ section "trlcdoc" {
                     - a project specific Sphinx configuration
 
                     Project pages shall be able to refer to files of the project independent of their location in the
-                    site.
+                    site. A project page shall be able to disable this, to show the placeholder text itself.
                     '''
                 verification_criteria =
                     '''
@@ -405,6 +420,7 @@ section "trlcdoc" {
                     - a page header
                     - a Sphinx configuration
                     - project pages referring to project files
+                    - a project page with disabled placeholder replacement
 
                     Check the pages and the applied configuration.
                     '''

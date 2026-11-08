@@ -1,10 +1,9 @@
 """Tests of the trlcdoc configuration: discovery, validation and project settings.
 
-    Author: Norbert Schulz (norbert.schulz@newtec.de)
 """
 
 # trlcdoc - A utility for producing project documentation from TRLC and LOBSTER contents.
-# Copyright (c) 2026 - 2026 NewTec GmbH
+# Copyright (c) 2026 - 2026 Norbert Schulz github@schulznorbert.de
 #
 # This file is part of trlcdoc program.
 #
@@ -137,19 +136,22 @@ def test_project_settings(project: Path) -> None:
     root = project.parent
     (root / "logo.png").write_bytes(b"")
     data = base_config()
-    data["project"].update({"name": "Hello World", "author": "John Doe", "copyright": "2020, John Doe",
-                            "logo": "logo.png"})
+    data["project"].update({"name": "Hello World", "version": "1.2.3", "author": "John Doe",
+                            "copyright": "2020, John Doe", "logo": "logo.png"})
     cfg = load_config(write_config(root, data))
     assert cfg.repository == "https://github.com/example/example.git"
 
     settings = json.loads(_write_sphinx_config(cfg, root, []).read_text(encoding="utf-8"))
     assert settings["project"] == "Hello World"
+    assert settings["version"] == "1.2.3"
     assert settings["author"] == "John Doe"
     assert settings["copyright"] == "2020, John Doe"
     assert settings["logo"] == str(root / "logo.png")
 
-    del data["project"]["repository"]
-    assert load_config(write_config(root, data)).repository == "auto"
+    del data["project"]["repository"], data["project"]["version"]
+    cfg = load_config(write_config(root, data))
+    assert cfg.repository == "auto"
+    assert json.loads(_write_sphinx_config(cfg, root, []).read_text(encoding="utf-8"))["version"] is None
 
 
 def test_output_folder(project: Path) -> None:

@@ -33,10 +33,19 @@ section "SW-Tests" {
         SwTestCase tc_cli_help {
             description =
                 '''
-                Call trlcdoc with `-h` and with `--help`. Check that the usage help with all steps is shown and the exit
-                code is 0 (`tests/test_cli.py`).
+                Call trlcdoc with `-h` and with `--help`. Check that the usage help with all steps, the copyright and the
+                repository link is shown and the exit code is 0 (`tests/test_cli.py`).
                 '''
             verifies = [SwRequirements.sw_req_cli_help]
+        }
+
+        SwTestCase tc_cli_version {
+            description =
+                '''
+                Call trlcdoc with `-v` and with `--version`. Check that the version of the installed package is shown and
+                the exit code is 0 (`tests/test_cli.py`).
+                '''
+            verifies = [SwRequirements.sw_req_cli_version]
         }
 
         SwTestCase tc_steps {
@@ -120,8 +129,9 @@ section "SW-Tests" {
         SwTestCase tc_project_settings {
             description =
                 '''
-                Configure the project name, author, copyright, logo and repository. Check the settings passed to the
-                HTML site and the default repository `auto` (`tests/test_config.py`).
+                Configure the project name, version, author, copyright, logo and repository. Check the settings passed
+                to the HTML site, the default repository `auto` and that the version is optional
+                (`tests/test_config.py`).
                 '''
             verifies = [SwRequirements.sw_req_project_settings]
         }
@@ -377,6 +387,7 @@ section "SW-Tests" {
 
                 - a project start page, page header and Sphinx configuration file
                 - a project page including a project file
+                - a project page with disabled placeholder replacement
                 - a TRLC document without title
 
                 Check
@@ -384,6 +395,7 @@ section "SW-Tests" {
                 - the table of contents
                 - the page header on the generated pages
                 - the page titles
+                - that the placeholder is kept on the page with disabled replacement
                 - the applied configuration and its setup
                 - that the Sphinx cache is not part of the site
                 '''

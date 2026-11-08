@@ -1,10 +1,9 @@
 """Tests of the output folder handling: creation, clean step and delete protection.
 
-    Author: Norbert Schulz (norbert.schulz@newtec.de)
 """
 
 # trlcdoc - A utility for producing project documentation from TRLC and LOBSTER contents.
-# Copyright (c) 2026 - 2026 NewTec GmbH
+# Copyright (c) 2026 - 2026 Norbert Schulz github@schulznorbert.de
 #
 # This file is part of trlcdoc program.
 #

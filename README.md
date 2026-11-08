@@ -1,32 +1,57 @@
 # trlcdoc
 
-Configurable documentation tooling for NewTec TRLC based projects.
+Configurable documentation tooling for TRLC based projects.
 
-The trlcdoc tool is a tailored utility for converting trlc files,
-test results and lobster trace report into a static project report
-web site. It is  driven by a configuration yaml file that defines
+The trlcdoc tool is a tailored utility for converting TRLC files,
+test results and LOBSTER trace reports into a static project report
+website. It is driven by a configuration YAML file that defines
 the project specific content to process.
 
 ![Overview](./overview.svg)
 
-Status: prototype. Projects add this repository as git submodule, e.g. in
-`tools/trlc-doc`, and install it into their virtual environment.
+**NOTE**:
+trlcdoc is not a standalone solution, but a component extending the
+[trlc](https://github.com/bmw-software-engineering/trlc)
+and
+[BMW LOBSTER tooling](https://github.com/bmw-software-engineering/lobster)
+with automated documentation generation.
+An understanding of their purpose and usage is required to benefit from trlcdoc.
 
-## Usage
+**Status**: alpha. The configuration may change incompatibly before 1.0.0.
 
-```bash
-git submodule add https://github.com/nhjschulz/trlc-doc tools/trlc-doc
-pip install -e tools/trlc-doc       # the submodule folder
-trlcdoc                             # all steps, uses ./trlcdoc.yaml (or a parent folder)
-trlcdoc tests trace                 # selected steps only
-trlcdoc clean                       # remove all build artifacts
-trlcdoc clean all                   # fresh full build
-trlcdoc convert --format markdown   # Markdown export of the TRLC documents
-trlcdoc trace --online              # tracing report linked to the repository
-trlcdoc -c other.yaml check         # validate a configuration
-```
+## Goals
 
-Steps, always executed in this order:
+The trlcdoc tool was created to simplify the documentation
+generation for development projects that follow an *everything
+as code* approach. Its focus is not on end-user documentation,
+but on information for the development team, such as requirements, architecture,
+test results and traces between them.
+
+The trlcdoc tool aims for the following goals:
+
+* **Portability**: Replace host system dependent scripting that
+  is difficult to maintain and gets duplicated into new projects
+  over and over again (bat files, bash scripts, make, ...).
+
+* **Configurability**: Tool operation is driven by a single configuration
+  file in YAML format, which makes it easy to apply it to new projects.
+
+* **Correctness**: Analyze results of each execution step, report errors
+  and stop before producing incomplete or broken results.
+
+* **Quality**: The development of trlcdoc follows best practices from the
+  V-Model. It is driven by requirements, has a documented architecture and
+  high unit test code coverage. In addition, its own project documentation is
+  built by itself following the "eating your own dog food" practice.
+
+## Principle of Operation
+
+trlcdoc provides a fixed set of steps to generate the documentation. All
+steps are configured by sections in a YAML configuration file. The steps to
+execute are given to trlcdoc as arguments. Without arguments, or with `all`,
+trlcdoc executes all steps except `clean`.
+
+The table below shows the supported steps. Steps always execute in this order:
 
 | Step | Does |
 |---|---|
@@ -41,6 +66,46 @@ Steps, always executed in this order:
 Exit codes: `0` success, `1` content findings (failed tests, missing trace
 links), `2` build error. All generated files go to `paths.output`
 (default `build/trlcdoc`), never into this package folder.
+
+## Usage
+
+### Installation
+
+The HTML site generation needs a Java runtime for PlantUML, and Graphviz for all
+diagrams except sequence diagrams.
+
+**From PyPI:**
+
+```bash
+pip install trlcdoc
+trlcdoc --help
+```
+
+**As a submodule:**
+
+```bash
+# Create a python venv (recommended)
+python3 -m venv .venv
+. .venv/bin/activate
+
+# add trlcdoc to your project as a submodule
+git submodule add https://github.com/nhjschulz/trlc-doc tools/trlc-doc
+pip install -e tools/trlc-doc       # the submodule folder
+
+trlcdoc --help
+```
+
+### Execution Examples
+
+```bash
+trlcdoc                             # all steps, uses ./trlcdoc.yaml (or a parent folder)
+trlcdoc tests trace                 # selected steps only
+trlcdoc clean                       # remove all build artifacts
+trlcdoc clean all                   # fresh full build
+trlcdoc convert --format markdown   # Markdown export of the TRLC documents
+trlcdoc trace --online              # tracing report linked to the repository
+trlcdoc -c other.yaml check         # validate a configuration
+```
 
 ## Configuration
 
@@ -58,12 +123,14 @@ Without the submodule, use the published schema of your trlcdoc release
 (one copy per tag `Vx.y.z`):
 
 ```yaml
-# yaml-language-server: $schema=https://nhjschulz.github.io/trlc-doc/schema/V0.1.0/trlcdoc.schema.json
+# yaml-language-server: $schema=https://nhjschulz.github.io/trlc-doc/schema/V0.3.0/trlcdoc.schema.json
 ```
 
-Users of Visual Studio Code can use the 
+Users of Visual Studio Code can use the
 [redhat.vscode-yaml](https://marketplace.visualstudio.com/items?itemName=redhat.vscode-yaml)
-extension to get schema validation for `trlcdoc.yaml` files: 
+extension to get schema validation for `trlcdoc.yaml` files.
+
+See trlcdoc's own [trlcdoc.yaml](./trlcdoc.yaml) configuration as a full example.
 
 Key concepts:
 
@@ -94,30 +161,30 @@ Key concepts:
   converted content.
 - **PLANTUML** environment variable: a plantuml.jar or a PlantUML server URL.
 
-The built-in converters are the project converters of
+The built-in TRLC converters are the project converters of
 [pyTRLCConverter](https://github.com/NewTec-GmbH/pyTRLCConverter) (`tools/converter`),
 for its 3.x API. pyTRLCConverter also determines the trlc version.
 
-See the flashcontainer
-[trlcdoc.yaml](https://github.com/nhjschulz/flashcontainer/blob/master/trlcdoc.yaml)
-for a complete example.
-
 ## Trlcdoc Documentation
 
-The trlc project documentation is itself being generated using trlcdoc. Run the
-following commands to build it:
+The trlcdoc project documentation is itself being generated using trlcdoc.
+The latest version is available online at
+[https://nhjschulz.github.io/trlc-doc/](https://nhjschulz.github.io/trlc-doc/).
 
-```
+Run the following commands to build it locally:
+
+```bash
 # setup virtual environment and install trlcdoc
 
 python3 -m venv .venv
 . .venv/bin/activate
-pip install -e .[test]
+pip install -e ".[test]"
 
 # generate documentation
-trlcdoc -c trlcdoc.yaml 
+trlcdoc -c trlcdoc.yaml
 ```
-The resulting documentation is generated in folder `build/trlcdoc/html`
+
+The website is written to `build/trlcdoc/html`.
 
 ## Code Tracing
 
@@ -130,11 +197,13 @@ def find_config(start: Path) -> Path:
     """Find the default configuration file trlcdoc.yaml in a folder or its parents.
 ```
 
-The built-in converters in [trlcdoc/converters](trlcdoc/converters) carry the
-comment on the class instead, which covers all its methods. The trace level
-`SW Code` in [trlcdoc.yaml](trlcdoc.yaml) extracts the comments with
-lobster-python. A function without comment is reported as finding by the trace
-step, and so is a requirement without implementing function.
+The trace level `SW Code` in [trlcdoc.yaml](trlcdoc.yaml) extracts the comments with
+[lobster-python](https://pypi.org/project/bmw-lobster-tool-python/).
+A function without comment is reported as a finding by the trace step, and so is a
+requirement without an implementing function.
+
+Note: Support for code tracing to other languages like C/C++ or Rust is currently
+under development.
 
 ## Tests
 
@@ -143,8 +212,8 @@ test function `test_<name>` implements the TRLC test case `tc_<name>` in
 [trlc/swe-test](trlc/swe-test), which links it to its requirements. Most tests
 run trlcdoc on a minimal example project, created in a temporary folder.
 
-```
-pip install -e .[test]
+```bash
+pip install -e ".[test]"
 pytest
 ```
 
@@ -155,4 +224,4 @@ pull request on Linux and Windows.
 
 ## License
 
-GPL-3.0, see [LICENSE](LICENSE).
+GPL-3.0-or-later, see [LICENSE](LICENSE).

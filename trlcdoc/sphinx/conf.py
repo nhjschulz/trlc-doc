@@ -3,7 +3,6 @@
     All project specific values are read from trlcdoc_settings.json, which
     trlcdoc writes next to this file from the project configuration.
 
-    Author: Norbert Schulz (norbert.schulz@newtec.de)
 """
 
 # *******************************************************************************
@@ -36,6 +35,9 @@ PROJECT_ROOT = Path(_SETTINGS["project_root"])
 project = _SETTINGS["project"]
 copyright = _SETTINGS["copyright"]
 author = _SETTINGS["author"]
+# The version follows the project name in the HTML title: '<project> <release> documentation'.
+if _SETTINGS.get("version"):
+    version = release = _SETTINGS["version"]
 
 extensions = [
     'myst_parser',              # https://www.sphinx-doc.org/en/master/usage/markdown.html
