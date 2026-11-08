@@ -8,7 +8,7 @@
 
 project:
   name: trlcdoc
-  version: 0.3,0
+  version: "0.3.0"
   author: Norbert Schulz
   copyright: "2026, Norbert Schulz"
   repository: https://github.com/nhjschulz/trlc-doc.git
