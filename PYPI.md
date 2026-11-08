@@ -9,7 +9,7 @@ configuration file in the project root defines what to process.
 
 ![Overview](https://raw.githubusercontent.com/nhjschulz/trlc-doc/main/overview.svg)
 
-Status: prototype. The configuration may change incompatibly before 1.0.
+Status: alpha. The configuration may change incompatibly before 1.0.0.
 
 - **Documentation:** <https://nhjschulz.github.io/trlc-doc/>
 - **Source code:** <https://github.com/nhjschulz/trlc-doc>

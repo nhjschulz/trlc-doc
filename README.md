@@ -17,6 +17,8 @@ and
 with automated documentation generation.
 An understanding of their purpose and usage is required to benefit from trlcdoc.
 
+**Status**: alpha. The configuration may change incompatibly before 1.0.0.
+
 ## Goals
 
 The trlcdoc tool was created to simplify the documentation
