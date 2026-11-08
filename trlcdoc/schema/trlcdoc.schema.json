@@ -14,6 +14,7 @@
             "required": ["name", "author", "copyright"],
             "properties": {
                 "name": {"type": "string", "minLength": 1},
+                "version": {"description": "Project version, shown after the name in the HTML title. Quote it, e.g. '1.0', so YAML does not read it as a number.", "type": "string", "minLength": 1},
                 "author": {"type": "string", "minLength": 1},
                 "copyright": {"type": "string", "minLength": 1},
                 "repository": {

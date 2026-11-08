@@ -162,8 +162,9 @@ section "trlcdoc" {
             SwReq sw_req_project_settings {
                 description =
                     '''
-                    The software shall take project metadata (name, author, copyright, repository, logo) from the
-                    configuration.
+                    The software shall take project metadata (name, optional version, author, copyright, repository,
+                    logo) from the configuration. A configured version shall follow the project name in the HTML
+                    title.
                     '''
                 verification_criteria =
                     '''
