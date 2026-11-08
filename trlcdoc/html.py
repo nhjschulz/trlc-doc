@@ -276,11 +276,24 @@ def _write_index(cfg: Config, src_dir: Path, pages: List[str]) -> Path:
     if "index" in cfg.html:
         _write_project_page(cfg, cfg.path(cfg.html["index"]), index)
     else:
-        content = _heading(f"{cfg.project['name']} documentation", "=")
+        content = _heading(f"{_project_title(cfg)} documentation", "=")
         content += ".. toctree::\n   :maxdepth: 1\n   :caption: Contents:\n\n"
         content += "".join(f"   {page}\n" for page in pages)
         _write_generated(cfg, index, {}, content)
     return index
+
+
+def _project_title(cfg: Config) -> str:
+    # lobster-trace: SwRequirements.sw_req_project_settings
+    """Get the project name, followed by the project version if configured.
+
+    Args:
+        cfg (Config): Project configuration.
+
+    Returns:
+        str: Name and version of the project.
+    """
+    return " ".join(filter(None, [cfg.project["name"], cfg.project.get("version")]))
 
 
 def _write_sphinx_config(cfg: Config, src_dir: Path, copy_dirs: List[Dict[str, str]]) -> Path:
@@ -301,6 +314,7 @@ def _write_sphinx_config(cfg: Config, src_dir: Path, copy_dirs: List[Dict[str, s
     conf = cfg.html.get("conf")
     settings = {
         "project": cfg.project["name"],
+        "version": cfg.project.get("version"),
         "author": cfg.project["author"],
         "copyright": cfg.project["copyright"],
         "logo": str(cfg.path(logo)) if logo else None,

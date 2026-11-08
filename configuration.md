@@ -174,6 +174,7 @@ Project metadata for the HTML site and the online tracing report.
 ```yaml
 project:
   name: pyTRLCConverter
+  version: "3.0.0"
   author: NewTec GmbH
   copyright: 2024 - 2026, NewTec GmbH
   repository: https://github.com/NewTec-GmbH/pyTRLCConverter
@@ -183,7 +184,8 @@ project:
 
 | Key          | Required | Default | Meaning and impact |
 |--------------|----------|---------|--------------------|
-| `name`       | yes      |         | Sphinx `project`. Appears in the browser title of every page and in the heading `<name> documentation` of the generated start page. |
+| `name`       | yes      |         | Sphinx `project`. Appears in the page header, the browser title of every page and in the heading `<name> documentation` of the generated start page. |
+| `version`    | no       | none    | Sphinx `version` and `release`. Follows the name in the page header, the browser title and the start page heading: `<name> <version> documentation`. Quote it (`"1.0"`): YAML reads an unquoted `1.0` as a number, which the schema rejects. |
 | `author`     | yes      |         | Sphinx `author`. |
 | `copyright`  | yes      |         | Sphinx `copyright`, shown in the page footer. Quote it if it contains a colon or starts with a number followed by special characters. |
 | `repository` | no       | `auto`  | Repository URL. Used by `trlcdoc trace --online` to turn the file references of the tracing report into links to the repository, and for the links of Markdown pages to project files ([4.7](#47-type-rst-and-type-markdown)). `auto` takes the URL from `git remote get-url origin`. SSH URLs (`git@host:owner/repo.git`) are converted to HTTPS, a trailing `.git` is removed. |

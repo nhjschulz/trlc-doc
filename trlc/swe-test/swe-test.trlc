@@ -129,8 +129,9 @@ section "SW-Tests" {
         SwTestCase tc_project_settings {
             description =
                 '''
-                Configure the project name, author, copyright, logo and repository. Check the settings passed to the
-                HTML site and the default repository `auto` (`tests/test_config.py`).
+                Configure the project name, version, author, copyright, logo and repository. Check the settings passed
+                to the HTML site, the default repository `auto` and that the version is optional
+                (`tests/test_config.py`).
                 '''
             verifies = [SwRequirements.sw_req_project_settings]
         }

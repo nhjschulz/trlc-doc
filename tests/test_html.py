@@ -107,6 +107,7 @@ def fixture_site(tmp_path_factory: pytest.TempPathFactory, plantuml_jar: Path) -
     (root / "docs" / "logo.png").write_bytes(_sphinx_png())
 
     data = base_config()
+    data["project"]["version"] = "1.2.3"
     # The project page comes first, to check that the configured order is kept.
     data["documents"] = [EXTRA_DOCUMENTS[1], *data["documents"], EXTRA_DOCUMENTS[0], *EXTRA_DOCUMENTS[2:]]
     config_file = write_config(root, data)
@@ -149,7 +150,10 @@ def test_html_site(site: Dict[str, Any]) -> None:
     """
     assert site["exit_code"] == 0
     index = _page(site, "index.html")
-    assert "<h1>example documentation" in index
+    # The project version follows the name in the start page heading and the HTML title.
+    assert "<h1>example 1.2.3 documentation" in index
+    assert "&#8212; example 1.2.3 documentation</title>" in index
+    assert "<span>example 1.2.3 documentation</span>" in index
 
     toc = re.findall(r'<li class="toctree-l1"><a class="reference internal" href="([^"]+)">([^<]+)</a>', index)
     assert [title for _, title in toc] == TITLES
