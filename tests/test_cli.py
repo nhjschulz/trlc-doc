@@ -28,7 +28,7 @@ from typing import List
 import pytest
 from conftest import base_config, make_project, write_config
 
-from trlcdoc import cli
+from trlcdoc import __version__, cli
 from trlcdoc.config import load_config
 from trlcdoc.util import find_tool
 
@@ -82,6 +82,21 @@ def test_cli_help(option: str, capsys: pytest.CaptureFixture) -> None:
         assert step in out
     assert cli.COPYRIGHT in out
     assert cli.REPOSITORY in out
+
+
+
+@pytest.mark.parametrize("option", ["-v", "--version"])
+def test_cli_version(option: str, capsys: pytest.CaptureFixture) -> None:
+    """The version is shown with -v and --version.
+
+    Args:
+        option (str): Version option.
+        capsys (pytest.CaptureFixture): pytest output capture.
+    """
+    with pytest.raises(SystemExit) as exit_info:
+        cli.main([option])
+    assert exit_info.value.code == 0
+    assert capsys.readouterr().out == f"trlcdoc {__version__}\n"
 
 
 def test_steps(project: Path, monkeypatch: pytest.MonkeyPatch) -> None:

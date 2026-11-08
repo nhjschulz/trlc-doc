@@ -113,12 +113,13 @@ section "trlcdoc SW Architecture" {
                         '''
                     verification_criteria =
                         '''
-                        Call `trlcdoc` with different step selections, with `--help` and with an invalid configuration
-                        Check the executed steps, the console output and the exit code.
+                        Call `trlcdoc` with different step selections, with `--help`, with `--version` and with an invalid
+                        configuration. Check the executed steps, the console output and the exit code.
                         '''
                     satisfies = [
                         SwRequirements.sw_req_cli,
                         SwRequirements.sw_req_cli_help,
+                        SwRequirements.sw_req_cli_version,
                         SwRequirements.sw_req_steps,
                         SwRequirements.sw_req_step_order,
                         SwRequirements.sw_req_exit_code,

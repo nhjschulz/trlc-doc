@@ -24,6 +24,7 @@ import argparse
 from pathlib import Path
 from typing import List, Optional
 
+from . import __version__
 from .config import Config, find_config, load_config
 from .convert import convert_documents
 from .html import build_html
@@ -39,6 +40,8 @@ STEPS = ["clean", "check", "plantuml", "tests", "convert", "trace", "html"]
 
 COPYRIGHT = "Copyright (c) 2026 Norbert Schulz"
 REPOSITORY = "https://github.com/nhjschulz/trlc-doc"
+DESCRIPTION = """Build project documentation for TRLC/LOBSTER based projects: requirements, architecture,
+tests, test results, tracing report and HTML site."""
 
 # Classes **********************************************************************
 
@@ -48,6 +51,7 @@ REPOSITORY = "https://github.com/nhjschulz/trlc-doc"
 def _parse_args(argv: Optional[List[str]]) -> argparse.Namespace:
     # lobster-trace: SwRequirements.sw_req_cli
     # lobster-trace: SwRequirements.sw_req_cli_help
+    # lobster-trace: SwRequirements.sw_req_cli_version
     # lobster-trace: SwRequirements.sw_req_steps
     # lobster-trace: SwRequirements.sw_req_config_file
     """Parse the command line arguments.
@@ -60,12 +64,14 @@ def _parse_args(argv: Optional[List[str]]) -> argparse.Namespace:
     """
     parser = argparse.ArgumentParser(
         prog="trlcdoc",
-        description="Build project documentation for TRLC based projects: requirements, architecture,\n"
-                    "tests, test results, tracing report and HTML site.",
-        epilog=f"{COPYRIGHT} - see {REPOSITORY} for further information.",
+        description=DESCRIPTION,
+        epilog=f"Version {__version__} - {COPYRIGHT} - GPL-3.0-or-later - see {REPOSITORY} for further information.",
         formatter_class=argparse.RawDescriptionHelpFormatter)
+
     parser.add_argument("steps", nargs="*", metavar="step",
                         help=f"steps to run: {', '.join(STEPS)} or all (default: all)")
+    parser.add_argument("-v", "--version", action="version", version=f"%(prog)s {__version__}",
+                        help="show the trlcdoc version and exit")
     parser.add_argument("-c", "--config", type=Path,
                         help="project configuration (default: trlcdoc.yaml in the current folder or a parent)")
     parser.add_argument("--online", action="store_true",
