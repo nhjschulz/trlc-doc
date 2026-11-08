@@ -39,6 +39,15 @@ section "SW-Tests" {
             verifies = [SwRequirements.sw_req_cli_help]
         }
 
+        SwTestCase tc_cli_version {
+            description =
+                '''
+                Call trlcdoc with `-v` and with `--version`. Check that the version of the installed package is shown and
+                the exit code is 0 (`tests/test_cli.py`).
+                '''
+            verifies = [SwRequirements.sw_req_cli_version]
+        }
+
         SwTestCase tc_steps {
             description =
                 '''

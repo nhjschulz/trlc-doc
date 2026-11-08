@@ -47,6 +47,19 @@ section "trlcdoc" {
                 valid_status = AbstractRequirements.VALID_STATUS.valid
             }
 
+            SwReq sw_req_cli_version {
+                description =
+                    '''
+                    The software shall show its version and exit successfully when called with the command line
+                    argument `-v` or `--version`.
+                    '''
+                verification_criteria =
+                    '''
+                    Call trlcdoc with `-v` and `--version` and check that the version is shown and the exit code is 0.
+                    '''
+                valid_status = AbstractRequirements.VALID_STATUS.valid
+            }
+
             SwReq sw_req_steps {
                 description =
                     '''
