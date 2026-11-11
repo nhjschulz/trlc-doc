@@ -176,15 +176,17 @@
                 "junit": {"description": "JUnit XML file written by the test command.", "type": "string"},
                 "coverage": {"description": "HTML coverage folder written by the test command.", "type": "string"},
                 "link": {
-                    "description": "How a test result is linked to its TRLC test case.",
+                    "description": "How a test result is linked to its TRLC test case: by a JUnit property, by the test output ('output') or by a name pattern ('from' and 'to'). The result records are written into the package of the linked test cases.",
                     "type": "object",
                     "additionalProperties": false,
-                    "required": ["from", "to"],
+                    "anyOf": [{"required": ["output"]}, {"required": ["from", "to"]}],
+                    "dependentRequired": {"from": ["to"], "to": ["from"]},
                     "properties": {
                         "property": {"description": "JUnit test case property holding the test case id. Used first, if present. A test may record it several times.", "type": "string", "default": "lobster-trace"},
+                        "output": {"description": "Pattern with an {id} placeholder for the qualified test case id (Package.record), searched in the test output (JUnit system-out). Used after the property, before the name pattern. Suite output lines in Unity format '<file>:<line>:<test>:<level>: <message>' belong to the named test.", "type": "string", "pattern": "\\{id\\}"},
                         "array": {"description": "The relates component of the test result records is an array (e.g. 'SwTestCase [1 .. *]'): write the linked test cases as list. Needed for tests linked to several test cases.", "type": "boolean", "default": false},
                         "from": {"description": "Test function name pattern with a {name} placeholder.", "type": "string", "pattern": "\\{name\\}"},
-                        "to": {"description": "Qualified test case id pattern (Package.record) with a {name} placeholder.", "type": "string", "pattern": "^[A-Za-z_][A-Za-z0-9_]*\\..*\\{name\\}"}
+                        "to": {"description": "Qualified test case id pattern (Package.record) with a {name} placeholder. Used if the test has no property and no output link.", "type": "string", "pattern": "^[A-Za-z_][A-Za-z0-9_]*\\..*\\{name\\}"}
                     }
                 }
             },

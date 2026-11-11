@@ -303,19 +303,24 @@ section "trlcdoc" {
                     The software shall convert the test results into TRLC test result records, which reference their
                     TRLC test cases.
 
-                    - A test shall be linked by a property it records or by a configured name mapping.
+                    - A test shall be linked by a property, else by an output pattern, else by a name mapping.
+                    - Unity output lines of a test suite shall be assigned to the test they name.
                     - A test may record several test cases.
                     - A test that cannot be linked shall be reported as error.
+                    - The test result records shall be written into the package of the linked test cases.
+                    - Test cases of several packages or without package shall be reported as error.
                     '''
                 verification_criteria =
                     '''
                     Run the tests step with tests
 
                     - linked by property
+                    - linked by test case output and by Unity suite output
                     - linked to several test cases
                     - linked by name mapping
                     - not linked
 
+                    and with test cases of another package, of several packages and without package.
                     Check the generated records and the errors.
                     '''
                 valid_status = AbstractRequirements.VALID_STATUS.valid

@@ -551,7 +551,8 @@ tests:
 ### 5.3 link: from test results to test cases
 
 Every executed test must be linked to at least one TRLC test case. trlcdoc
-tries two ways for each JUnit test case, in this order:
+tries three ways for each JUnit test case, in this order, and uses the first
+one that finds a test case:
 
 1. **Property:** the JUnit test case has properties named `link.property`
    (default `lobster-trace`). Their values are the qualified test case ids. In
@@ -564,7 +565,66 @@ tries two ways for each JUnit test case, in this order:
        ...
    ```
 
-2. **Name pattern:** if the test has no such property, its name is matched
+2. **Output:** the test writes the test case ids to its output, and
+   `link.output` is the pattern to find them, with an `{id}` placeholder for
+   the qualified test case id. Every matching output line links one test case;
+   an id written several times is linked once. trlcdoc reads the JUnit
+   `<system-out>` of the test case and of its test suite:
+
+   - The `<system-out>` of a **test case** (e.g. pytest) belongs to that test.
+   - The `<system-out>` of a **test suite** (e.g. Ceedling) holds the output of
+     all its tests. Only lines in the Unity format
+     `<file>:<line>:<test>:<level>: <message>` are used, the `<test>` field
+     names the test the line belongs to.
+
+   This is the way for C unit tests with Unity and Ceedling, which have no
+   test properties. A macro writes the test case ids with `TEST_MESSAGE`:
+
+   ```c
+   #define LOBSTER_TRACE(_id)  TEST_MESSAGE("lobster-trace: " _id)
+
+   void test_Greeter_morningGreeting(void)
+   {
+       LOBSTER_TRACE("SwTests.tc_greet_morning_time_greeting");
+       LOBSTER_TRACE("SwTests.tc_greet_user_name");
+       ...
+   }
+   ```
+
+   Ceedling's built-in `junit` report writes these lines into the suite
+   output:
+
+   ```text
+   test/test_Greeter.c:42:test_Greeter_morningGreeting:INFO: lobster-trace: SwTests.tc_greet_user_name
+   ```
+
+   Enable the report in `project.yml` and point `tests.junit` to it:
+
+   ```yaml
+   # project.yml (Ceedling)
+   :plugins:
+     :enabled:
+       - report_tests_log_factory
+   :report_tests_log_factory:
+     :reports:
+       - junit
+   ```
+
+   ```yaml
+   # trlcdoc.yaml
+   tests:
+     runner: command
+     command: [ceedling, test:all]
+     junit: build/artifacts/test/junit_tests_report.xml
+     link:
+       output: "lobster-trace: {id}"
+       array: true
+   ```
+
+   Write the trace messages at the start of the test: a test that aborts
+   before them has no link.
+
+3. **Name pattern:** if the test has neither, its name is matched
    against `link.from`, and the `{name}` part is inserted into `link.to`. With
    `from: "test_{name}"` and `to: "SwTests.tc_{name}"`, the test
    `test_parse_header` is linked to `SwTests.tc_parse_header`. pytest
@@ -574,12 +634,17 @@ tries two ways for each JUnit test case, in this order:
 | Key        | Default         | Meaning and impact |
 |------------|-----------------|--------------------|
 | `property` | `lobster-trace` | Name of the JUnit property holding the test case id. |
+| `output`   |                 | Pattern searched in the test output, must contain `{id}`. `{id}` matches a qualified id `Package.record`. |
 | `from`     |                 | Test function name pattern, must contain `{name}`. `{name}` matches letters, digits and `_`. |
-| `to`       |                 | Qualified test case id pattern `Package.record`, must contain `{name}`. **Its package is also the package of the generated result records.** |
+| `to`       |                 | Qualified test case id pattern `Package.record`, must contain `{name}`. |
 | `array`    | `false`         | Write the linked test cases as a list. Needed as soon as one test records more than one test case. |
 
+`link` needs `output`, or `from` and `to`, or both. The property is always
+tried first.
+
 Tests that cannot be linked are a build error that lists them all. Fix them by
-recording the property or renaming the test. Skipped tests are left out.
+recording the property, writing the test case id to the output or renaming the
+test. Skipped tests are left out.
 
 **`array`:** a test recording several test cases is an error unless `array:
 true` is set. With `array`, every result record gets a list
@@ -614,7 +679,11 @@ section "SW Test Results" {
 }
 ```
 
-Your TRLC model must therefore define, in the package of `link.to`:
+**The records are written into the package of the linked test cases**, here
+`SwTests`. All linked test cases must belong to one package, and every id must
+be qualified with its package; otherwise the `tests` step fails and lists the
+tests. Your TRLC model must therefore define, in the package of the test
+cases:
 
 ```text
 enum SwTestResult {
@@ -976,8 +1045,10 @@ so stale files of a previous run do not remain.
 | `documents[x].pytrlcconverter.converter.rst: file '...' not found.` | Wrong path, or `builtin:` prefix missing for a built-in file. |
 | `documents/0: 'converter' is not one of ['id', 'title', ...]` | A pyTRLCConverter option on document level. Move it into the `pytrlcconverter` block. |
 | `trace.levels[A].requires: level 'B' is not defined.` | The level name must match exactly, including spaces and case. |
-| `Tests not matching tests.link.from ...` | Tests without test case link, see [5.3](#53-link-from-test-results-to-test-cases). |
+| `Tests without test case link (property ..., output ..., name pattern ...)` | Tests without test case link, see [5.3](#53-link-from-test-results-to-test-cases). |
 | `Tests linked to several test cases, which needs tests.link.array` | Set `array: true` and make `relates` an array in the model. |
+| `Tests linked to test cases of several packages` | All test cases of the results must be in one package, see [5.4](#54-the-generated-test-result-records). |
+| `tests/link: {...} is not valid under any of the given schemas` | `link` needs `output`, or both `from` and `to`. |
 | `No test results in ..., run the tests step first.` | Run `trlcdoc tests convert` or `trlcdoc`. |
 | `No converted files in ..., run the convert step first.` | Run `convert` before `html`. |
 | `pyTRLCConverter` reports an unresolved reference | The referenced records' document is missing in `include`. |

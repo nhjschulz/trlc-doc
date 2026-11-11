@@ -126,6 +126,19 @@ def test_config_validation(project: Path, capsys: pytest.CaptureFixture) -> None
     assert "has invalid settings" in capsys.readouterr().out
     assert not (root / "build").exists()
 
+    # tests.link needs the output pattern, or the name pattern with 'from' and 'to'.
+    data = base_config()
+    for link, valid in (({"output": "lobster-trace: {id}"}, True),
+                        ({"output": "lobster-trace: {id}", "from": "test_{name}", "to": "SwTests.tc_{name}"}, True),
+                        ({"from": "test_{name}", "to": "SwTests.tc_{name}"}, True),
+                        ({"output": "lobster-trace"}, False),
+                        ({"output": "lobster-trace: {id}", "from": "test_{name}"}, False),
+                        ({"to": "SwTests.tc_{name}"}, False),
+                        ({"property": "lobster-trace"}, False)):
+        data["tests"]["link"] = link
+        assert (_config_errors(root, data) == "") is valid, link
+    assert "tests/link" in _config_errors(root, data)
+
 
 def test_project_settings(project: Path) -> None:
     """The project metadata of the configuration is passed to the HTML site.
