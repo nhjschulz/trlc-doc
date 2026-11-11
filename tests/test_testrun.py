@@ -57,6 +57,46 @@ JUNIT_XML = """<?xml version="1.0" encoding="utf-8"?>
 </testsuite></testsuites>
 """
 
+# Ceedling JUnit report: the Unity messages of all tests are in the suite output.
+CEEDLING_XML = """<?xml version="1.0" encoding="utf-8" ?>
+<testsuites tests="4" failures="1" time="0.010">
+  <testsuite name="test/test_Greeter" tests="3" failures="1" skipped="1" errors="0" time="0.004">
+    <testcase name="test_Greeter_morning" time="0.000"/>
+    <testcase name="test_Greeter_night" time="0.000">
+      <failure message="Expected 1 Was 0" />
+    </testcase>
+    <testcase name="test_Greeter_ignored" time="0.000"><skipped /></testcase>
+    <system-out>
+test/test_Greeter.c:10:test_Greeter_morning:INFO: lobster-trace: SwTests.tc_passing
+test/test_Greeter.c:11:test_Greeter_morning:INFO: lobster-trace: SwTests.tc_other
+test/test_Greeter.c:12:test_Greeter_morning:INFO: lobster-trace: SwTests.tc_passing
+test/test_Greeter.c:20:test_Greeter_night:INFO: lobster-trace: SwTests.tc_failing
+test/test_Greeter.c:21:test_Greeter_night:INFO: unrelated message
+lobster-trace: SwTests.tc_error
+    </system-out>
+  </testsuite>
+  <testsuite name="test/test_App" tests="1" failures="0" skipped="0" errors="0" time="0.001">
+    <testcase name="test_App_run" time="0.000"/>
+    <system-out>
+test/test_App.c:5:test_App_run:INFO: lobster-trace: SwTests.tc_error
+    </system-out>
+  </testsuite>
+</testsuites>
+"""
+
+# pytest tests with their own output: linked by output, the property takes precedence.
+OUTPUT_CASES = """<testcase classname="tests.test_a" name="check_output">
+    <system-out>some log line
+lobster-trace: SwTests.tc_param
+</system-out>
+  </testcase>
+  <testcase classname="tests.test_a" name="check_property_and_output">
+    <properties><property name="lobster-trace" value="SwTests.tc_other"/></properties>
+    <system-out>lobster-trace: SwTests.tc_error</system-out>
+  </testcase>"""
+
+OUTPUT_LINK = {"output": "lobster-trace: {id}"}
+
 # Classes **********************************************************************
 
 # Functions ********************************************************************
@@ -132,6 +172,73 @@ def test_test_results(tmp_path: Path) -> None:
                      encoding="utf-8")
     with pytest.raises(TrlcdocError, match="check_unlinked"):
         read_junit(junit, LINK)
+
+
+def test_test_results_output(tmp_path: Path) -> None:
+    """Test results are linked to their test cases by the test output.
+
+    Args:
+        tmp_path (Path): pytest temporary folder.
+    """
+    # Ceedling/Unity: the suite output names the test of each line, duplicates are removed.
+    junit = tmp_path / "ceedling.xml"
+    junit.write_text(CEEDLING_XML, encoding="utf-8")
+    with pytest.raises(TrlcdocError, match="needs tests.link.array: test_Greeter_morning$"):
+        read_junit(junit, OUTPUT_LINK)
+    array_link = {**OUTPUT_LINK, "array": True}
+    results = read_junit(junit, array_link)
+    assert results == [
+        ("test_Greeter_morning", True, ["SwTests.tc_passing", "SwTests.tc_other"]),
+        ("test_Greeter_night", False, ["SwTests.tc_failing"]),
+        ("test_App_run", True, ["SwTests.tc_error"]),
+    ]
+    content = _write_valid_results(tmp_path / "ceedling", results, array_link, "relates SwTestCase [1 .. *]")
+    assert content.startswith("package SwTests")
+    assert "SwTestCaseResult test_Greeter_night_result {" in content
+    assert "relates = [SwTests.tc_passing, SwTests.tc_other]" in content
+
+    # pytest: the test case output, after the property and before the name pattern.
+    junit = tmp_path / "pytest.xml"
+    junit.write_text(JUNIT_XML.format(extra=OUTPUT_CASES), encoding="utf-8")
+    results = read_junit(junit, {**LINK, **OUTPUT_LINK})
+    assert results[-3:] == [
+        ("check_with_property", True, ["SwTests.tc_other"]),
+        ("check_output", True, ["SwTests.tc_param"]),
+        ("check_property_and_output", True, ["SwTests.tc_other"]),
+    ]
+    assert ("test_passing", True, ["SwTests.tc_passing"]) in results
+
+    # Without name pattern, tests without output link are not linked.
+    with pytest.raises(TrlcdocError) as error:
+        read_junit(junit, OUTPUT_LINK)
+    message = str(error.value)
+    assert "property 'lobster-trace', output 'lobster-trace: {id}'" in message
+    assert "name pattern" not in message
+    assert "test_passing" in message
+    assert "check_output" not in message
+
+
+def test_test_results_package(tmp_path: Path) -> None:
+    """The test result records are written into the package of the linked test cases.
+
+    Args:
+        tmp_path (Path): pytest temporary folder.
+    """
+    trlc_file = tmp_path / RESULTS_FILE
+
+    # A property may link to another package than the name pattern.
+    content = write_results([("check_a", True, ["Other.tc_a"])], trlc_file, LINK).read_text(encoding="utf-8")
+    assert content.startswith("package Other\n")
+    assert "relates = Other.tc_a" in content
+
+    for results, message in (
+            ([("check_a", True, ["SwTests.tc_a"]), ("check_b", True, ["Other.tc_b"]),
+              ("check_c", True, ["Other.tc_c"])],
+             "several packages: SwTests: check_a; Other: check_b, check_c"),
+            ([("check_a", True, ["tc_a"])], r"without package: check_a \(tc_a\)"),
+            ([], "No test linked")):
+        with pytest.raises(TrlcdocError, match=message):
+            write_results(results, trlc_file, LINK)
 
 
 def _write_valid_results(folder: Path, results: List[Tuple[str, bool, List[str]]], link: Dict[str, Any],

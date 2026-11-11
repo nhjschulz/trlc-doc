@@ -122,6 +122,9 @@ section "SW-Tests" {
                 - an undefined trace level
 
                 Check that every error is reported with its location, and that no step runs.
+
+                Load test link configurations with output pattern, name pattern, both, an output pattern without
+                `{id}`, `from` without `to`, `to` alone and property alone. Check that only the first three are valid.
                 '''
             verifies = [SwRequirements.sw_req_config_validation]
         }
@@ -282,6 +285,44 @@ section "SW-Tests" {
                 - the linked test cases
                 - the errors for the unlinked test and for two test cases without relates array
                 - that the written test result records with single and array relates are valid TRLC
+                '''
+            verifies = [SwRequirements.sw_req_test_results]
+        }
+
+        SwTestCase tc_test_results_output {
+            description =
+                '''
+                **Test results linked by output** (`tests/test_testrun.py`)
+
+                Read a Ceedling JUnit XML file with Unity suite output: a test tracing a test case twice and to a second
+                test case, a failed test, a skipped test, a second suite, an unrelated message and a trace line without
+                Unity prefix. Read a pytest JUnit XML file with test case output, with a test having a property and
+                output, and with tests without output.
+
+                Check
+
+                - the linked test cases per test, without duplicates and without the line lacking the Unity prefix
+                - the error for several test cases without relates array
+                - that the property is used before the output, and the output before the name pattern
+                - the error naming the link methods for tests without output and without name pattern
+                - that the written test result records are valid TRLC
+                '''
+            verifies = [SwRequirements.sw_req_test_results]
+        }
+
+        SwTestCase tc_test_results_package {
+            description =
+                '''
+                **Package of the test result records** (`tests/test_testrun.py`)
+
+                Write test result records linked to test cases
+
+                - of another package than the name pattern
+                - of several packages
+                - without package
+                - and without any linked test
+
+                Check the package of the written records and the errors.
                 '''
             verifies = [SwRequirements.sw_req_test_results]
         }
