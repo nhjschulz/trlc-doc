@@ -3,7 +3,7 @@
 # trlcdoc configuration of trlcdoc itself: builds requirements, architecture,
 # tests, test results, tracing report and the HTML site.
 #
-#   pip install -e .[test]
+#   pip install -e .[test,doc]
 #   trlcdoc            # all steps, HTML site in build/trlcdoc/html
 
 project:
@@ -138,4 +138,7 @@ plantuml:
   version: 1.2024.8
 
 html:
-  theme: haiku
+  extensions:
+    - sphinx_rtd_theme
+  theme: sphinx_rtd_theme
+  conf: doc/sphinx/sphinx_conf.py

@@ -3,6 +3,7 @@
 [![License: GPL-3.0-or-later](https://img.shields.io/badge/license-GPL--3.0--or--later-blue)](https://github.com/nhjschulz/trlc-doc/blob/main/LICENSE)
 [![PyPI](https://img.shields.io/pypi/v/trlcdoc)](https://pypi.org/project/trlcdoc/)
 [![Tests](https://github.com/nhjschulz/trlc-doc/actions/workflows/test.yml/badge.svg)](https://github.com/nhjschulz/trlc-doc/actions/workflows/test.yml)
+[![Docs](https://github.com/nhjschulz/trlc-doc/actions/workflows/pages.yaml/badge.svg?branch=main)](https://nhjschulz.github.io/trlc-doc/)
 [![Project Status: WIP](https://www.repostatus.org/badges/latest/wip.svg)](https://www.repostatus.org/#wip)
 
 Configurable documentation tooling for TRLC based projects.
@@ -185,7 +186,7 @@ Run the following commands to build it locally:
 
 python3 -m venv .venv
 . .venv/bin/activate
-pip install -e ".[test]"
+pip install -e ".[test,doc]"
 
 # generate documentation
 trlcdoc -c trlcdoc.yaml

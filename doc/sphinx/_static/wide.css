@@ -1,0 +1,15 @@
+/* Use the full window width (sphinx_rtd_theme default max-width is 800px). */
+.wy-nav-content {
+    max-width: none;
+}
+
+/* Let tables span the content width instead of shrinking to their content. */
+.rst-content table.docutils {
+    width: 100%;
+}
+
+/* sphinx_rtd_theme sets nowrap on table cells; allow long text to wrap. */
+.wy-table-responsive table td,
+.wy-table-responsive table th {
+    white-space: normal;
+}
