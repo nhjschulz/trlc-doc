@@ -1,5 +1,11 @@
 # trlcdoc
 
+[![License: GPL-3.0-or-later](https://img.shields.io/badge/license-GPL--3.0--or--later-blue)](https://github.com/nhjschulz/trlc-doc/blob/main/LICENSE)
+[![PyPI](https://img.shields.io/pypi/v/trlcdoc)](https://pypi.org/project/trlcdoc/)
+[![Tests](https://github.com/nhjschulz/trlc-doc/actions/workflows/test.yml/badge.svg)](https://github.com/nhjschulz/trlc-doc/actions/workflows/test.yml)
+[![Docs](https://github.com/nhjschulz/trlc-doc/actions/workflows/pages.yaml/badge.svg?branch=main)](https://nhjschulz.github.io/trlc-doc/)
+[![Project Status: WIP](https://www.repostatus.org/badges/latest/wip.svg)](https://www.repostatus.org/#wip)
+
 Configurable documentation tooling for TRLC based projects.
 
 The trlcdoc tool is a tailored utility for converting TRLC files,
@@ -147,9 +153,11 @@ Key concepts:
 - **trace.levels** are the LOBSTER levels. Each TRLC level names its `document`;
   the lobster-trlc inputs are derived from it and its includes.
 - **tests.link** maps test results to TRLC test cases: the JUnit `property`
-  if the test records one, otherwise the `from` -> `to` name pattern. A test
-  recording several test cases needs `array: true` and a model with
-  `relates SwTestCase [1 .. *]`.
+  if the test records one, otherwise the `output` pattern in the test output
+  (e.g. Unity `TEST_MESSAGE` lines of Ceedling tests), otherwise the
+  `from` -> `to` name pattern. A test recording several test cases needs
+  `array: true` and a model with `relates SwTestCase [1 .. *]`. The result
+  records are written into the package of the linked test cases.
 - **html** customizes the site: `theme`, `extensions`, `extra_conf`, a project
   start page `index` (it owns the toctree; TRLC documents are named
   `<id>/index`), a `page_header` for every generated page, and a project Sphinx
@@ -178,7 +186,7 @@ Run the following commands to build it locally:
 
 python3 -m venv .venv
 . .venv/bin/activate
-pip install -e ".[test]"
+pip install -e ".[test,doc]"
 
 # generate documentation
 trlcdoc -c trlcdoc.yaml
