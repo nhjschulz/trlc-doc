@@ -63,10 +63,10 @@ documents:
 
 Editors with YAML language support validate the configuration against the
 published JSON schema. Use the copy matching your trlcdoc release, here for
-version 0.3.0:
+version 0.4.0:
 
 ```yaml
-# yaml-language-server: $schema=https://nhjschulz.github.io/trlc-doc/schema/V0.3.0/trlcdoc.schema.json
+# yaml-language-server: $schema=https://nhjschulz.github.io/trlc-doc/schema/V0.4.0/trlcdoc.schema.json
 ```
 
 The [configuration reference](https://nhjschulz.github.io/trlc-doc/configuration.html)
