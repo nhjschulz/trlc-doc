@@ -83,6 +83,10 @@ documents:
     type: html
     source: tests:coverage
 
+  - id: implementation_details
+    type: rst
+    source: doc/sphinx/api.rst
+
   - id: license
     title: License information
     type: text
@@ -140,5 +144,11 @@ plantuml:
 html:
   extensions:
     - sphinx_rtd_theme
+    - autoapi.extension
+    - sphinx.ext.napoleon
+    - sphinx.ext.linkcode
+    - sphinx.ext.inheritance_diagram
+    - sphinx.ext.autodoc
+    - sphinx.ext.autosummary
   theme: sphinx_rtd_theme
   conf: doc/sphinx/sphinx_conf.py
