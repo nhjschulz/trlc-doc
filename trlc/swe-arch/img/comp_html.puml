@@ -3,6 +3,7 @@
 package "HTML Builder" {
     class "html" as html <<module>> {
         + build_html(cfg): Path
+        + show_html(cfg): Path
         - _write_page(cfg, doc, src_dir, copy_dirs): str
         - _write_converted_page(cfg, doc, src_dir): str
         - _write_index(cfg, src_dir, pages): Path
@@ -28,6 +29,7 @@ class "util" as util <<module>>
 
 class "trlcdoc_settings.json" as settings <<file>>
 class "html" as site <<folder>>
+class "webbrowser" as browser
 
 html ..> cfg : documents,\nproject,\nhtml settings
 html ..> util : run(),\nclean_dir()
@@ -37,4 +39,5 @@ build ..> conf : loads
 conf ..> settings : reads
 conf ..> spuml : <<use>>
 build --> site
+html ..> browser : open(index.html)
 @enduml

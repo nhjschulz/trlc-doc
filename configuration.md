@@ -108,10 +108,16 @@ you name them on the command line:
 | `convert`  | `documents` of type `trlc`/`test_results`, `paths.trlc_model` | Converted reStructuredText (or Markdown) |
 | `trace`    | `trace`, `documents`, `project.repository` | LOBSTER files and the HTML tracing report |
 | `html`     | `documents`, `project`, `html`          | The HTML site                               |
+| `show`     | `paths.output`                          | Nothing, opens `html/index.html` in the web browser |
 
-`trlcdoc` without arguments runs `all`: every step except `clean`. It leaves
+`trlcdoc` without arguments runs `all`: every step except `clean` and `show`. It leaves
 out `tests` if there is no `tests` section and `trace` if there is no `trace`
 section. `convert` and `html` always run `plantuml` first.
+
+`show` opens the start page of the built site. Under WSL it uses the Windows
+default browser (`wslview` or `explorer.exe`), otherwise Python's `webbrowser`
+module, which the `BROWSER` environment variable can override. Without a built
+site or without a web browser it stops with exit code `2`.
 
 Exit codes: `0` success, `1` content findings (failed tests, missing trace
 links), `2` build or configuration error.
@@ -891,7 +897,7 @@ html:
 |--------------|---------|--------------------|
 | `theme`      | `haiku` | Sphinx `html_theme`. trlcdoc's `custom.css` is only applied to `haiku`. Other themes must be installed in the environment, and usually also listed in `extensions` (e.g. `sphinx_rtd_theme`). |
 | `extensions` | `[]`    | Sphinx extensions added to the ones trlcdoc always loads (`myst_parser` for Markdown, `sphinxcontrib.plantuml` for diagrams). They must be installed in the environment. |
-| `extra_conf` | `{}`    | Sphinx configuration values, set as variables in the generated `conf.py`. Any value that YAML can express: strings, numbers, lists, dicts. |
+| `extra_conf` | `{}`    | Sphinx configuration values, set as variables in trlcdoc's `conf.py` (see [8.2](#82-conf-project-sphinx-configuration)). Any value that YAML can express: strings, numbers, lists, dicts. |
 
 `extra_conf` is the simplest way to set Sphinx options:
 
@@ -909,9 +915,32 @@ Use `conf` instead when a value needs Python, e.g. a computed path or a
 
 ### 8.2 conf: project Sphinx configuration
 
-A Python file executed at the end of the generated `conf.py`, in its
-namespace. It runs after `extra_conf`, so it can read and change every value
-trlcdoc sets (`extensions`, `html_static_path`, `html_theme`, ...).
+
+The `html` step copies
+[trlcdoc/sphinx/conf.py](trlcdoc/sphinx/conf.py) unchanged from the trlcdoc
+package into `<output>/sphinx/`, next to a `trlcdoc_settings.json` with the
+project values from `trlcdoc.yaml`. The `conf.py` reads this JSON file, sets
+the Sphinx configuration and, at its very end, executes the `conf` file in its
+own namespace with `exec()`. Read that `conf.py` to see what your file can
+use.
+
+The `conf` file runs after `extra_conf`, so it can read and change every value
+trlcdoc sets. Everything defined in `conf.py` before it is available without
+an import:
+
+| Name                                                  | Content |
+|-------------------------------------------------------|---------|
+| `PROJECT_ROOT`                                        | `pathlib.Path` of the project root. |
+| `trlcdoc_links`                                       | Dict with `repository` (HTTPS URL, `None` without git or origin remote), `commit` (`HEAD`, `None` outside git), `root` and the page mappings of the Markdown link resolution. |
+| `project`, `author`, `copyright`, `version`, `release` | From the `project` section. |
+| `extensions`                                          | trlcdoc's extensions plus `html: extensions`. |
+| `html_theme`, `html_static_path`, `html_logo`, `html_favicon`, `html_last_updated_fmt` | Site settings. |
+| `rst_prolog`, `source_suffix`, `myst_heading_anchors`, `plantuml` | Source and diagram settings. |
+| `Path`, `os`, `json`, `subprocess`, `shutil`, `urlparse`, `Any` | Modules and names imported by `conf.py`. |
+
+Names starting with `_` (e.g. `_SETTINGS`) are internal and may change.
+Code checkers do not know about this namespace and report these names as
+undefined; `# pylint: skip-file` silences pylint.
 
 ```python
 # doc/sphinx/sphinx_conf.py
@@ -926,9 +955,12 @@ def setup(app):
     app.connect('builder-inited', lambda app: print("project hook"))
 ```
 
-- `PROJECT_ROOT` is a `pathlib.Path` of the project root. The file runs in the
-  generated Sphinx folder, so **build paths from `PROJECT_ROOT`**, not
-  relative to the file.
+- The file runs in the Sphinx folder `<output>/sphinx/`, so **build paths
+  from `PROJECT_ROOT`**, not relative to the file.
+- Functions defined in the file become Sphinx configuration values too, e.g.
+  `linkcode_resolve()` for `sphinx.ext.linkcode`. They can use the names
+  above, e.g. `trlcdoc_links["repository"]` and `trlcdoc_links["commit"]` to
+  link the API sources to the repository.
 - A `setup(app)` function is called after trlcdoc's own setup.
 - Do not reassign `html_static_path`, append to it: trlcdoc's `_static`
   folder holds the stylesheet and the `s5defs.txt` roles included in every
@@ -1026,7 +1058,7 @@ build/trlcdoc/
 │   ├── lobster-report.conf             generated policy
 │   ├── report.lobster
 │   └── tracing_report.html
-├── sphinx/                             generated Sphinx sources and conf.py
+├── sphinx/                             generated Sphinx sources, conf.py (copy) and trlcdoc_settings.json
 ├── doctrees/                           Sphinx cache
 └── html/                               the site, open html/index.html
 ```
