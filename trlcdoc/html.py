@@ -22,9 +22,12 @@
 
 import json
 import os
+import platform
 import shutil
+import subprocess
+import webbrowser
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 from sphinx.cmd.build import build_main
 
@@ -83,6 +86,97 @@ def build_html(cfg: Config) -> Path:
     if build_main(["-b", "html", "-q", "-d", str(doctrees_dir), str(src_dir), str(out_dir)]) != 0:
         raise TrlcdocError("Sphinx HTML build failed.")
     return out_dir
+
+
+def show_html(cfg: Config) -> Path:
+    # lobster-trace: SwRequirements.sw_req_show
+    """Open the start page of the built HTML site in the web browser.
+
+    Under WSL, the site opens in the Windows default browser (wslview or explorer.exe).
+    Without Windows interop, and on all other systems, the Python webbrowser module
+    selects the browser, which the BROWSER environment variable can override.
+
+    Args:
+        cfg (Config): Project configuration.
+
+    Returns:
+        Path: The opened start page.
+
+    Raises:
+        TrlcdocError: If the site is not built or no web browser is available.
+    """
+    index = cfg.html_dir / "index.html"
+    if not index.is_file():
+        raise TrlcdocError(f"No HTML site found at {index}, run the html step first.")
+
+    print(f"Opening {index}")
+    if not (_is_wsl() and _open_in_windows(index)):
+        try:
+            opened = webbrowser.get().open(index.as_uri())
+        except webbrowser.Error:
+            opened = False
+        if not opened:
+            raise TrlcdocError(f"No web browser found to open {index}. Set the BROWSER environment variable "
+                               "to the command of a web browser, or open the file manually.")
+    return index
+
+
+def _is_wsl() -> bool:
+    # lobster-trace: SwRequirements.sw_req_show
+    """Check whether trlcdoc runs in the Windows Subsystem for Linux.
+
+    Returns:
+        bool: True under WSL.
+    """
+    return "WSL_DISTRO_NAME" in os.environ or "microsoft" in platform.uname().release.lower()
+
+
+def _open_in_windows(index: Path) -> bool:
+    # lobster-trace: SwRequirements.sw_req_show
+    """Open a file of the WSL file system in the Windows default browser.
+
+    Args:
+        index (Path): The page to open.
+
+    Returns:
+        bool: True if the page was handed to Windows, False without Windows interop.
+    """
+    cmd: Optional[List[str]] = None
+    wslview = shutil.which("wslview")
+    explorer = shutil.which("explorer.exe")
+    if wslview is not None:
+        cmd = [wslview, str(index)]
+    elif explorer is not None:
+        windows_path = _windows_path(index)
+        if windows_path is not None:
+            cmd = [explorer, windows_path]
+
+    if cmd is not None:
+        # explorer.exe returns 1 also on success, so the exit code is not checked.
+        subprocess.run(cmd, check=False)
+
+    return cmd is not None
+
+
+def _windows_path(path: Path) -> Optional[str]:
+    # lobster-trace: SwRequirements.sw_req_show
+    """Convert a WSL path into a Windows path with wslpath.
+
+    Args:
+        path (Path): Path in the WSL file system.
+
+    Returns:
+        Optional[str]: The Windows path, or None if wslpath failed.
+    """
+    result = None
+    try:
+        proc = subprocess.run(["wslpath", "-w", str(path)], capture_output=True, text=True, check=False)
+        if proc.returncode == 0 and proc.stdout.strip():
+            result = proc.stdout.strip()
+    except OSError:
+        result = None
+
+    return result
 
 
 def _heading(title: str, char: str = PAGE_TITLE_CHAR) -> str:

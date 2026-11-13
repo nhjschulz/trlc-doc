@@ -103,7 +103,7 @@ section "trlcdoc SW Architecture" {
                         - runs them
 
                         The clean step removes the output folder, the check step reports the valid configuration, all
-                        other steps are delegated to their components.
+                        other steps are delegated to their components. The steps clean and show only run on request.
 
                         It maps the step results to the exit codes:
 
@@ -123,7 +123,8 @@ section "trlcdoc SW Architecture" {
                         SwRequirements.sw_req_steps,
                         SwRequirements.sw_req_step_order,
                         SwRequirements.sw_req_exit_code,
-                        SwRequirements.sw_req_clean
+                        SwRequirements.sw_req_clean,
+                        SwRequirements.sw_req_show
                     ]
                 }
 
@@ -364,6 +365,9 @@ section "trlcdoc SW Architecture" {
                         It builds the site with Sphinx. It adds the project page header to the generated pages and
                         replaces the project root placeholder in project pages.
 
+                        It also realizes the show step, which opens the start page of the built site in the web browser:
+                        under WSL in the Windows default browser, otherwise with the Python `webbrowser` module.
+
                         The generic Sphinx configuration `conf.py`
 
                         - reads the project settings
@@ -391,7 +395,8 @@ section "trlcdoc SW Architecture" {
                         SwRequirements.sw_req_html_site,
                         SwRequirements.sw_req_html_version_info,
                         SwRequirements.sw_req_html_customization,
-                        SwRequirements.sw_req_markdown_links
+                        SwRequirements.sw_req_markdown_links,
+                        SwRequirements.sw_req_show
                     ]
                 }
 

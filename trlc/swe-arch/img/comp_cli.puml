@@ -30,11 +30,12 @@ cli ...> plantuml : provide_plantuml()
 cli ...> testrun : run_tests()
 cli ...> convert : convert_documents()
 cli ...> trace : build_trace_report()
-cli ...> html : build_html()
+cli ...> html : build_html()\nshow_html()
 
 note right of cli
   Steps: clean, check, plantuml,
-  tests, convert, trace, html
+  tests, convert, trace, html,
+  show
   Exit codes: 0 ok, 1 findings,
   2 build error
 end note

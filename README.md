@@ -55,7 +55,7 @@ The trlcdoc tool aims for the following goals:
 trlcdoc provides a fixed set of steps to generate the documentation. All
 steps are configured by sections in a YAML configuration file. The steps to
 execute are given to trlcdoc as arguments. Without arguments, or with `all`,
-trlcdoc executes all steps except `clean`.
+trlcdoc executes all steps except `clean` and `show`.
 
 The table below shows the supported steps. Steps always execute in this order:
 
@@ -68,6 +68,7 @@ The table below shows the supported steps. Steps always execute in this order:
 | `convert` | Converts each TRLC document with its pyTRLCConverter converter. |
 | `trace` | Generates the lobster-trlc configs and the LOBSTER policy from `trace.levels`, creates the HTML tracing report. |
 | `html` | Generates the Sphinx sources from `documents` and builds the site. |
+| `show` | Opens the start page of the built site in the web browser. Not part of `all`. |
 
 Exit codes: `0` success, `1` content findings (failed tests, missing trace
 links), `2` build error. All generated files go to `paths.output`
@@ -108,6 +109,7 @@ trlcdoc                             # all steps, uses ./trlcdoc.yaml (or a paren
 trlcdoc tests trace                 # selected steps only
 trlcdoc clean                       # remove all build artifacts
 trlcdoc clean all                   # fresh full build
+trlcdoc all show                    # full build, then open the site in the browser
 trlcdoc convert --format markdown   # Markdown export of the TRLC documents
 trlcdoc trace --online              # tracing report linked to the repository
 trlcdoc -c other.yaml check         # validate a configuration
