@@ -131,7 +131,7 @@ Without the submodule, use the published schema of your trlcdoc release
 (one copy per tag `Vx.y.z`):
 
 ```yaml
-# yaml-language-server: $schema=https://nhjschulz.github.io/trlc-doc/schema/V0.3.0/trlcdoc.schema.json
+# yaml-language-server: $schema=https://nhjschulz.github.io/trlc-doc/schema/V0.4.0/trlcdoc.schema.json
 ```
 
 Users of Visual Studio Code can use the
