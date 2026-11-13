@@ -74,9 +74,10 @@ section "trlcdoc" {
                     - convert
                     - trace
                     - html
+                    - show
 
                     The user shall be able to select the steps to execute. Without a selection, all steps except clean
-                    shall be executed. Steps without the needed configuration sections shall be skipped..
+                    and show shall be executed. Steps without the needed configuration sections shall be skipped..
                     '''
                 verification_criteria =
                     '''
@@ -484,6 +485,21 @@ section "trlcdoc" {
                 verification_criteria =
                     '''
                     Run the clean step after a build and check that the output folder is removed.
+                    '''
+                valid_status = AbstractRequirements.VALID_STATUS.valid
+            }
+
+            SwReq sw_req_show {
+                description =
+                    '''
+                    The software shall open the start page of the built HTML site in the web browser with the show
+                    step, under Linux, Windows and the Windows Subsystem for Linux. If the site is not built or no web
+                    browser is available, the software shall report the problem as build error.
+                    '''
+                verification_criteria =
+                    '''
+                    Run the show step with a built site, without a site and without web browser. Check the opened page,
+                    the error messages and the exit code.
                     '''
                 valid_status = AbstractRequirements.VALID_STATUS.valid
             }

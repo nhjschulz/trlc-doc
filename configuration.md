@@ -108,10 +108,16 @@ you name them on the command line:
 | `convert`  | `documents` of type `trlc`/`test_results`, `paths.trlc_model` | Converted reStructuredText (or Markdown) |
 | `trace`    | `trace`, `documents`, `project.repository` | LOBSTER files and the HTML tracing report |
 | `html`     | `documents`, `project`, `html`          | The HTML site                               |
+| `show`     | `paths.output`                          | Nothing, opens `html/index.html` in the web browser |
 
-`trlcdoc` without arguments runs `all`: every step except `clean`. It leaves
+`trlcdoc` without arguments runs `all`: every step except `clean` and `show`. It leaves
 out `tests` if there is no `tests` section and `trace` if there is no `trace`
 section. `convert` and `html` always run `plantuml` first.
+
+`show` opens the start page of the built site. Under WSL it uses the Windows
+default browser (`wslview` or `explorer.exe`), otherwise Python's `webbrowser`
+module, which the `BROWSER` environment variable can override. Without a built
+site or without a web browser it stops with exit code `2`.
 
 Exit codes: `0` success, `1` content findings (failed tests, missing trace
 links), `2` build or configuration error.

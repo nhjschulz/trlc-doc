@@ -27,7 +27,7 @@ from typing import List, Optional
 from . import __version__
 from .config import Config, find_config, load_config
 from .convert import convert_documents
-from .html import build_html
+from .html import build_html, show_html
 from .plantuml import provide_plantuml
 from .testrun import run_tests
 from .trace import build_trace_report
@@ -35,8 +35,8 @@ from .util import TrlcdocError, remove_output
 
 # Variables ********************************************************************
 
-# Steps in execution order. 'all' runs every step the configuration needs, except clean.
-STEPS = ["clean", "check", "plantuml", "tests", "convert", "trace", "html"]
+# Steps in execution order. 'all' runs every step the configuration needs, except clean and show.
+STEPS = ["clean", "check", "plantuml", "tests", "convert", "trace", "html", "show"]
 
 COPYRIGHT = "Copyright (c) 2026 Norbert Schulz"
 REPOSITORY = "https://github.com/nhjschulz/trlc-doc"
@@ -102,7 +102,7 @@ def _selected_steps(cfg: Config, requested: List[str]) -> List[str]:
     selected = {step for step in STEPS if step in requested}
     if "all" in requested:
         selected.update(step for step in STEPS
-                        if step != "clean"
+                        if step not in ("clean", "show")
                         and not (step == "tests" and cfg.tests is None)
                         and not (step == "trace" and cfg.trace is None))
     # Converting and rendering need the PlantUML jar.
@@ -114,6 +114,7 @@ def _selected_steps(cfg: Config, requested: List[str]) -> List[str]:
 def _run_step(step: str, cfg: Config, args: argparse.Namespace) -> bool:
     # lobster-trace: SwRequirements.sw_req_steps
     # lobster-trace: SwRequirements.sw_req_clean
+    # lobster-trace: SwRequirements.sw_req_show
     # lobster-trace: SwRequirements.sw_req_exit_code
     """Run one step.
 
@@ -147,8 +148,11 @@ def _run_step(step: str, cfg: Config, args: argparse.Namespace) -> bool:
         if cfg.trace is None:
             raise TrlcdocError("The configuration has no 'trace' section.")
         ok = build_trace_report(cfg, args.online) == 0
-    else:
+    elif step == "html":
         build_html(cfg)
+    else:
+        show_html(cfg)
+
     return ok
 
 

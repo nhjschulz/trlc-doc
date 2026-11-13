@@ -451,6 +451,23 @@ section "SW-Tests" {
             verifies = [SwRequirements.sw_req_html_version_info]
         }
 
+        SwTestCase tc_show {
+            description =
+                '''
+                **Show step** (`tests/test_html.py`)
+
+                Run the show step
+
+                - with a built site, under Linux/Windows and under WSL
+                - without a built site
+                - without an available web browser
+
+                Check the opened page, that `all` does not include the show step, the error messages and the exit
+                code 2 on errors.
+                '''
+            verifies = [SwRequirements.sw_req_show, SwRequirements.sw_req_steps]
+        }
+
         SwTestCase tc_markdown_links {
             description =
                 '''

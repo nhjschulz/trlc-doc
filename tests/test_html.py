@@ -22,6 +22,7 @@
 
 import re
 import sys
+import webbrowser
 from pathlib import Path
 from typing import Any, Dict, List
 
@@ -29,7 +30,9 @@ import pytest
 import sphinx
 from conftest import base_config, git_init, make_project, write_config
 
-from trlcdoc import cli
+from trlcdoc import cli, html
+from trlcdoc.config import load_config
+from trlcdoc.util import clean_dir
 
 # Variables ********************************************************************
 
@@ -310,5 +313,89 @@ def test_markdown_links_as_text(tmp_path: Path, plantuml_jar: Path, monkeypatch:
     assert "<p>See <span>the module</span>.</p>" in readme
     assert "hello.py" not in readme
     assert "Link to project file 'hello.py' shown as text" in capfd.readouterr().err
+
+
+class _Browser:  # pylint: disable=too-few-public-methods
+    """Web browser stub, which records the opened URLs."""
+
+    def __init__(self) -> None:
+        self.urls: List[str] = []
+
+    def open(self, url: str) -> bool:
+        """Record the URL.
+
+        Args:
+            url (str): The opened URL.
+
+        Returns:
+            bool: Always True, the page was opened.
+        """
+        self.urls.append(url)
+        return True
+
+
+def test_show(project: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]) -> None:
+    """The show step opens the start page of the site, in the Windows browser under WSL.
+
+    Args:
+        project (Path): Configuration file of the example project.
+        monkeypatch (pytest.MonkeyPatch): pytest monkeypatch.
+        capsys (pytest.CaptureFixture[str]): pytest output capture.
+    """
+    # pylint: disable=protected-access
+    assert "show" not in cli._selected_steps(load_config(project), ["all"])
+    # pylint: enable=protected-access
+
+    browser = _Browser()
+    monkeypatch.setattr(webbrowser, "get", lambda: browser)
+    monkeypatch.setattr(html, "_is_wsl", lambda: False)
+
+    # Without site.
+    assert cli.main(["-c", str(project), "show"]) == 2
+    assert "run the html step first" in capsys.readouterr().out
+    assert not browser.urls
+
+    output = project.parent / "build" / "trlcdoc"
+    index = clean_dir(output / "html", output) / "index.html"
+    index.write_text("site", encoding="utf-8")
+
+    # Linux and Windows: the webbrowser module opens the page.
+    assert cli.main(["-c", str(project), "show"]) == 0
+    assert browser.urls == [index.as_uri()]
+    assert f"Opening {index}" in capsys.readouterr().out
+
+    # Without web browser.
+    def no_browser() -> Any:
+        raise webbrowser.Error("could not locate runnable browser")
+
+    monkeypatch.setattr(webbrowser, "get", no_browser)
+    assert cli.main(["-c", str(project), "show"]) == 2
+    assert "No web browser found" in capsys.readouterr().out
+
+    # WSL: explorer.exe opens the Windows path of the page, also if it returns 1.
+    commands: List[List[str]] = []
+
+    def run(cmd: List[str], **_: Any) -> Any:
+        commands.append(cmd)
+        stdout = "\\\\wsl.localhost\\distro\\index.html\n" if cmd[0] == "wslpath" else ""
+        return type("Proc", (), {"returncode": 0 if cmd[0] == "wslpath" else 1, "stdout": stdout})
+
+    monkeypatch.setattr(html, "_is_wsl", lambda: True)
+    monkeypatch.setattr(html.subprocess, "run", run)
+    monkeypatch.setattr(html.shutil, "which", lambda name: f"/win/{name}" if name == "explorer.exe" else None)
+    assert cli.main(["-c", str(project), "show"]) == 0
+    assert commands == [["wslpath", "-w", str(index)], ["/win/explorer.exe", "\\\\wsl.localhost\\distro\\index.html"]]
+
+    # WSL with wslview.
+    commands.clear()
+    monkeypatch.setattr(html.shutil, "which", lambda name: f"/usr/bin/{name}" if name == "wslview" else None)
+    assert cli.main(["-c", str(project), "show"]) == 0
+    assert commands == [["/usr/bin/wslview", str(index)]]
+
+    # WSL without Windows interop: fallback to the webbrowser module, here without browser.
+    commands.clear()
+    monkeypatch.setattr(html.shutil, "which", lambda name: None)
+    assert cli.main(["-c", str(project), "show"]) == 2
+    assert not commands
 
 # Main *************************************************************************
