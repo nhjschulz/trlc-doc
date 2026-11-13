@@ -73,7 +73,7 @@ Each release tag `Vx.y.z` has its own copy, so pick the one that matches the
 trlcdoc version you use (the configuration may change incompatibly before 1.0):
 
 ```yaml
-# yaml-language-server: $schema=https://nhjschulz.github.io/trlc-doc/schema/V0.3.0/trlcdoc.schema.json
+# yaml-language-server: $schema=https://nhjschulz.github.io/trlc-doc/schema/V0.4.0/trlcdoc.schema.json
 ```
 
 The schema of the current `main` branch is available without a version:
@@ -1093,7 +1093,7 @@ A configuration example using all sections, with requirements, architecture, tes
 cases, test results, code tracing and a customized site.
 
 ```yaml
-# yaml-language-server: $schema=https://nhjschulz.github.io/trlc-doc/schema/V0.3.0/trlcdoc.schema.json
+# yaml-language-server: $schema=https://nhjschulz.github.io/trlc-doc/schema/V0.4.0/trlcdoc.schema.json
 
 project:
   name: pyTRLCConverter
