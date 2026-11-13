@@ -161,8 +161,8 @@ Key concepts:
 - **html** customizes the site: `theme`, `extensions`, `extra_conf`, a project
   start page `index` (it owns the toctree; TRLC documents are named
   `<id>/index`), a `page_header` for every generated page, and a project Sphinx
-  configuration file `conf`, executed at the end of the generated conf.py with
-  `PROJECT_ROOT` set. In these files and in `rst`/`markdown` documents,
+  configuration file `conf`, executed at the end of trlcdoc's
+  [conf.py](trlcdoc/sphinx/conf.py) with `PROJECT_ROOT` and `trlcdoc_links` set. In these files and in `rst`/`markdown` documents,
   `{project_root}` is replaced by the relative path from the page to the
   project root.
 - A TRLC or test result document without `title` takes its page title from the
