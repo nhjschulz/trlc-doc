@@ -354,11 +354,13 @@ section "trlcdoc" {
                 description =
                     '''
                     The software shall create an HTML tracing report. On request, the report shall link the items to
-                    their sources in the project repository.
+                    their sources in the project repository. On request, the report shall render the item descriptions
+                    as Markdown.
                     '''
                 verification_criteria =
                     '''
-                    Create the tracing report offline and online. Check the item links of both reports.
+                    Create the tracing report offline and online. Check the item links of both reports. Create the
+                    report with and without Markdown rendering and check the descriptions.
                     '''
                 valid_status = AbstractRequirements.VALID_STATUS.valid
             }
