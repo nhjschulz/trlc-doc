@@ -101,6 +101,7 @@ tests:
 
 trace:
   namespace: req
+  markdown: true
   levels:
     - name: SW Requirement
       document: sw_requirements

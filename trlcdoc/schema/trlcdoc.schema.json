@@ -203,6 +203,7 @@
             "required": ["levels"],
             "properties": {
                 "namespace": {"description": "LOBSTER namespace of all TRLC levels.", "type": "string", "default": "req"},
+                "markdown": {"description": "Render the item descriptions of the tracing report as Markdown. Enable it together with a Markdown render_cfg.", "type": "boolean", "default": false},
                 "levels": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/level"}}
             }
         },

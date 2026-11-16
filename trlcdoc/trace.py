@@ -67,7 +67,10 @@ def build_trace_report(cfg: Config, online: bool) -> int:
     if online:
         _make_online(cfg, report_file)
 
-    run([find_tool("lobster-html-report"), "--out", str(cfg.trace_report_html), str(report_file)], cfg.root)
+    command = [find_tool("lobster-html-report"), "--out", str(cfg.trace_report_html)]
+    if cfg.trace.get("markdown", False):
+        command.append("--render-md")
+    run([*command, str(report_file)], cfg.root)
     return _print_summary(report_file)
 
 

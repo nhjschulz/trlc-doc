@@ -717,6 +717,7 @@ tracing report `<output>/trace/tracing_report.html`.
 ```yaml
 trace:
   namespace: req
+  markdown: true
   levels:
     - name: SW Requirement
       document: sw_requirements
@@ -733,6 +734,7 @@ trace:
 | Key         | Default | Meaning and impact |
 |-------------|---------|--------------------|
 | `namespace` | `req`   | LOBSTER namespace of all TRLC items. An item is identified as `<namespace> <Package>.<record>`, e.g. `req SwRequirements.sw_req_cli`. Keep the default: `lobster-python` reads `# lobster-trace: Package.record` comments into the `req` namespace, so code can only trace to TRLC items in that namespace. |
+| `markdown`  | `false` | Render the item descriptions of the tracing report as Markdown (`lobster-html-report --render-md`): wrapped lines join into one paragraph, and `**bold**`, `` `code` ``, lists and tables are rendered like on the documentation pages. Enable it together with a Markdown `render_cfg` ([4.9](#49-pytrlcconverter-the-pytrlcconverter-options)). Raw HTML is not escaped: write text like `<name>` in backticks, otherwise the browser hides it as unknown tag. Without it, descriptions are plain text with a line break for every source line break. |
 | `levels`    |         | The levels, see below. Their order is the order in the report. |
 
 After the report, trlcdoc prints every item that is not traced as required:

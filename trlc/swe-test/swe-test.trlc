@@ -355,6 +355,22 @@ section "SW-Tests" {
             verifies = [SwRequirements.sw_req_trace_report]
         }
 
+        SwTestCase tc_trace_markdown {
+            description =
+                '''
+                **Markdown descriptions in the tracing report** (`tests/test_trace.py`)
+
+                Create the tracing report of a requirement with a wrapped Markdown description
+
+                - with the default settings
+                - with `markdown: true`
+
+                Check that the description is plain text with line breaks by default, and rendered Markdown in one
+                paragraph with `markdown`.
+                '''
+            verifies = [SwRequirements.sw_req_trace_report]
+        }
+
         SwTestCase tc_trace_findings {
             description =
                 '''
