@@ -110,6 +110,8 @@ def test_config_validation(project: Path, capsys: pytest.CaptureFixture) -> None
     data["documents"][0]["pytrlcconverter"]["render_cfg"] = "missing.json"
     data["trace"]["levels"][1]["trace_to"] = ["Unknown Level"]
     data["html"] = {"index": "docs/index.rst", "page_header": "docs/header.rst", "conf": "docs/conf.py"}
+    data["trace"]["levels"].append({"name": "SW Code", "kind": "implementation", "extractor": "lobster-doxygen",
+                                    "doxyfile": "tools/Doxyfile"})
     errors = _config_errors(root, data)
     assert "has invalid settings" in errors
     assert "documents[sw_architecture].include: 'unknown'" in errors
@@ -120,6 +122,7 @@ def test_config_validation(project: Path, capsys: pytest.CaptureFixture) -> None
     assert "trace.levels[SW Architecture].trace_to: level 'Unknown Level' is not defined" in errors
     for key, value in data["html"].items():
         assert f"html.{key}: file '{value}' not found" in errors
+    assert "trace.levels[SW Code].doxyfile: file 'tools/Doxyfile' not found" in errors
 
     # No step runs with an invalid configuration.
     assert cli.main(["-c", str(project), "clean", "all"]) == 2
@@ -138,6 +141,20 @@ def test_config_validation(project: Path, capsys: pytest.CaptureFixture) -> None
         data["tests"]["link"] = link
         assert (_config_errors(root, data) == "") is valid, link
     assert "tests/link" in _config_errors(root, data)
+
+    # lobster-python scans sources, lobster-doxygen takes the sources from a Doxyfile.
+    (root / "Doxyfile").write_text("INPUT = src\n", encoding="utf-8")
+    for extractor, keys, valid in (("lobster-python", ("sources",), True),
+                                   ("lobster-python", ("doxyfile",), False),
+                                   ("lobster-python", ("sources", "doxyfile"), False),
+                                   ("lobster-doxygen", ("doxyfile",), True),
+                                   ("lobster-doxygen", ("sources",), False),
+                                   ("lobster-doxygen", ("sources", "doxyfile"), False)):
+        data = base_config()
+        level = {"name": "SW Code", "kind": "implementation", "extractor": extractor}
+        level.update({key: {"sources": ["src"], "doxyfile": "Doxyfile"}[key] for key in keys})
+        data["trace"]["levels"].append(level)
+        assert (_config_errors(root, data) == "") is valid, (extractor, keys)
 
 
 def test_project_settings(project: Path) -> None:

@@ -120,11 +120,15 @@ section "SW-Tests" {
                 - a missing converter file
                 - missing HTML site files
                 - an undefined trace level
+                - a missing Doxyfile
 
                 Check that every error is reported with its location, and that no step runs.
 
                 Load test link configurations with output pattern, name pattern, both, an output pattern without
                 `{id}`, `from` without `to`, `to` alone and property alone. Check that only the first three are valid.
+
+                Load implementation levels with lobster-python and lobster-doxygen, each with `sources`, `doxyfile` or
+                both. Check that only lobster-python with `sources` and lobster-doxygen with `doxyfile` are valid.
                 '''
             verifies = [SwRequirements.sw_req_config_validation]
         }
@@ -455,6 +459,20 @@ section "SW-Tests" {
                 exit code 0 (`tests/test_trace.py`).
                 '''
             verifies = [SwRequirements.sw_req_trace_findings]
+        }
+
+        SwTestCase tc_trace_doxygen {
+            description =
+                '''
+                **C/C++ code tracing** (`tests/test_trace.py`)
+
+                Create the tracing report of a project with a C function, an `@implements` tag and a Doxyfile in a
+                tools folder. Check that the function traces to its requirement and that no doxygen output lands next
+                to the Doxyfile. Without doxygen on the PATH, check the error naming the trace level, and that a
+                project without lobster-doxygen level still creates its report. The test is skipped if doxygen is
+                not installed.
+                '''
+            verifies = [SwRequirements.sw_req_trace_doxygen]
         }
     }
 

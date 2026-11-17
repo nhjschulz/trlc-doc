@@ -34,6 +34,7 @@ document adds the behavior behind the keys.
 - [6. trace](#6-trace)
   - [6.1 Requirement levels](#61-requirement-levels)
   - [6.2 Implementation levels](#62-implementation-levels)
+    - [6.2.1 C/C++ code with lobster-doxygen](#621-cc-code-with-lobster-doxygen)
   - [6.3 trace\_to and requires](#63-trace_to-and-requires)
   - [6.4 Online tracing report](#64-online-tracing-report)
 - [7. plantuml](#7-plantuml)
@@ -808,9 +809,13 @@ TRLC document (extracted with lobster-trlc).
 
 ### 6.2 Implementation levels
 
-`kind: implementation` takes the items from source code. The only extractor is
-`lobster-python`: every function and method is an item, linked by
-`# lobster-trace:` comments.
+`kind: implementation` takes the items from source code. The `extractor` decides
+the language:
+
+- `lobster-python`: every Python function and method is an item, linked by
+  `# lobster-trace:` comments.
+- `lobster-doxygen`: every C/C++ function, method, class, struct and union is an
+  item, linked by doxygen `@implements{...}` tags. See [6.2.1](#621-cc-code-with-lobster-doxygen).
 
 ```yaml
     - name: SW Code
@@ -828,16 +833,73 @@ def convert_section(self, section, level):
 
 | Key         | Meaning and impact |
 |-------------|--------------------|
-| `extractor` | `lobster-python`. |
-| `sources`   | Files or folders to scan, relative to the project root. |
+| `extractor` | `lobster-python` or `lobster-doxygen`. |
+| `sources`   | `lobster-python` only: files or folders to scan, relative to the project root. |
+| `doxyfile`  | `lobster-doxygen` only: the Doxyfile that selects the sources, relative to the project root. |
 
-`document`, `record_type` are not allowed here; `extractor` and `sources` are
-not allowed for requirement levels. `tags` and `description_fields` have no
-effect.
+`document`, `record_type` are not allowed here; `extractor`, `sources` and
+`doxyfile` are not allowed for requirement levels. `tags` and
+`description_fields` have no effect.
 
 Use a second implementation level for test code (`sources: [tests]`,
 `trace_to: [SW Test Case]`) to check that every test function traces to a test
 case.
+
+#### 6.2.1 C/C++ code with lobster-doxygen
+
+C projects differ a lot in where their sources live and which preprocessor
+defines they need, so the project provides its own Doxyfile per level:
+
+```yaml
+    - name: SW Code
+      kind: implementation
+      extractor: lobster-doxygen
+      doxyfile: tools/doxygen/Doxyfile
+      trace_to: [SW Requirement]
+
+    - name: SW Test Code
+      kind: implementation
+      extractor: lobster-doxygen
+      doxyfile: tools/doxygen/Doxyfile_test     # e.g. other INPUT, EXCLUDE, PREDEFINED
+      trace_to: [SW Test Case]
+```
+
+```c
+/**
+ * @file greeter.c
+ */
+
+/**
+ * @brief Print the greeting.
+ * @implements{SwRequirements.sw_req_greet}
+ */
+void Greeter_greet(void);
+```
+
+The `trace` step runs `doxygen -` in the folder of the Doxyfile, so its relative
+paths (`INPUT`, `EXCLUDE`, `@INCLUDE`) keep working. It includes the Doxyfile
+unchanged and overrides only the output settings: XML goes to
+`<output>/trace/<level>-doxygen/xml`, all other formats are off. Then
+`lobster-doxygen` turns the XML into the level's items. Settings like
+`WARN_LOGFILE` still apply as written in the Doxyfile.
+
+The Doxyfile must
+
+- define the aliases that lobster-doxygen reads:
+  ```text
+  ALIASES = "implements{1}=@xrefitem implements \"Implements\" \"Requirement Traceability\" Requirement: \1" \
+            "justification{1}=@xrefitem justified \"Justified\" \"Justification Overview\" Justification: \1"
+  ```
+- select the sources with `INPUT` (and `EXCLUDE`, `FILE_PATTERNS`, ...).
+- set `PREDEFINED` with `MACRO_EXPANSION = YES` if functions are declared by
+  macros, e.g. Unity's `TEST(...)`.
+
+Every source file needs a `@file` comment, otherwise doxygen drops the tags of
+its functions. `@justification{reason}` marks an item as intentionally
+untraced.
+
+`lobster-doxygen` is installed with trlcdoc. Doxygen itself must be on the
+`PATH`, but only when a level uses `lobster-doxygen`.
 
 ### 6.3 trace_to and requires
 
@@ -1129,6 +1191,7 @@ build/trlcdoc/
 │   └── markdown/<id>/                  convert --format markdown
 ├── trace/
 │   ├── <level>.yaml, <level>.lobster   extracted items per level
+│   ├── <level>-doxygen/xml/            doxygen XML of lobster-doxygen levels
 │   ├── lobster-report.conf             generated policy
 │   ├── report.lobster
 │   └── tracing_report.html
@@ -1151,6 +1214,9 @@ so stale files of a previous run do not remain.
 | `documents[x].pytrlcconverter.converter.rst: file '...' not found.` | Wrong path, or `builtin:` prefix missing for a built-in file. |
 | `documents/0: 'converter' is not one of ['id', 'title', ...]` | A pyTRLCConverter option on document level. Move it into the `pytrlcconverter` block. |
 | `trace.levels[A].requires: level 'B' is not defined.` | The level name must match exactly, including spaces and case. |
+| `trace.levels[A].doxyfile: file '...' not found.` | The Doxyfile path is relative to the project root. |
+| `Tool 'doxygen' not found. It is needed by the lobster-doxygen extractor of trace level 'A'` | Install doxygen and put it on the `PATH`. |
+| lobster-doxygen: `... has requirements or justifications on file level.` | An `@implements` tag in the `@file` comment. Move it to a function, struct or class. |
 | `Tests without test case link (property ..., output ..., name pattern ...)` | Tests without test case link, see [5.3](#53-link-from-test-results-to-test-cases). |
 | `Tests linked to several test cases, which needs tests.link.array` | Set `array: true` and make `relates` an array in the model. |
 | `Tests linked to test cases of several packages` | All test cases of the results must be in one package, see [5.4](#54-the-generated-test-result-records). |

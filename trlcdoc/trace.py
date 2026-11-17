@@ -160,6 +160,7 @@ def _extract_trlc(cfg: Config, level: Dict[str, Any], out_file: Path) -> Path:
 
 def _extract_code(cfg: Config, level: Dict[str, Any], out_file: Path) -> Path:
     # lobster-trace: SwRequirements.sw_req_trace_levels
+    # lobster-trace: SwRequirements.sw_req_trace_doxygen
     """Extract an implementation level from source code.
 
     Args:
@@ -170,8 +171,46 @@ def _extract_code(cfg: Config, level: Dict[str, Any], out_file: Path) -> Path:
     Returns:
         Path: The LOBSTER output file.
     """
+    if level["extractor"] == "lobster-doxygen":
+        return _extract_doxygen(cfg, level, out_file)
     sources = [str(cfg.path(source)) for source in level["sources"]]
     run([find_tool(level["extractor"]), "--out", str(out_file), *sources], cfg.root)
+    return out_file
+
+
+def _extract_doxygen(cfg: Config, level: Dict[str, Any], out_file: Path) -> Path:
+    # lobster-trace: SwRequirements.sw_req_trace_doxygen
+    """Extract an implementation level from C/C++ sources with doxygen and lobster-doxygen.
+
+    Doxygen runs in the folder of the configured Doxyfile, so its relative paths keep
+    working. The Doxyfile is included unchanged and followed by settings that write
+    only the XML output into the trace folder.
+
+    Args:
+        cfg (Config): Project configuration.
+        level (Dict[str, Any]): Trace level of kind implementation with a doxyfile.
+        out_file (Path): LOBSTER output file.
+
+    Returns:
+        Path: The LOBSTER output file.
+    """
+    doxygen = find_tool("doxygen", f"It is needed by the lobster-doxygen extractor of trace level "
+                                   f"'{level['name']}', see https://www.doxygen.nl.")
+    doxyfile = cfg.path(level["doxyfile"])
+    doxygen_dir = out_file.with_name(f"{out_file.stem}-doxygen")
+    settings = [
+        f'@INCLUDE = "{doxyfile.as_posix()}"',
+        f'OUTPUT_DIRECTORY = "{doxygen_dir.as_posix()}"',
+        "GENERATE_XML = YES",
+        "XML_OUTPUT = xml",
+        "GENERATE_HTML = NO",
+        "GENERATE_LATEX = NO",
+        "GENERATE_RTF = NO",
+        "GENERATE_MAN = NO",
+        "GENERATE_DOCBOOK = NO",
+    ]
+    run([doxygen, "-"], doxyfile.parent, stdin="\n".join(settings) + "\n")
+    run([find_tool("lobster-doxygen"), "-o", str(out_file), str(doxygen_dir / "xml")], cfg.root)
     return out_file
 
 

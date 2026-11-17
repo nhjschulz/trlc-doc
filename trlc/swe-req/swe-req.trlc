@@ -419,6 +419,23 @@ section "trlcdoc" {
                     '''
                 valid_status = AbstractRequirements.VALID_STATUS.valid
             }
+
+            SwReq sw_req_trace_doxygen {
+                description =
+                    '''
+                    **C/C++ code tracing**
+
+                    The software shall extract the trace links of C/C++ code from the doxygen `@implements` tags with
+                    lobster-doxygen. A Doxyfile per trace level selects the sources. Doxygen shall be needed only for
+                    such trace levels.
+                    '''
+                verification_criteria =
+                    '''
+                    Trace a C function through a Doxyfile and check the traced item. Run the trace step without doxygen
+                    with and without such a level and check the error.
+                    '''
+                valid_status = AbstractRequirements.VALID_STATUS.valid
+            }
         }
 
         section "HTML Site" {

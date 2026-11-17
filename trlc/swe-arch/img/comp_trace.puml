@@ -5,6 +5,7 @@ package "Trace Report" {
         + build_trace_report(cfg, online): int
         - _extract_trlc(cfg, level, out_file): Path
         - _extract_code(cfg, level, out_file): Path
+        - _extract_doxygen(cfg, level, out_file): Path
         - _write_policy(cfg, sources, policy_file): Path
         - _make_online(cfg, report_file): Path
         - _print_summary(report_file): int
@@ -14,11 +15,13 @@ package "Trace Report" {
 package "LOBSTER" {
     class "lobster-trlc" as ltrlc <<SOUP>>
     class "lobster-python" as lpython <<SOUP>>
+    class "lobster-doxygen" as ldoxygen <<SOUP>>
     class "lobster-report" as lreport <<SOUP>>
     class "lobster-online-report" as lonline <<SOUP>>
     class "lobster-html-report" as lhtml <<SOUP>>
 }
 
+class "doxygen" as doxygen <<SOUP>>
 class "Config" as cfg
 class "util" as util <<module>>
 
@@ -28,6 +31,8 @@ trace ..> cfg : trace.levels
 trace ..> util : run(),\ngit_output()
 trace ..> ltrlc : TRLC levels
 trace ..> lpython : code levels
+trace ..> ldoxygen : C/C++ code levels
+trace ..> doxygen : XML for lobster-doxygen
 trace ..> lreport : policy from levels
 trace ..> lonline : optional
 trace ..> lhtml
