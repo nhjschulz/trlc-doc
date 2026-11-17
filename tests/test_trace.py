@@ -21,7 +21,9 @@
 # Imports **********************************************************************
 
 import json
+import os
 import shutil
+import sys
 from pathlib import Path
 
 import pytest
@@ -256,7 +258,13 @@ def test_trace_doxygen(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     assert (cfg.trace_dir / "sw_code-doxygen" / "xml" / "index.xml").is_file()
 
     # Without doxygen, only a project with a lobster-doxygen level fails.
-    monkeypatch.setenv("PATH", str(tmp_path / "empty"))
+    # Hide only doxygen. The LOBSTER tools stay reachable through the PATH, where Windows
+    # without venv has them anyway; the interpreter folder may also contain doxygen.
+    monkeypatch.setenv("PATH", os.pathsep.join([str(Path(sys.executable).parent), os.environ.get("PATH", "")]))
+    monkeypatch.setattr(sys, "executable", str(tmp_path / "python"))
+    which = shutil.which
+    monkeypatch.setattr(shutil, "which", lambda name, *args, **kwargs:
+                        None if Path(name).stem == "doxygen" else which(name, *args, **kwargs))
     with pytest.raises(TrlcdocError, match="Tool 'doxygen' not found.*trace level 'SW Code'"):
         build_trace_report(cfg, online=False)
     cfg = load_config(write_config(root, base_config()))
