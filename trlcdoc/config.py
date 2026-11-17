@@ -157,6 +157,18 @@ class Config:
         return self.trace_dir / "tracing_report.html"
 
     @property
+    def trace_report_rst(self) -> Path:
+        # lobster-trace: SwRequirements.sw_req_trace_report_rst
+        """Folder of the reStructuredText tracing report, one page per level."""
+        return self.trace_dir / "rst"
+
+    @property
+    def trace_report_format(self) -> str:
+        # lobster-trace: SwRequirements.sw_req_trace_report_rst
+        """Format of the tracing report: 'html' (default) or 'rst'."""
+        return (self.trace or {}).get("report", "html")
+
+    @property
     def sphinx_dir(self) -> Path:
         # lobster-trace: SwRequirements.sw_req_html_site
         # lobster-trace: SwRequirements.sw_req_output_folder

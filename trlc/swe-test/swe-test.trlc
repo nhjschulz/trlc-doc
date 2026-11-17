@@ -371,6 +371,21 @@ section "SW-Tests" {
             verifies = [SwRequirements.sw_req_trace_report]
         }
 
+        SwTestCase tc_trace_report_rst {
+            description =
+                '''
+                **Tracing report as site pages** (`tests/test_html.py`)
+
+                Build a site with a page header and `report: rst`. Check
+
+                - the start page with the configured title and the coverage summary instead of the LOBSTER title
+                - a page per trace level with the item cards and the page header
+                - that the item source links are relative and point to the project files
+                - that no HTML tracing report is created
+                '''
+            verifies = [SwRequirements.sw_req_trace_report_rst]
+        }
+
         SwTestCase tc_trace_findings {
             description =
                 '''

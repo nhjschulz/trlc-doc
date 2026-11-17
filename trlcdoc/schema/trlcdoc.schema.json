@@ -203,6 +203,7 @@
             "required": ["levels"],
             "properties": {
                 "namespace": {"description": "LOBSTER namespace of all TRLC levels.", "type": "string", "default": "req"},
+                "report": {"description": "Format of the tracing report: html embeds the LOBSTER HTML report, rst includes it as Sphinx pages, one per level (lobster-rst-report). markdown only applies to html.", "enum": ["html", "rst"], "default": "html"},
                 "markdown": {"description": "Render the item descriptions of the tracing report as Markdown. Enable it together with a Markdown render_cfg.", "type": "boolean", "default": false},
                 "levels": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/level"}}
             }

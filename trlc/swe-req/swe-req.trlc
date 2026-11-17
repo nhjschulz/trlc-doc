@@ -365,6 +365,23 @@ section "trlcdoc" {
                 valid_status = AbstractRequirements.VALID_STATUS.valid
             }
 
+            SwReq sw_req_trace_report_rst {
+                description =
+                    '''
+                    **Tracing report as site pages**
+
+                    On request, the software shall include the tracing report as pages of the HTML site, one page per
+                    trace level, instead of embedding the HTML tracing report. The links to the item sources shall work
+                    from the site pages.
+                    '''
+                verification_criteria =
+                    '''
+                    Build a site with the tracing report as site pages. Check the start page with its title, the level
+                    pages with their items, the page header and the links to the item sources.
+                    '''
+                valid_status = AbstractRequirements.VALID_STATUS.valid
+            }
+
             SwReq sw_req_trace_findings {
                 description =
                     '''

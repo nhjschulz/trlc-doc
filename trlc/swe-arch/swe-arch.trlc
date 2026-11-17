@@ -327,6 +327,7 @@ section "trlcdoc SW Architecture" {
                         - generates the LOBSTER policy from the level relations
                         - runs lobster-report
                         - creates the HTML tracing report with lobster-html-report
+                        - or the site pages with lobster-rst-report, using project relative file references
                         - links the items to the repository with lobster-online-report for online reports
 
                         It lists the items with missing trace links and reports them as findings.
@@ -339,6 +340,7 @@ section "trlcdoc SW Architecture" {
                     satisfies = [
                         SwRequirements.sw_req_trace_levels,
                         SwRequirements.sw_req_trace_report,
+                        SwRequirements.sw_req_trace_report_rst,
                         SwRequirements.sw_req_trace_findings
                     ]
                 }
@@ -391,6 +393,7 @@ section "trlcdoc SW Architecture" {
                     satisfies = [
                         SwRequirements.sw_req_documents,
                         SwRequirements.sw_req_document_types,
+                        SwRequirements.sw_req_trace_report_rst,
                         SwRequirements.sw_req_project_settings,
                         SwRequirements.sw_req_html_site,
                         SwRequirements.sw_req_html_version_info,
