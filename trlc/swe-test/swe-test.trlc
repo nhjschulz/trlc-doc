@@ -446,6 +446,16 @@ section "SW-Tests" {
                 '''
             verifies = [SwRequirements.sw_req_trace_findings, SwRequirements.sw_req_exit_code]
         }
+
+        SwTestCase tc_trace_justified {
+            description =
+                '''
+                Create the tracing report of a project with an implementation level that has a function marked with
+                `lobster-exclude`. Check that the function is counted as justified and not listed as untraced, and the
+                exit code 0 (`tests/test_trace.py`).
+                '''
+            verifies = [SwRequirements.sw_req_trace_findings]
+        }
     }
 
     section "HTML Site" {

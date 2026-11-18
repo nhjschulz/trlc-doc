@@ -163,4 +163,37 @@ def test_trace_findings(tmp_path: Path, capsys: pytest.CaptureFixture) -> None:
     assert cli.main(["-c", str(project), "trace"]) == 1
     assert "finished with findings in: trace" in capsys.readouterr().out
 
+
+def test_trace_justified(tmp_path: Path, capsys: pytest.CaptureFixture) -> None:
+    """Items justified in LOBSTER (lobster-exclude) count as traced, but are counted.
+
+    Args:
+        tmp_path (Path): pytest temporary folder.
+        capsys (pytest.CaptureFixture): pytest output capture.
+    """
+    project = make_project(tmp_path / "project")
+    (project.parent / "src").mkdir()
+    (project.parent / "src" / "code.py").write_text(
+        'def greet():\n'
+        '    # lobster-trace: SwRequirements.sw_req_hello\n'
+        '    return "Hello"\n'
+        '\n\n'
+        'def helper():\n'
+        '    # lobster-exclude: Utility for other functions.\n'
+        '    return 1\n',
+        encoding="utf-8")
+    data = base_config()
+    data["trace"]["levels"].append({"name": "SW Code", "kind": "implementation",
+                                    "extractor": "lobster-python", "sources": ["src"],
+                                    "trace_to": ["SW Requirement"]})
+    cfg = load_config(write_config(project.parent, data))
+    run_tests(cfg)
+    capsys.readouterr()
+
+    assert build_trace_report(cfg, online=False) == 0
+    out = capsys.readouterr().out
+    assert "SW Code: 2 items, 0 not traced, 1 justified" in out
+    assert "python code.helper" not in out
+    assert _report_items(project)["python code.helper"]["tracing_status"] == "JUSTIFIED"
+
 # Main *************************************************************************
