@@ -21,6 +21,7 @@
 # Imports **********************************************************************
 
 import json
+import os
 import re
 from pathlib import Path
 from typing import Any, Dict, List
@@ -67,11 +68,45 @@ def build_trace_report(cfg: Config, online: bool) -> int:
     if online:
         _make_online(cfg, report_file)
 
-    command = [find_tool("lobster-html-report"), "--out", str(cfg.trace_report_html)]
-    if cfg.trace.get("markdown", False):
-        command.append("--render-md")
-    run([*command, str(report_file)], cfg.root)
+    if cfg.trace_report_format == "rst":
+        _write_rst_report(cfg, report_file)
+    else:
+        command = [find_tool("lobster-html-report"), "--out", str(cfg.trace_report_html)]
+        if cfg.trace.get("markdown", False):
+            command.append("--render-md")
+        run([*command, str(report_file)], cfg.root)
     return _print_summary(report_file)
+
+
+def _write_rst_report(cfg: Config, report_file: Path) -> Path:
+    # lobster-trace: SwRequirements.sw_req_trace_report_rst
+    """Create the tracing report as reStructuredText pages for the HTML site.
+
+    The local file references are made relative to the project root and prefixed with the path from a report page
+    back to the project root, so they work from the site. Repository links of an online report are kept.
+
+    Args:
+        cfg (Config): Project configuration.
+        report_file (Path): LOBSTER report.
+
+    Returns:
+        Path: Folder with the report pages.
+    """
+    with open(report_file, encoding="utf-8") as file:
+        report = json.load(file)
+    for level in report["levels"]:
+        for item in level["items"]:
+            location = item.get("location", {})
+            if location.get("kind") == "file" and Path(location["file"]).is_relative_to(cfg.root):
+                location["file"] = Path(location["file"]).relative_to(cfg.root).as_posix()
+    rst_input = report_file.with_name("report_rst.lobster")
+    rst_input.write_text(json.dumps(report, indent=2), encoding="utf-8")
+
+    # The pages end up in a folder per document: <html>/<id>/<level>.html
+    source_root = Path(os.path.relpath(cfg.root, cfg.html_dir / "document")).as_posix()
+    run([find_tool("lobster-rst-report"), "--out-dir", str(cfg.trace_report_rst),
+         "--source-root", source_root, str(rst_input)], cfg.root)
+    return cfg.trace_report_rst
 
 
 def _slug(name: str) -> str:

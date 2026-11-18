@@ -261,6 +261,50 @@ def test_html_customization(tmp_path: Path, plantuml_jar: Path, monkeypatch: pyt
     assert not (html / ".doctrees").exists()
 
 
+
+def test_trace_report_rst(tmp_path: Path, plantuml_jar: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """The tracing report is included as site pages, one per trace level.
+
+    Args:
+        tmp_path (Path): pytest temporary folder.
+        plantuml_jar (Path): The PlantUML jar.
+        monkeypatch (pytest.MonkeyPatch): pytest monkeypatch.
+    """
+    root = tmp_path / "project"
+    make_project(root)
+    (root / "docs").mkdir()
+    (root / "docs" / "header.rst").write_text(".. note:: Example page header\n", encoding="utf-8")
+    data = base_config()
+    data["trace"]["report"] = "rst"
+    data["html"] = {"page_header": "docs/header.rst"}
+    monkeypatch.setenv("PLANTUML", str(plantuml_jar))
+    assert cli.main(["-c", str(write_config(root, data)), "all"]) == 0
+
+    build = root / "build" / "trlcdoc"
+    assert not (build / "trace" / "tracing_report.html").exists()
+    report_dir = build / "html" / "sw_tracing_report"
+
+    # The configured title replaces the LOBSTER title of the start page.
+    start = (report_dir / "index.html").read_text(encoding="utf-8")
+    assert "<h1>Software Tracing Report" in start
+    assert "L.O.B.S.T.E.R." not in start
+    assert "Coverage Summary" in start
+    assert "Example page header" in start
+
+    # A page per level, with the page header and the item cards.
+    requirements = (report_dir / "sw_requirement.html").read_text(encoding="utf-8")
+    assert "Example page header" in requirements
+    assert 'id="lobster-item-' in requirements
+    assert "SwRequirements.sw_req_hello" in requirements
+
+    # The source links are relative and point to the project files.
+    links = re.findall(r'href="([^"]*swe-req\.trlc)"', requirements)
+    assert links
+    for link in links:
+        assert not Path(link).is_absolute()
+        assert (report_dir / link).resolve() == (root / "trlc" / "swe-req" / "swe-req.trlc").resolve()
+
+
 def test_html_version_info(site: Dict[str, Any]) -> None:
     """Every page shows the commit the documentation was built from.
 
