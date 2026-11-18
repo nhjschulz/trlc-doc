@@ -102,8 +102,9 @@ section "trlcdoc SW Architecture" {
                         - determines the steps to run in their fixed order, including the steps they depend on
                         - runs them
 
-                        The clean step removes the output folder, the check step reports the valid configuration, all
-                        other steps are delegated to their components. The steps clean and show only run on request.
+                        The clean step removes the output folder, the check step reports the valid configuration and
+                        the table of contents findings of a project start page (`pages.py`), all other steps are
+                        delegated to their components. The steps clean and show only run on request.
 
                         It maps the step results to the exit codes:
 
@@ -124,7 +125,8 @@ section "trlcdoc SW Architecture" {
                         SwRequirements.sw_req_step_order,
                         SwRequirements.sw_req_exit_code,
                         SwRequirements.sw_req_clean,
-                        SwRequirements.sw_req_show
+                        SwRequirements.sw_req_show,
+                        SwRequirements.sw_req_toctree_check
                     ]
                 }
 
@@ -144,12 +146,15 @@ section "trlcdoc SW Architecture" {
                         Finds and loads a YAML configuration, validates it against the JSON schema and checks
 
                         - the references between documents, includes, converter files and trace levels
+                        - the document ids of the `{page:<id>}` placeholders in the project pages
                         - the location of the output folder
 
                         It provides the validated settings as a `Config` object, which resolves all paths:
 
                         - the configured inputs relative to the project root
                         - the generated files in fixed subfolders of the output folder
+
+                        It defines the page name of each document (`page_name()`), the single place of this rule.
                         '''
                     verification_criteria =
                         '''
@@ -166,7 +171,8 @@ section "trlcdoc SW Architecture" {
                         SwRequirements.sw_req_config_validation,
                         SwRequirements.sw_req_project_settings,
                         SwRequirements.sw_req_documents,
-                        SwRequirements.sw_req_output_folder
+                        SwRequirements.sw_req_output_folder,
+                        SwRequirements.sw_req_page_placeholders
                     ]
                 }
 
@@ -327,6 +333,7 @@ section "trlcdoc SW Architecture" {
                         - generates the LOBSTER policy from the level relations
                         - runs lobster-report
                         - creates the HTML tracing report with lobster-html-report
+                        - or the site pages with lobster-rst-report, using project relative file references
                         - links the items to the repository with lobster-online-report for online reports
 
                         It lists the items with missing trace links and reports them as findings.
@@ -339,6 +346,7 @@ section "trlcdoc SW Architecture" {
                     satisfies = [
                         SwRequirements.sw_req_trace_levels,
                         SwRequirements.sw_req_trace_report,
+                        SwRequirements.sw_req_trace_report_rst,
                         SwRequirements.sw_req_trace_findings
                     ]
                 }
@@ -354,7 +362,7 @@ section "trlcdoc SW Architecture" {
                 SwArchSpec sw_arch_comp_html {
                     description =
                         '''
-                        **HTML Builder component** (`html.py`, `sphinx/`)
+                        **HTML Builder component** (`html.py`, `pages.py`, `sphinx/`)
 
                         Realizes the html step. It generates the Sphinx source folder with
 
@@ -362,8 +370,11 @@ section "trlcdoc SW Architecture" {
                         - the start page with the table of contents or the project start page
                         - the project settings
 
-                        It builds the site with Sphinx. It adds the project page header to the generated pages and
-                        replaces the project root placeholder in project pages.
+                        It builds the site with Sphinx. It adds the project page header to the generated pages.
+
+                        The module `pages.py` replaces the placeholders of the project pages, relative to each page:
+                        `{project_root}`, `{page:<id>}` and `{documents}`. It also checks the toctrees of a project
+                        start page against the page names of the documents for the check step.
 
                         It also realizes the show step, which opens the start page of the built site in the web browser:
                         under WSL in the Windows default browser, otherwise with the Python `webbrowser` module.
@@ -391,12 +402,15 @@ section "trlcdoc SW Architecture" {
                     satisfies = [
                         SwRequirements.sw_req_documents,
                         SwRequirements.sw_req_document_types,
+                        SwRequirements.sw_req_trace_report_rst,
                         SwRequirements.sw_req_project_settings,
                         SwRequirements.sw_req_html_site,
                         SwRequirements.sw_req_html_version_info,
                         SwRequirements.sw_req_html_customization,
                         SwRequirements.sw_req_markdown_links,
-                        SwRequirements.sw_req_show
+                        SwRequirements.sw_req_show,
+                        SwRequirements.sw_req_page_placeholders,
+                        SwRequirements.sw_req_toctree_check
                     ]
                 }
 

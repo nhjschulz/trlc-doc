@@ -21,8 +21,9 @@
 # Imports **********************************************************************
 
 import json
+import re
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 import jsonschema
 import yaml
@@ -39,6 +40,10 @@ TESTS_COVERAGE = "tests:coverage"
 
 # Document types whose content are TRLC records.
 TRLC_DOCUMENT_TYPES = ("trlc", "test_results")
+
+# Placeholder in project owned pages for the page name of a document, {page:<id>}.
+# Everything up to the closing brace is taken as id, so a misspelled id is reported.
+PAGE_PLACEHOLDER = re.compile(r"\{page:([^}]*)\}")
 
 # Classes **********************************************************************
 
@@ -157,6 +162,18 @@ class Config:
         return self.trace_dir / "tracing_report.html"
 
     @property
+    def trace_report_rst(self) -> Path:
+        # lobster-trace: SwRequirements.sw_req_trace_report_rst
+        """Folder of the reStructuredText tracing report, one page per level."""
+        return self.trace_dir / "rst"
+
+    @property
+    def trace_report_format(self) -> str:
+        # lobster-trace: SwRequirements.sw_req_trace_report_rst
+        """Format of the tracing report: 'html' (default) or 'rst'."""
+        return (self.trace or {}).get("report", "html")
+
+    @property
     def sphinx_dir(self) -> Path:
         # lobster-trace: SwRequirements.sw_req_html_site
         # lobster-trace: SwRequirements.sw_req_output_folder
@@ -183,6 +200,39 @@ class Config:
             Dict[str, Any]: The document configuration.
         """
         return next(doc for doc in self.documents if doc["id"] == doc_id)
+
+    def page_name(self, doc: Dict[str, Any]) -> str:
+        # lobster-trace: SwRequirements.sw_req_documents
+        # lobster-trace: SwRequirements.sw_req_page_placeholders
+        """Get the Sphinx page name of a document, the name used in a table of contents.
+
+        Documents with several pages are a folder with an index page: TRLC documents and the
+        reStructuredText tracing report. All other documents are a single page.
+
+        Args:
+            doc (Dict[str, Any]): Document configuration.
+
+        Returns:
+            str: '<id>/index' for a folder of pages, otherwise '<id>'.
+        """
+        result = doc["id"]
+        if doc["type"] in TRLC_DOCUMENT_TYPES or (doc["type"] == "trace_report" and self.trace_report_format == "rst"):
+            result = f"{doc['id']}/index"
+        return result
+
+    def placeholder_files(self) -> List[Tuple[str, Path]]:
+        # lobster-trace: SwRequirements.sw_req_html_customization
+        # lobster-trace: SwRequirements.sw_req_page_placeholders
+        """Get the project owned files whose placeholders are replaced.
+
+        Returns:
+            List[Tuple[str, Path]]: Configuration location and path of html.index, html.page_header and
+            the rst and markdown documents, except documents with 'placeholders: false'.
+        """
+        result = [(f"html.{key}", self.path(self.html[key])) for key in ("index", "page_header") if key in self.html]
+        result.extend((f"documents[{doc['id']}]", self.path(doc["source"])) for doc in self.documents
+                      if doc["type"] in ("rst", "markdown") and doc.get("placeholders", True))
+        return result
 
     def trlc_sources(self, doc: Dict[str, Any]) -> List[Path]:
         # lobster-trace: SwRequirements.sw_req_trlc_conversion
@@ -307,12 +357,35 @@ def _check_references(cfg: Config) -> List[str]:
         if key in cfg.html and not cfg.path(cfg.html[key]).is_file():
             errors.append(f"html.{key}: file '{cfg.html[key]}' not found.")
 
+    errors.extend(_check_page_placeholders(cfg, doc_ids))
+
     if cfg.output.is_relative_to(PACKAGE_DIR):
         errors.append("paths.output: must not be inside the trlcdoc package folder.")
     # The clean step removes the output folder, so it must never contain the project.
     if cfg.root.is_relative_to(cfg.output):
         errors.append("paths.output: must not be the project root or one of its parents.")
 
+    return errors
+
+
+def _check_page_placeholders(cfg: Config, doc_ids: List[str]) -> List[str]:
+    # lobster-trace: SwRequirements.sw_req_config_validation
+    # lobster-trace: SwRequirements.sw_req_page_placeholders
+    """Check that the {page:<id>} placeholders of the project owned files name configured documents.
+
+    Args:
+        cfg (Config): Schema validated configuration.
+        doc_ids (List[str]): Ids of the configured documents.
+
+    Returns:
+        List[str]: Error messages, empty if all placeholders name a document.
+    """
+    errors: List[str] = []
+    for where, file in cfg.placeholder_files():
+        if file.is_file():
+            ids = PAGE_PLACEHOLDER.findall(file.read_text(encoding="utf-8"))
+            errors.extend(f"{where}: placeholder '{{page:{doc_id}}}' names no document."
+                          for doc_id in sorted(set(ids)) if doc_id not in doc_ids)
     return errors
 
 

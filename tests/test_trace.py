@@ -112,6 +112,36 @@ def test_trace_report(tmp_path: Path) -> None:
     assert link in cfg.trace_report_html.read_text(encoding="utf-8")
 
 
+
+def test_trace_markdown(tmp_path: Path) -> None:
+    """The descriptions of the tracing report are rendered as Markdown with "markdown: true".
+
+    Args:
+        tmp_path (Path): pytest temporary folder.
+    """
+    project = make_project(tmp_path / "project")
+    req_file = project.parent / "trlc" / "swe-req" / "swe-req.trlc"
+    req_file.write_text(req_file.read_text(encoding="utf-8").replace(
+        'description = "The software shall greet."',
+        "description =\n            '''\n            The software shall **greet** with\n            `hello()`.\n            '''"),
+        encoding="utf-8")
+    cfg = load_config(project)
+    run_tests(cfg)
+
+    # By default the description is plain text, with the source line breaks.
+    assert build_trace_report(cfg, online=False) == 0
+    report = cfg.trace_report_html.read_text(encoding="utf-8")
+    assert "The software shall **greet** with<br>`hello()`." in report
+
+    data = base_config()
+    data["trace"]["markdown"] = True
+    cfg = load_config(write_config(cfg.root, data))
+    assert build_trace_report(cfg, online=False) == 0
+    report = cfg.trace_report_html.read_text(encoding="utf-8")
+    assert "The software shall <strong>greet</strong> with\n<code>hello()</code>.</p>" in report
+    assert "**greet**" not in report
+
+
 def test_trace_findings(tmp_path: Path, capsys: pytest.CaptureFixture) -> None:
     """Items with missing trace links are listed and reported as findings.
 
@@ -132,5 +162,38 @@ def test_trace_findings(tmp_path: Path, capsys: pytest.CaptureFixture) -> None:
 
     assert cli.main(["-c", str(project), "trace"]) == 1
     assert "finished with findings in: trace" in capsys.readouterr().out
+
+
+def test_trace_justified(tmp_path: Path, capsys: pytest.CaptureFixture) -> None:
+    """Items justified in LOBSTER (lobster-exclude) count as traced, but are counted.
+
+    Args:
+        tmp_path (Path): pytest temporary folder.
+        capsys (pytest.CaptureFixture): pytest output capture.
+    """
+    project = make_project(tmp_path / "project")
+    (project.parent / "src").mkdir()
+    (project.parent / "src" / "code.py").write_text(
+        'def greet():\n'
+        '    # lobster-trace: SwRequirements.sw_req_hello\n'
+        '    return "Hello"\n'
+        '\n\n'
+        'def helper():\n'
+        '    # lobster-exclude: Utility for other functions.\n'
+        '    return 1\n',
+        encoding="utf-8")
+    data = base_config()
+    data["trace"]["levels"].append({"name": "SW Code", "kind": "implementation",
+                                    "extractor": "lobster-python", "sources": ["src"],
+                                    "trace_to": ["SW Requirement"]})
+    cfg = load_config(write_config(project.parent, data))
+    run_tests(cfg)
+    capsys.readouterr()
+
+    assert build_trace_report(cfg, online=False) == 0
+    out = capsys.readouterr().out
+    assert "SW Code: 2 items, 0 not traced, 1 justified" in out
+    assert "python code.helper" not in out
+    assert _report_items(project)["python code.helper"]["tracing_status"] == "JUSTIFIED"
 
 # Main *************************************************************************

@@ -21,6 +21,7 @@
 # Imports **********************************************************************
 
 import json
+import os
 import re
 from pathlib import Path
 from typing import Any, Dict, List
@@ -31,6 +32,10 @@ from .config import Config
 from .util import TrlcdocError, clean_dir, find_tool, git_output, repository_url, run
 
 # Variables ********************************************************************
+
+# LOBSTER tracing status of items that are traced as required. Justified items
+# (e.g. marked with "lobster-exclude") count as covered in LOBSTER, too.
+TRACED_STATUS = ("OK", "JUSTIFIED")
 
 # Classes **********************************************************************
 
@@ -67,8 +72,45 @@ def build_trace_report(cfg: Config, online: bool) -> int:
     if online:
         _make_online(cfg, report_file)
 
-    run([find_tool("lobster-html-report"), "--out", str(cfg.trace_report_html), str(report_file)], cfg.root)
+    if cfg.trace_report_format == "rst":
+        _write_rst_report(cfg, report_file)
+    else:
+        command = [find_tool("lobster-html-report"), "--out", str(cfg.trace_report_html)]
+        if cfg.trace.get("markdown", False):
+            command.append("--render-md")
+        run([*command, str(report_file)], cfg.root)
     return _print_summary(report_file)
+
+
+def _write_rst_report(cfg: Config, report_file: Path) -> Path:
+    # lobster-trace: SwRequirements.sw_req_trace_report_rst
+    """Create the tracing report as reStructuredText pages for the HTML site.
+
+    The local file references are made relative to the project root and prefixed with the path from a report page
+    back to the project root, so they work from the site. Repository links of an online report are kept.
+
+    Args:
+        cfg (Config): Project configuration.
+        report_file (Path): LOBSTER report.
+
+    Returns:
+        Path: Folder with the report pages.
+    """
+    with open(report_file, encoding="utf-8") as file:
+        report = json.load(file)
+    for level in report["levels"]:
+        for item in level["items"]:
+            location = item.get("location", {})
+            if location.get("kind") == "file" and Path(location["file"]).is_relative_to(cfg.root):
+                location["file"] = Path(location["file"]).relative_to(cfg.root).as_posix()
+    rst_input = report_file.with_name("report_rst.lobster")
+    rst_input.write_text(json.dumps(report, indent=2), encoding="utf-8")
+
+    # The pages end up in a folder per document: <html>/<id>/<level>.html
+    source_root = Path(os.path.relpath(cfg.root, cfg.html_dir / "document")).as_posix()
+    run([find_tool("lobster-rst-report"), "--out-dir", str(cfg.trace_report_rst),
+         "--source-root", source_root, str(rst_input)], cfg.root)
+    return cfg.trace_report_rst
 
 
 def _slug(name: str) -> str:
@@ -190,6 +232,9 @@ def _print_summary(report_file: Path) -> int:
     # lobster-trace: SwRequirements.sw_req_trace_findings
     """Print the number of items per level that are not traced as required.
 
+    Items that LOBSTER reports as justified (e.g. by a "lobster-exclude" comment)
+    count as traced, like in the coverage of the LOBSTER report.
+
     Args:
         report_file (Path): LOBSTER report.
 
@@ -202,9 +247,13 @@ def _print_summary(report_file: Path) -> int:
     total = 0
     print("Tracing:")
     for level in report["levels"]:
-        missing = [item["tag"] for item in level["items"] if item.get("tracing_status") != "OK"]
+        missing = [item["tag"] for item in level["items"] if item.get("tracing_status") not in TRACED_STATUS]
+        justified = sum(item.get("tracing_status") == "JUSTIFIED" for item in level["items"])
         total += len(missing)
-        print(f"  {level['name']}: {len(level['items'])} items, {len(missing)} not traced")
+        line = f"  {level['name']}: {len(level['items'])} items, {len(missing)} not traced"
+        if justified:
+            line += f", {justified} justified"
+        print(line)
         for tag in missing:
             print(f"    {tag}")
     return total
