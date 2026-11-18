@@ -10,19 +10,26 @@ package "HTML Builder" {
         - _write_sphinx_config(cfg, src_dir, copy_dirs): Path
     }
 
+    class "pages" as pages <<module>> {
+        + replace_placeholders(cfg, text, page_file): str
+        + toctree_entries(text, markdown): List[str]
+        + check_toctrees(cfg): List[str]
+    }
+
     class "conf.py" as conf <<module>> {
         + setup(app)
         - _copy_dirs(app)
         - _git_commit_info(): str
     }
 
-    class "_static" as static <<folder>>
 }
 
 package "Sphinx" {
-    class "sphinx.cmd.build" as build <<SOUP>>
-    class "sphinxcontrib.plantuml" as spuml <<SOUP>>
+    class "sphinx.cmd.build" as build
+    class "sphinxcontrib.plantuml" as spuml
 }
+
+"HTML Builder" .d[hidden].> "Sphinx" 
 
 class "Config" as cfg
 class "util" as util <<module>>
@@ -31,13 +38,15 @@ class "trlcdoc_settings.json" as settings <<file>>
 class "html" as site <<folder>>
 class "webbrowser" as browser
 
-html ..> cfg : documents,\nproject,\nhtml settings
+html .> cfg : documents,\nproject,\nhtml settings
 html ..> util : run(),\nclean_dir()
+html .> pages : replace_placeholders()
+pages ..> cfg : page_name()
 html --> settings : writes
 html ..> build : build_main()
 build ..> conf : loads
 conf ..> settings : reads
-conf ..> spuml : <<use>>
-build --> site
+conf .r.> spuml : <<use>>
+build -d-> site
 html ..> browser : open(index.html)
 @enduml

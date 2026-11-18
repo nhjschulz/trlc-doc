@@ -166,7 +166,10 @@ Key concepts:
   configuration file `conf`, executed at the end of trlcdoc's
   [conf.py](trlcdoc/sphinx/conf.py) with `PROJECT_ROOT` and `trlcdoc_links` set. In these files and in `rst`/`markdown` documents,
   `{project_root}` is replaced by the relative path from the page to the
-  project root.
+  project root. Further placeholders insert the page name of a document or of
+  all documents, e.g. for the toctree of the start page, and `trlcdoc check`
+  compares that toctree with the documents (see the configuration reference,
+  chapter 8).
 - A TRLC or test result document without `title` takes its page title from the
   converted content.
 - **PLANTUML** environment variable: a plantuml.jar or a PlantUML server URL.

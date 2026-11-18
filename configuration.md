@@ -42,7 +42,7 @@ document adds the behavior behind the keys.
   - [8.2 conf: project Sphinx configuration](#82-conf-project-sphinx-configuration)
   - [8.3 index: project start page](#83-index-project-start-page)
   - [8.4 page\_header](#84-page_header)
-  - [8.5 The {project\_root} placeholder](#85-the-project_root-placeholder)
+  - [8.5 Placeholders](#85-placeholders)
 - [9. Generated files](#9-generated-files)
 - [10. Typical errors](#10-typical-errors)
 - [11. Complete examples](#11-complete-examples)
@@ -102,7 +102,7 @@ you name them on the command line:
 | Step       | Uses                                    | Produces                                    |
 |------------|-----------------------------------------|---------------------------------------------|
 | `clean`    | `paths.output`                          | Removes the output folder                   |
-| `check`    | the whole file                          | Nothing, validates the configuration        |
+| `check`    | the whole file                          | Nothing, validates the configuration and the table of contents of `html.index` |
 | `plantuml` | `plantuml`                              | PlantUML jar, `PLANTUML` environment variable |
 | `tests`    | `tests`                                 | JUnit XML, coverage report, TRLC test results |
 | `convert`  | `documents` of type `trlc`/`test_results`, `paths.trlc_model` | Converted reStructuredText (or Markdown) |
@@ -120,7 +120,8 @@ module, which the `BROWSER` environment variable can override. Without a built
 site or without a web browser it stops with exit code `2`.
 
 Exit codes: `0` success, `1` content findings (failed tests, missing trace
-links), `2` build or configuration error.
+links, a wrong table of contents in `html.index`), `2` build or configuration
+error.
 
 ### 1.4 Validation
 
@@ -137,6 +138,7 @@ The configuration is checked in two stages before any step runs, including the
    - the converter, translation and render configuration files of the
      `pytrlcconverter` options exist,
    - `html.conf`, `html.index` and `html.page_header` files exist,
+   - the `{page:<id>}` placeholders ([8.5](#85-placeholders)) name documents,
    - a `test_results` document or a `tests:coverage` source has a `tests` section,
    - a `trace_report` document has a `trace` section,
    - `paths.output` is neither inside the trlcdoc package nor the project root
@@ -144,6 +146,11 @@ The configuration is checked in two stages before any step runs, including the
 
 All problems are reported at once. Run `trlcdoc check` after every change of
 the configuration.
+
+With a project start page (`html.index`), the `check` step also compares its
+table of contents with the page names of the documents, see
+[8.3](#83-index-project-start-page). These are content findings: they are
+reported with exit code `1`, and the other steps still run.
 
 ### 1.5 A minimal configuration
 
@@ -250,11 +257,21 @@ rejected.
 | `title` | Page heading and table of contents entry. trlcdoc writes it as top level heading above the content, except for `rst` and `markdown` pages ([4.7](#47-type-rst-and-type-markdown)). |
 | `type`  | One of the types above. |
 
-**Page names:** documents of type `trlc` and `test_results` become the page
-`<id>/index.html`, all others `<id>.html`. The folder per TRLC document keeps
-the converted pages and their diagram images together, so relative image
-paths work. This matters when you write your own start page
-([8.3](#83-index-project-start-page)) or link to pages from outside.
+**Page names:** a document is a single page or a folder of pages:
+
+| Document | Page name | HTML file |
+|---|---|---|
+| `trlc`, `test_results` | `<id>/index` | `<id>/index.html` |
+| `trace_report` with `trace.report: rst` | `<id>/index` | `<id>/index.html`, plus one page per trace level |
+| `trace_report` with `trace.report: html` (default) | `<id>` | `<id>.html` |
+| all others | `<id>` | `<id>.html` |
+
+The folder per TRLC document keeps the converted pages and their diagram images
+together, so relative image paths work. This matters when you write your own
+start page ([8.3](#83-index-project-start-page)) or link to pages from outside.
+In project pages, write `{page:<id>}` instead of the page name
+([8.5](#85-placeholders)): trlcdoc inserts the right name, also after a change
+of `trace.report`.
 
 ### 4.2 type: trlc
 
@@ -405,11 +422,11 @@ a detailed design, release notes.
   | A target that does not exist, or lies outside the project | Left to MyST, which warns about it. |
 
   In reStructuredText files, use the
-  [`{project_root}`](#85-the-project_root-placeholder) placeholder for images
+  [`{project_root}`](#85-placeholders) placeholder for images
   and includes from the project:
   `.. image:: {project_root}/doc/images/context.svg`.
 - **`placeholders: false`** copies the file without replacing the
-  placeholder, for a page that explains it, like this configuration reference.
+  placeholders, for a page that explains them, like this configuration reference.
 
 ### 4.8 type: text
 
@@ -992,19 +1009,45 @@ pyTRLCConverter
    :maxdepth: 1
    :caption: Contents:
 
-   sw_requirements/index
-   sw_architecture/index
-   sw_detail_design
-   sw_tracing_report
-   license_include
+   {page:sw_requirements}
+   {page:sw_architecture}
+   {page:sw_detail_design}
+   {page:sw_tracing_report}
+
+.. toctree::
+   :caption: License:
+
+   {page:license_include}
 ```
 
 Your page **owns the table of contents**: trlcdoc adds nothing to it, so list
-every document, using the page names of [4.1](#41-common-keys)
-(`<id>/index` for `trlc` and `test_results`, `<id>` for all others). A
-document missing in the toctree is still built, and Sphinx warns that it is
-not included in any toctree. The `documents` order then only determines the
-build, not the navigation.
+every document. Use `{page:<id>}` ([8.5](#85-placeholders)): trlcdoc replaces
+it with the page name of the document, which depends on its type and on
+`trace.report` ([4.1](#41-common-keys)). Writing the page names yourself works
+as well. With `{documents}` alone in a toctree, all documents are listed in
+configuration order:
+
+```rst
+.. toctree::
+   :caption: Contents:
+
+   {documents}
+```
+
+The `documents` order then only determines the build, not the navigation
+(except for `{documents}`).
+
+The `check` step compares the toctrees with the documents. It reads the
+toctrees of the start page and of the `rst` and `markdown` documents, so a
+document may also be listed in the toctree of another page, and reports
+
+- an entry that is no page, with the page name of a matching document:
+  `html.index: toctree entry 'sw_tracing_report' is no page. Document 'sw_tracing_report' is the page 'sw_tracing_report/index' (type trace_report, trace.report: rst).`
+- a document that is in no toctree. Sphinx builds it, but it is not in the
+  navigation.
+
+Entries in folders that belong to no document, e.g. the API pages of
+sphinx-autoapi (`api/<package>/index`), are not checked.
 
 ### 8.4 page_header
 
@@ -1025,28 +1068,42 @@ generated start page and the pages of type `trlc`, `test_results`,
 
 Use it for a logo, a classification notice or a disclaimer. Because it is
 inserted into pages at different folder depths, image paths must use
-`{project_root}`.
+`{project_root}` and links to other pages `{page:<id>}`.
 
-### 8.5 The {project_root} placeholder
+### 8.5 Placeholders
 
 trlcdoc copies project owned pages into the generated Sphinx folder, at
 different depths (`index.rst`, `sw_requirements/index.rst`). A relative path
-written in the original file would therefore be wrong.
+written in the original file would therefore be wrong, and the page names of
+the documents depend on their type ([4.1](#41-common-keys)).
 
-In these files, trlcdoc replaces `{project_root}` with the relative path from
-the page to the project root:
+In these files, trlcdoc replaces placeholders, relative to the page they are
+in:
 
 - `html.index`,
 - `html.page_header` (separately for each page it is inserted into),
 - documents of type `rst` and `markdown`, unless they set
   `placeholders: false` ([4.7](#47-type-rst-and-type-markdown)).
 
+| Placeholder | Replaced by |
+|---|---|
+| `{project_root}` | The relative path from the page to the project root. |
+| `{page:<id>}` | The page name of the document `<id>`, relative to the page. For toctree entries and `:doc:` links. |
+| `{documents}` | The page names of all documents in configuration order, one per line. Write it alone on a line, e.g. as content of a toctree; every page name gets the indentation of the placeholder. |
+
 ```rst
 .. image:: {project_root}/doc/images/architecture.svg
 .. literalinclude:: {project_root}/examples/simple/simple.trlc
+
+See the :doc:`tracing report <{page:sw_tracing_report}>`.
 ```
 
-The placeholder is not replaced in the `conf` file; use `PROJECT_ROOT` there.
+A `{page:<id>}` naming no document is a configuration error:
+`html.index: placeholder '{page:sw_req}' names no document.` To show a
+placeholder as text, e.g. on a page explaining it, set `placeholders: false`
+for that document.
+
+The placeholders are not replaced in the `conf` file; use `PROJECT_ROOT` there.
 
 ## 9. Generated files
 
@@ -1094,7 +1151,10 @@ so stale files of a previous run do not remain.
 | `No converted files in ..., run the convert step first.` | Run `convert` before `html`. |
 | `pyTRLCConverter` reports an unresolved reference | The referenced records' document is missing in `include`. |
 | LOBSTER: `X cannot trace to Y items` | A level in `requires` of `Y` lacks `Y` in its `trace_to`. |
-| Sphinx: `document isn't included in any toctree` | With `html.index`, add the page to your toctree. |
+| Sphinx: `document isn't included in any toctree` | With `html.index`, add the page to your toctree, e.g. with `{page:<id>}`. |
+| `html.index: toctree entry 'x' is no page. Document 'x' is the page 'x/index' (...)` | The entry uses the wrong page name, e.g. after changing `trace.report`. Write `{page:x}` instead. |
+| `html.index: document 'x' (page '...') is not in any toctree.` | Add `{page:x}` to a toctree of the start page or of a project page. |
+| `html.index: placeholder '{page:x}' names no document.` | Misspelled document id in a project page. |
 
 ## 11. Complete examples
 

@@ -33,6 +33,7 @@ from typing import Any, Dict, List, Optional
 from sphinx.cmd.build import build_main
 
 from .config import PACKAGE_DIR, TRLC_DOCUMENT_TYPES, Config
+from .pages import replace_placeholders
 from .util import TrlcdocError, clean_dir, git_output, repository_url, run
 
 # Variables ********************************************************************
@@ -49,9 +50,6 @@ RST_TRACE_REPORT_EXTENSIONS = ["sphinx_design", "sphinx.ext.graphviz"]
 # from the order the characters appear in a page. pyTRLCConverter underlines its
 # levels with = # ~ ^ " + ', so '-' keeps the page title above the included content.
 PAGE_TITLE_CHAR = "-"
-
-# Placeholder in project owned pages, replaced by the relative path from the page to the project root.
-PROJECT_ROOT_PLACEHOLDER = "{project_root}"
 
 # Classes **********************************************************************
 
@@ -215,13 +213,12 @@ def _write_page(cfg: Config, doc: Dict[str, Any], src_dir: Path, copy_dirs: List
         TrlcdocError: If an input of the document is missing.
     """
     doc_type = doc["type"]
-    page = doc["id"]
-    page_file = src_dir / f"{page}.rst"
+    page_file = src_dir / f"{doc['id']}.rst"
 
     if doc_type in TRLC_DOCUMENT_TYPES:
-        page = _write_converted_page(cfg, doc, src_dir)
+        _write_converted_page(cfg, doc, src_dir)
     elif doc_type == "trace_report" and cfg.trace_report_format == "rst":
-        page = _write_rst_trace_report(cfg, doc, src_dir)
+        _write_rst_trace_report(cfg, doc, src_dir)
     elif doc_type == "trace_report":
         _require(cfg.trace_report_html, "run the trace step first")
         _write_generated(cfg, page_file, doc, f".. raw:: html\n   :file: {cfg.trace_report_html.as_posix()}\n")
@@ -243,22 +240,7 @@ def _write_page(cfg: Config, doc: Dict[str, Any], src_dir: Path, copy_dirs: List
         page_file = page_file.with_suffix(".md" if doc_type == "markdown" else ".rst")
         _write_project_page(cfg, source, page_file, doc.get("placeholders", True))
 
-    return page
-
-
-def _project_root_text(cfg: Config, text: str, page_file: Path) -> str:
-    # lobster-trace: SwRequirements.sw_req_html_customization
-    """Replace the project root placeholder by the relative path from a page to the project root.
-
-    Args:
-        cfg (Config): Project configuration.
-        text (str): Page content with placeholders.
-        page_file (Path): The page in the Sphinx source folder.
-
-    Returns:
-        str: The content with replaced placeholders.
-    """
-    return text.replace(PROJECT_ROOT_PLACEHOLDER, Path(os.path.relpath(cfg.root, page_file.parent)).as_posix())
+    return cfg.page_name(doc)
 
 
 def _write_project_page(cfg: Config, source: Path, page_file: Path, placeholders: bool = True) -> Path:
@@ -270,14 +252,14 @@ def _write_project_page(cfg: Config, source: Path, page_file: Path, placeholders
         cfg (Config): Project configuration.
         source (Path): The project page.
         page_file (Path): The page in the Sphinx source folder.
-        placeholders (bool): Replace the project root placeholder, False copies the page unchanged.
+        placeholders (bool): Replace the placeholders, False copies the page unchanged.
 
     Returns:
         Path: The written page.
     """
     text = source.read_text(encoding="utf-8")
     if placeholders:
-        text = _project_root_text(cfg, text, page_file)
+        text = replace_placeholders(cfg, text, page_file)
     page_file.write_text(text, encoding="utf-8")
     return page_file
 
@@ -317,7 +299,7 @@ def _page_header(cfg: Config, page_file: Path) -> str:
     if "page_header" not in cfg.html:
         return ""
     header = cfg.path(cfg.html["page_header"]).read_text(encoding="utf-8")
-    return _project_root_text(cfg, header, page_file).rstrip("\n") + "\n\n"
+    return replace_placeholders(cfg, header, page_file).rstrip("\n") + "\n\n"
 
 
 def _write_rst_trace_report(cfg: Config, doc: Dict[str, Any], src_dir: Path) -> str:
@@ -349,7 +331,7 @@ def _write_rst_trace_report(cfg: Config, doc: Dict[str, Any], src_dir: Path) -> 
     include = page_dir / ("report" + INCLUDE_SUFFIX)
     include.write_text(start, encoding="utf-8")
     _write_generated(cfg, page_dir / "index.rst", doc, f".. include:: {include.name}\n")
-    return f"{doc['id']}/index"
+    return cfg.page_name(doc)
 
 
 def _write_converted_page(cfg: Config, doc: Dict[str, Any], src_dir: Path) -> str:
@@ -383,7 +365,7 @@ def _write_converted_page(cfg: Config, doc: Dict[str, Any], src_dir: Path) -> st
         include = (page_dir / rst_file.name).rename(page_dir / (rst_file.stem + INCLUDE_SUFFIX))
         content += f".. include:: {include.name}\n\n"
     _write_generated(cfg, page_dir / "index.rst", doc, content)
-    return f"{doc['id']}/index"
+    return cfg.page_name(doc)
 
 
 def _require(path: Path, hint: str) -> Path:
@@ -514,7 +496,7 @@ def _link_settings(cfg: Config) -> Dict[str, Any]:
     for doc in cfg.documents:
         if "source" in doc and doc["type"] in ("trlc", "rst", "markdown", "text"):
             source = Path(os.path.relpath(cfg.path(doc["source"]), cfg.root)).as_posix()
-            pages[source] = f"{doc['id']}/index" if doc["type"] == "trlc" else doc["id"]
+            pages[source] = cfg.page_name(doc)
             if doc["type"] == "markdown":
                 markdown_sources[doc["id"]] = source
 
