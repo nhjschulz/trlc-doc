@@ -3,6 +3,7 @@
 [![License: GPL-3.0-or-later](https://img.shields.io/badge/license-GPL--3.0--or--later-blue)](https://github.com/nhjschulz/trlc-doc/blob/main/LICENSE)
 [![PyPI](https://img.shields.io/pypi/v/trlcdoc)](https://pypi.org/project/trlcdoc/)
 [![Tests](https://github.com/nhjschulz/trlc-doc/actions/workflows/test.yml/badge.svg)](https://github.com/nhjschulz/trlc-doc/actions/workflows/test.yml)
+[![Docs](https://github.com/nhjschulz/trlc-doc/actions/workflows/pages.yaml/badge.svg?branch=main)](https://nhjschulz.github.io/trlc-doc/)
 [![Project Status: WIP](https://www.repostatus.org/badges/latest/wip.svg)](https://www.repostatus.org/#wip)
 
 Configurable documentation tooling for TRLC based projects.
@@ -63,10 +64,10 @@ documents:
 
 Editors with YAML language support validate the configuration against the
 published JSON schema. Use the copy matching your trlcdoc release, here for
-version 0.4.0:
+version 0.5.0:
 
 ```yaml
-# yaml-language-server: $schema=https://nhjschulz.github.io/trlc-doc/schema/V0.4.0/trlcdoc.schema.json
+# yaml-language-server: $schema=https://nhjschulz.github.io/trlc-doc/schema/V0.5.0/trlcdoc.schema.json
 ```
 
 The [configuration reference](https://nhjschulz.github.io/trlc-doc/configuration.html)
