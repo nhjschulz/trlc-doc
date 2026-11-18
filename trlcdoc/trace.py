@@ -33,6 +33,10 @@ from .util import TrlcdocError, clean_dir, find_tool, git_output, repository_url
 
 # Variables ********************************************************************
 
+# LOBSTER tracing status of items that are traced as required. Justified items
+# (e.g. marked with "lobster-exclude") count as covered in LOBSTER, too.
+TRACED_STATUS = ("OK", "JUSTIFIED")
+
 # Classes **********************************************************************
 
 # Functions ********************************************************************
@@ -228,6 +232,9 @@ def _print_summary(report_file: Path) -> int:
     # lobster-trace: SwRequirements.sw_req_trace_findings
     """Print the number of items per level that are not traced as required.
 
+    Items that LOBSTER reports as justified (e.g. by a "lobster-exclude" comment)
+    count as traced, like in the coverage of the LOBSTER report.
+
     Args:
         report_file (Path): LOBSTER report.
 
@@ -240,9 +247,13 @@ def _print_summary(report_file: Path) -> int:
     total = 0
     print("Tracing:")
     for level in report["levels"]:
-        missing = [item["tag"] for item in level["items"] if item.get("tracing_status") != "OK"]
+        missing = [item["tag"] for item in level["items"] if item.get("tracing_status") not in TRACED_STATUS]
+        justified = sum(item.get("tracing_status") == "JUSTIFIED" for item in level["items"])
         total += len(missing)
-        print(f"  {level['name']}: {len(level['items'])} items, {len(missing)} not traced")
+        line = f"  {level['name']}: {len(level['items'])} items, {len(missing)} not traced"
+        if justified:
+            line += f", {justified} justified"
+        print(line)
         for tag in missing:
             print(f"    {tag}")
     return total

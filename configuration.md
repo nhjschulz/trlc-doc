@@ -773,6 +773,14 @@ Tracing:
 Untraced items are content findings: the report is still created, and trlcdoc
 exits with `1`.
 
+Items that LOBSTER reports as justified, e.g. Python functions with a
+`# lobster-exclude: <reason>` comment, count as traced, like in the coverage
+of the report. Their number is shown per level, so exemptions stay visible:
+
+```text
+  SW Test Code: 100 items, 0 not traced, 17 justified
+```
+
 ### 6.1 Requirement levels
 
 The default `kind: requirements` takes the records of one record type from a

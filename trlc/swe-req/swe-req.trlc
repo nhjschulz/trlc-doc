@@ -409,11 +409,13 @@ section "trlcdoc" {
                 description =
                     '''
                     The software shall list the items with missing trace links and report them as findings.
+                    Items justified in LOBSTER (e.g. by `lobster-exclude`) count as traced, their number is shown.
                     '''
                 verification_criteria =
                     '''
                     Run the trace step on a project with an untraced requirement. Check the listed item and the exit
-                    code.
+                    code. Run it on a project with a justified function. Check that it is counted as justified and the
+                    exit code is 0.
                     '''
                 valid_status = AbstractRequirements.VALID_STATUS.valid
             }
