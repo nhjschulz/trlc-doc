@@ -28,6 +28,7 @@ from . import __version__
 from .config import Config, find_config, load_config
 from .convert import convert_documents
 from .html import build_html, show_html
+from .pages import check_toctrees
 from .plantuml import provide_plantuml
 from .testrun import run_tests
 from .trace import build_trace_report
@@ -116,6 +117,7 @@ def _run_step(step: str, cfg: Config, args: argparse.Namespace) -> bool:
     # lobster-trace: SwRequirements.sw_req_clean
     # lobster-trace: SwRequirements.sw_req_show
     # lobster-trace: SwRequirements.sw_req_exit_code
+    # lobster-trace: SwRequirements.sw_req_toctree_check
     """Run one step.
 
     Args:
@@ -125,7 +127,7 @@ def _run_step(step: str, cfg: Config, args: argparse.Namespace) -> bool:
 
     Returns:
         bool: True if the step found no problems in the project content
-        (failed tests, missing trace links). Build errors raise TrlcdocError.
+        (failed tests, missing trace links, wrong table of contents). Build errors raise TrlcdocError.
 
     Raises:
         TrlcdocError: If the step cannot be completed.
@@ -136,6 +138,11 @@ def _run_step(step: str, cfg: Config, args: argparse.Namespace) -> bool:
         print(f"Removing {cfg.output}" if remove_output(cfg.output) else f"Nothing to clean in {cfg.output}")
     elif step == "check":
         print(f"Configuration {cfg.config_file} is valid, output: {cfg.output}")
+        toctree_findings = check_toctrees(cfg)
+        if toctree_findings:
+            print("Table of contents of the project start page:")
+            print("".join(f"  {finding}\n" for finding in toctree_findings), end="")
+        ok = not toctree_findings
     elif step == "plantuml":
         provide_plantuml(cfg)
     elif step == "tests":

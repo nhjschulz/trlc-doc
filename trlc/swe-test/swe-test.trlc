@@ -129,6 +129,35 @@ section "SW-Tests" {
             verifies = [SwRequirements.sw_req_config_validation]
         }
 
+        SwTestCase tc_toctree_check {
+            description =
+                '''
+                **Table of contents check** (`tests/test_pages.py`)
+
+                Run the check step with project start pages listing
+
+                - TRLC documents and the reStructuredText tracing report without `/index`
+                - an unknown page and a page of a Sphinx extension
+                - not every document
+
+                Check the findings with the right page names and their reason, and the exit code 1. Check that the
+                same start page is right for the tracing report in HTML format, that a start page with placeholders,
+                page names and a Markdown document with its own toctree has no findings, and that misspelled
+                `{page:<id>}` placeholders are configuration errors.
+                '''
+            verifies = [SwRequirements.sw_req_toctree_check, SwRequirements.sw_req_page_placeholders]
+        }
+
+        SwTestCase tc_toctree_entries {
+            description =
+                '''
+                Read the toctree entries of a reStructuredText page with LF and CRLF line ends and of a Markdown page
+                with MyST toctrees. Check that titles, a leading `/`, source suffixes, options, `self`, URLs and glob
+                patterns are handled (`tests/test_pages.py`).
+                '''
+            verifies = [SwRequirements.sw_req_toctree_check]
+        }
+
         SwTestCase tc_project_settings {
             description =
                 '''
@@ -384,6 +413,29 @@ section "SW-Tests" {
                 - that no HTML tracing report is created
                 '''
             verifies = [SwRequirements.sw_req_trace_report_rst]
+        }
+
+        SwTestCase tc_page_placeholders {
+            description =
+                '''
+                Replace `{page:<id>}`, `{documents}` and `{project_root}` for a page at the top and in a document
+                folder, with both tracing report formats. Check the relative page names, the kept indentation and CRLF
+                line end of `{documents}` and that an unknown id is left unchanged (`tests/test_pages.py`).
+                '''
+            verifies = [SwRequirements.sw_req_page_placeholders]
+        }
+
+        SwTestCase tc_page_placeholders_site {
+            description =
+                '''
+                **Page placeholders in a site** (`tests/test_html.py`)
+
+                Build a site whose start page contains only `{documents}`, whose page header and a project page link
+                with `{page:<id>}`, once with each tracing report format. Check the table of contents in configuration
+                order with the page name of each format, the links from pages at different depths and that the check
+                step has no findings.
+                '''
+            verifies = [SwRequirements.sw_req_page_placeholders, SwRequirements.sw_req_html_customization]
         }
 
         SwTestCase tc_trace_findings {

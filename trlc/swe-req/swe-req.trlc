@@ -160,6 +160,29 @@ section "trlcdoc" {
                 valid_status = AbstractRequirements.VALID_STATUS.valid
             }
 
+            SwReq sw_req_toctree_check {
+                description =
+                    '''
+                    **Table of contents check**
+
+                    With a project start page, the check step shall compare the table of contents entries of the start
+                    page and of the reStructuredText and Markdown documents with the page names of the documents. It
+                    shall report as finding
+
+                    - an entry which is no page, with the page name of the document of a similar name and its reason
+                    - a document which is in no table of contents
+
+                    Entries in folders that belong to no document shall be accepted, e.g. pages of Sphinx extensions.
+                    '''
+                verification_criteria =
+                    '''
+                    Check start pages with wrong entries, a missing document and a page of a Sphinx extension, with
+                    both tracing report formats, a correct start page and a Markdown toctree. Check the findings and
+                    the exit code. Read the entries of reStructuredText and Markdown toctrees.
+                    '''
+                valid_status = AbstractRequirements.VALID_STATUS.valid
+            }
+
             SwReq sw_req_project_settings {
                 description =
                     '''
@@ -470,6 +493,28 @@ section "trlcdoc" {
                     Build a site with a Markdown page linking to a site page, a TRLC document folder, a project file
                     and a project folder, and showing a project image. Check the links and the image, with and without
                     a repository.
+                    '''
+                valid_status = AbstractRequirements.VALID_STATUS.valid
+            }
+
+            SwReq sw_req_page_placeholders {
+                description =
+                    '''
+                    **Page placeholders**
+
+                    The software shall replace these placeholders in the project start page, the page header and the
+                    reStructuredText and Markdown documents:
+
+                    - `{page:<id>}` by the page name of the document, relative to the page
+                    - `{documents}` by the page names of all documents in configuration order, one per line
+
+                    A placeholder naming no document shall be reported as configuration error.
+                    '''
+                verification_criteria =
+                    '''
+                    Replace the placeholders for pages at different depths and both tracing report formats. Build sites
+                    with both tracing report formats whose start page and pages use the placeholders, and check the
+                    table of contents and the links. Check the error for an unknown document id.
                     '''
                 valid_status = AbstractRequirements.VALID_STATUS.valid
             }
