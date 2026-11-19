@@ -79,7 +79,8 @@ links), `2` build error. All generated files go to `paths.output`
 ### Installation
 
 The HTML site generation needs a Java runtime for PlantUML, and Graphviz for all
-diagrams except sequence diagrams.
+diagrams except sequence diagrams. Tracing C/C++ code needs
+[doxygen](https://www.doxygen.nl).
 
 **From PyPI:**
 
@@ -212,11 +213,13 @@ def find_config(start: Path) -> Path:
 
 The trace level `SW Code` in [trlcdoc.yaml](trlcdoc.yaml) extracts the comments with
 [lobster-python](https://pypi.org/project/bmw-lobster-tool-python/).
+C/C++ projects trace their code with doxygen `@implements{...}` tags and
+[lobster-doxygen](https://pypi.org/project/lobster-doxygen/), see the
+[configuration reference](configuration.md#621-cc-code-with-lobster-doxygen).
 A function without comment is reported as a finding by the trace step, and so is a
 requirement without an implementing function.
 
-Note: Support for code tracing to other languages like C/C++ or Rust is currently
-under development.
+Note: Support for code tracing to other languages like Rust is not planned yet.
 
 ## Tests
 
@@ -230,6 +233,7 @@ pip install -e ".[test]"
 pytest
 ```
 
+The C/C++ tracing test needs doxygen on the `PATH` and is skipped without it.
 The HTML site tests need a Java runtime for PlantUML. They use the jar from
 `$PLANTUML`, or download it once into the pytest cache. The
 [Tests workflow](.github/workflows/test.yml) runs the tests on every push and

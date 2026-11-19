@@ -330,6 +330,7 @@ section "trlcdoc SW Architecture" {
                         Realizes the trace step. It
 
                         - extracts the trace data per configured level with lobster-trlc or the code extractor
+                        - runs doxygen with the level's Doxyfile, limited to XML output, before lobster-doxygen
                         - generates the LOBSTER policy from the level relations
                         - runs lobster-report
                         - creates the HTML tracing report with lobster-html-report
@@ -347,7 +348,8 @@ section "trlcdoc SW Architecture" {
                         SwRequirements.sw_req_trace_levels,
                         SwRequirements.sw_req_trace_report,
                         SwRequirements.sw_req_trace_report_rst,
-                        SwRequirements.sw_req_trace_findings
+                        SwRequirements.sw_req_trace_findings,
+                        SwRequirements.sw_req_trace_doxygen
                     ]
                 }
 

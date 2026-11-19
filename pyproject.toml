@@ -36,6 +36,7 @@ dependencies = [
   # pyTRLCConverter determines the trlc version.
   "pyTRLCConverter >= 3.0.0",
   "bmw-lobster == 1.0.*",
+  "lobster-doxygen >= 1.1.0",
   "Sphinx >= 8.1.3",
   "myst-parser >= 4.0.0",
   "sphinxcontrib-plantuml >= 0.30",

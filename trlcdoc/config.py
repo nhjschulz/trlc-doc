@@ -351,7 +351,7 @@ def _check_references(cfg: Config) -> List[str]:
         errors.extend(_check_document(cfg, doc, doc_types))
 
     if cfg.trace is not None:
-        errors.extend(_check_levels(cfg.trace["levels"], doc_types))
+        errors.extend(_check_levels(cfg, cfg.trace["levels"], doc_types))
 
     for key in ("conf", "index", "page_header"):
         if key in cfg.html and not cfg.path(cfg.html[key]).is_file():
@@ -423,12 +423,14 @@ def _check_document(cfg: Config, doc: Dict[str, Any], doc_types: Dict[str, str])
     return errors
 
 
-def _check_levels(levels: List[Dict[str, Any]], doc_types: Dict[str, str]) -> List[str]:
+def _check_levels(cfg: Config, levels: List[Dict[str, Any]], doc_types: Dict[str, str]) -> List[str]:
     # lobster-trace: SwRequirements.sw_req_config_validation
     # lobster-trace: SwRequirements.sw_req_trace_levels
+    # lobster-trace: SwRequirements.sw_req_trace_doxygen
     """Check the trace level references.
 
     Args:
+        cfg (Config): Schema validated configuration.
         levels (List[Dict[str, Any]]): Configured trace levels.
         doc_types (Dict[str, str]): Document type per document id.
 
@@ -445,6 +447,8 @@ def _check_levels(levels: List[Dict[str, Any]], doc_types: Dict[str, str]) -> Li
         where = f"trace.levels[{level['name']}]"
         if "document" in level and doc_types.get(level["document"]) not in TRLC_DOCUMENT_TYPES:
             errors.append(f"{where}.document: '{level['document']}' is no document of type trlc or test_results.")
+        if "doxyfile" in level and not cfg.path(level["doxyfile"]).is_file():
+            errors.append(f"{where}.doxyfile: file '{level['doxyfile']}' not found.")
         for key in ("trace_to", "requires"):
             for target in level.get(key, []):
                 if target not in names:
