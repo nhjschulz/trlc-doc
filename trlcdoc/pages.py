@@ -5,7 +5,8 @@ the generated Sphinx folder at different depths. Their placeholders are replaced
 
 - {project_root}: the relative path from the page to the project root
 - {page:<id>}: the page name of a document, relative to the page
-- {documents}: the page names of all documents in configuration order, one per line
+- {documents}: the page names of the documents in configuration order, one per line, without
+  the documents a toctree of a project page lists explicitly
 
 With a project start page, the project owns the table of contents. The check compares its
 toctree entries with the page names of the documents, which depend on the document type and
@@ -73,6 +74,10 @@ def replace_placeholders(cfg: Config, text: str, page_file: Path) -> str:
     file works in pages at different depths of the Sphinx folder. Unknown document ids are
     left unchanged, the configuration check reports them.
 
+    {documents} leaves out the documents that a toctree of a project page lists explicitly,
+    by {page:<id>} or by page name, so a page can list a document in a toctree of its own,
+    e.g. the license in a separate section, without listing it twice.
+
     Args:
         cfg (Config): Project configuration.
         text (str): Page content with placeholders.
@@ -84,11 +89,17 @@ def replace_placeholders(cfg: Config, text: str, page_file: Path) -> str:
     page_dir = page_file.parent
     pages = {doc["id"]: _relative_page(cfg, cfg.page_name(doc), page_dir) for doc in cfg.documents}
 
-    def documents(match: re.Match) -> str:
-        indent, line_end = match.group(1), match.group(2)
-        return "\n".join(f"{indent}{page}{line_end}" for page in pages.values())
+    if DOCUMENTS_PLACEHOLDER.search(text):
+        explicit = _toctree_entries_of_project_pages(cfg, with_documents=False)
+        listed = {entry for _, entry in explicit}
+        unlisted = [pages[doc["id"]] for doc in cfg.documents if cfg.page_name(doc) not in listed]
 
-    text = DOCUMENTS_PLACEHOLDER.sub(documents, text)
+        def documents(match: re.Match) -> str:
+            indent, line_end = match.group(1), match.group(2)
+            return "\n".join(f"{indent}{page}{line_end}" for page in unlisted)
+
+        text = DOCUMENTS_PLACEHOLDER.sub(documents, text)
+
     text = PAGE_PLACEHOLDER.sub(lambda match: pages.get(match.group(1), match.group(0)), text)
     return text.replace(PROJECT_ROOT_PLACEHOLDER, Path(os.path.relpath(cfg.root, page_dir)).as_posix())
 
@@ -225,20 +236,25 @@ def check_toctrees(cfg: Config) -> List[str]:
     return findings
 
 
-def _toctree_entries_of_project_pages(cfg: Config) -> List[Tuple[str, str]]:
+def _toctree_entries_of_project_pages(cfg: Config, with_documents: bool = True) -> List[Tuple[str, str]]:
     # lobster-trace: SwRequirements.sw_req_toctree_check
+    # lobster-trace: SwRequirements.sw_req_page_placeholders
     """Get the toctree entries of html.index and the rst and markdown documents.
 
     The project pages are placed at the top of the Sphinx folder, so their entries are page
     names relative to the Sphinx folder.
 
     Args:
-        cfg (Config): Project configuration with html.index.
+        cfg (Config): Project configuration.
+        with_documents (bool): Include the entries of {documents}, False gives only the
+            explicitly listed entries.
 
     Returns:
         List[Tuple[str, str]]: Configuration location of the page and the entry.
     """
-    project_pages = [("html.index", cfg.path(cfg.html["index"]), "index.rst", True)]
+    project_pages = []
+    if "index" in cfg.html:
+        project_pages.append(("html.index", cfg.path(cfg.html["index"]), "index.rst", True))
     project_pages.extend((f"documents[{doc['id']}]", cfg.path(doc["source"]),
                           doc["id"] + (".md" if doc["type"] == "markdown" else ".rst"), doc.get("placeholders", True))
                          for doc in cfg.documents if doc["type"] in ("rst", "markdown"))
@@ -246,6 +262,8 @@ def _toctree_entries_of_project_pages(cfg: Config) -> List[Tuple[str, str]]:
     for where, source, name, placeholders in project_pages:
         if source.is_file():
             text = source.read_text(encoding="utf-8")
+            if not with_documents:
+                text = DOCUMENTS_PLACEHOLDER.sub("", text)
             if placeholders:
                 text = replace_placeholders(cfg, text, cfg.sphinx_dir / name)
             result.extend((where, entry) for entry in toctree_entries(text, name.endswith(".md")))

@@ -231,4 +231,35 @@ def test_page_placeholders(project: Path) -> None:
     cfg = load_config(write_config(root, data))
     assert replace_placeholders(cfg, "{page:sw_tracing_report}", cfg.sphinx_dir / "index.rst") == "sw_tracing_report"
 
+
+def test_documents_placeholder_unlisted(project: Path, capsys: pytest.CaptureFixture) -> None:
+    """{documents} leaves out the documents that a toctree of a project page lists explicitly.
+
+    Args:
+        project (Path): Configuration file of the example project.
+        capsys (pytest.CaptureFixture): pytest output capture.
+    """
+    root = project.parent
+    # Like a license in a section of its own: the start page lists the test results by placeholder
+    # and the tracing report by page name, a Markdown document lists the tests.
+    index = ("Example\n=======\n\n.. toctree::\n   :caption: Contents:\n\n   {documents}\n\n"
+             "License\n-------\n\n.. toctree::\n\n   {page:sw_test_results}\n   sw_tracing_report/index\n")
+    (root / "docs").mkdir(exist_ok=True)
+    (root / "docs" / "notes.md").write_text(NOTES_MD, encoding="utf-8")
+    data = _config(root, index)
+    data["documents"].append({"id": "notes", "type": "markdown", "source": "docs/notes.md"})
+    cfg = load_config(write_config(root, data))
+
+    text = replace_placeholders(cfg, index, cfg.sphinx_dir / "index.rst")
+    assert toctree_entries(text) == ["sw_requirements/index", "sw_architecture/index", "notes",
+                                     "sw_test_results/index", "sw_tracing_report/index"]
+
+    # In a page of a document folder, the remaining page names are relative to the folder.
+    nested = replace_placeholders(cfg, "{documents}", cfg.sphinx_dir / "sw_test" / "index.rst")
+    assert nested.split("\n") == ["../sw_requirements/index", "../sw_architecture/index", "../notes"]
+
+    # Every document is in exactly one toctree, the check has no findings.
+    assert cli.main(["-c", str(write_config(root, data)), "check"]) == 0
+    assert "toctree" not in capsys.readouterr().out
+
 # Main *************************************************************************

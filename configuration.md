@@ -1032,7 +1032,7 @@ Your page **owns the table of contents**: trlcdoc adds nothing to it, so list
 every document. Use `{page:<id>}` ([8.5](#85-placeholders)): trlcdoc replaces
 it with the page name of the document, which depends on its type and on
 `trace.report` ([4.1](#41-common-keys)). Writing the page names yourself works
-as well. With `{documents}` alone in a toctree, all documents are listed in
+as well. With `{documents}` alone in a toctree, the documents are listed in
 configuration order:
 
 ```rst
@@ -1040,7 +1040,18 @@ configuration order:
    :caption: Contents:
 
    {documents}
+
+License
+-------
+
+.. toctree::
+
+   {page:license_include}
 ```
+
+`{documents}` leaves out the documents that a toctree lists explicitly, by
+`{page:<id>}` or by page name, so the license above is listed only once. It
+reads the same toctrees as the `check` step (below).
 
 The `documents` order then only determines the build, not the navigation
 (except for `{documents}`).
@@ -1097,7 +1108,7 @@ in:
 |---|---|
 | `{project_root}` | The relative path from the page to the project root. |
 | `{page:<id>}` | The page name of the document `<id>`, relative to the page. For toctree entries and `:doc:` links. |
-| `{documents}` | The page names of all documents in configuration order, one per line. Write it alone on a line, e.g. as content of a toctree; every page name gets the indentation of the placeholder. |
+| `{documents}` | The page names of the documents in configuration order, one per line, without the documents a toctree lists explicitly ([8.3](#83-index-project-start-page)). Write it alone on a line, e.g. as content of a toctree; every page name gets the indentation of the placeholder. |
 
 ```rst
 .. image:: {project_root}/doc/images/architecture.svg

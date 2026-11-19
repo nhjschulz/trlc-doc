@@ -425,6 +425,19 @@ section "SW-Tests" {
             verifies = [SwRequirements.sw_req_page_placeholders]
         }
 
+        SwTestCase tc_documents_placeholder_unlisted {
+            description =
+                '''
+                **{documents} without explicitly listed documents** (`tests/test_pages.py`)
+
+                Replace `{documents}` in a start page that also lists two documents in a section of its own, by
+                `{page:<id>}` and by page name, with a Markdown document that lists a third one. Check that `{documents}`
+                lists only the remaining documents, also relative to a page in a document folder, and that the check
+                step has no findings.
+                '''
+            verifies = [SwRequirements.sw_req_page_placeholders, SwRequirements.sw_req_toctree_check]
+        }
+
         SwTestCase tc_page_placeholders_site {
             description =
                 '''
