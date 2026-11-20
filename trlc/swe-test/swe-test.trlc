@@ -122,7 +122,8 @@ section "SW-Tests" {
                 - an undefined trace level
                 - a missing Doxyfile
 
-                Check that every error is reported with its location, and that no step runs.
+                Check that every error is reported with its location, and that no step runs. Load a file that is no
+                valid YAML and check that the syntax error is reported with its position and exit code 2.
 
                 Load test link configurations with output pattern, name pattern, both, an output pattern without
                 `{id}`, `from` without `to`, `to` alone and property alone. Check that only the first three are valid.

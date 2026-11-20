@@ -474,7 +474,10 @@ def load_config(config_file: Path) -> Config:
         raise TrlcdocError(f"Configuration file {config_file} not found.")
 
     with open(config_file, encoding="utf-8") as file:
-        data = yaml.safe_load(file)
+        try:
+            data = yaml.safe_load(file)
+        except yaml.YAMLError as error:
+            raise TrlcdocError(f"{config_file} is no valid YAML: {error}") from error
 
     with open(SCHEMA_FILE, encoding="utf-8") as file:
         schema = json.load(file)

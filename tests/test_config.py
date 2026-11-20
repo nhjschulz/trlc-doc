@@ -129,6 +129,14 @@ def test_config_validation(project: Path, capsys: pytest.CaptureFixture) -> None
     assert "has invalid settings" in capsys.readouterr().out
     assert not (root / "build").exists()
 
+    # A file that is no valid YAML is reported with the position of the error.
+    project.write_text("project:\n  name: x\n   author: y\n", encoding="utf-8")
+    assert cli.main(["-c", str(project), "check"]) == 2
+    out = capsys.readouterr().out
+    assert "is no valid YAML: mapping values are not allowed here" in out
+    assert "line 3, column 10" in out
+    assert "Traceback" not in out
+
     # tests.link needs the output pattern, or the name pattern with 'from' and 'to'.
     data = base_config()
     for link, valid in (({"output": "lobster-trace: {id}"}, True),
