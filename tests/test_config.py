@@ -132,6 +132,58 @@ def test_config_validation(project: Path, capsys: pytest.CaptureFixture) -> None
     assert "has invalid settings" in capsys.readouterr().out
     assert not (root / "build").exists()
 
+    # Errors start with file and line of their entry, a missing key with the line of its parent.
+    lines = ["project:",                                 # 1
+             "  name: example",                          # 2
+             "  author: Jane Doe",                       # 3
+             "  copyright: '2026, Jane Doe'",            # 4
+             "  logo: docs/logo.pngx",                   # 5
+             "paths:",                                   # 6
+             "  trlc_model: trlc/model",                 # 7
+             "documents:",                               # 8
+             "  - id: sw_requirements",                  # 9
+             "    type: trlc",                           # 10
+             "    title: SW Requirements",               # 11
+             "    source: trlc/swe-req",                 # 12
+             "    pytrlcconverter:",                     # 13
+             "      converter:",                         # 14
+             "        rst: builtin:req2rst.py",          # 15
+             "  - id: sw_architecture",                  # 16
+             "    type: trlc",                           # 17
+             "    title: SW Architecture",               # 18
+             "    source: trlc/swe-arch",                # 19
+             "    include: [sw_requirements, unknown]",  # 20
+             "    pytrlcconverter:",                     # 21
+             "      converter:",                         # 22
+             "        rst: converters/missing.py",       # 23
+             "  - id: sw_requirements",                  # 24
+             "    type: trlc",                           # 25
+             "    title: SW Requirements",               # 26
+             "    source: trlc/swe-req",                 # 27
+             "    pytrlcconverter:",                     # 28
+             "      converter:",                         # 29
+             "        rst: builtin:req2rst.py"]          # 30
+    project.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    assert cli.main(["-c", str(project), "check"]) == 2
+    out = capsys.readouterr().out.splitlines()
+    assert out[-4:] == [
+        f"  {project}:5: project.logo: file 'docs/logo.pngx' not found.",
+        f"  {project}:20: documents[sw_architecture].include: 'unknown' is no document of type trlc or test_results.",
+        f"  {project}:23: documents[sw_architecture].pytrlcconverter.converter.rst: "
+        "file 'converters/missing.py' not found.",
+        f"  {project}:24: documents: id 'sw_requirements' is used more than once."]
+
+    lines[2] = "  authors: Jane Doe"
+    lines[18] = "    sorce: trlc/swe-arch"
+    lines[24] = "    type: pdf"
+    project.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    assert cli.main(["-c", str(project), "check"]) == 2
+    out = capsys.readouterr().out
+    assert f"\n  {project}:1: project: 'author' is a required property" in out
+    assert f"\n  {project}:3: project: Additional properties are not allowed ('authors' was unexpected)" in out
+    assert f"\n  {project}:25: documents/2/type: 'pdf' is not one of" in out
+    assert f"\n  {project}:19: documents/1: 'sorce' is not one of" in out
+
     # A file that is no valid YAML is reported with the position of the error.
     project.write_text("project:\n  name: x\n   author: y\n", encoding="utf-8")
     assert cli.main(["-c", str(project), "check"]) == 2

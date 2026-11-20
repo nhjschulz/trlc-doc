@@ -146,8 +146,22 @@ The configuration is checked in two stages before any step runs, including the
    - `paths.output` is neither inside the trlcdoc package nor the project root
      or one of its parents.
 
-All problems are reported at once. Run `trlcdoc check` after every change of
-the configuration.
+All problems are reported at once, each with the file and line of its entry:
+
+```text
+trlcdoc error: trlcdoc.yaml has invalid settings:
+  trlcdoc.yaml:15: project.logo: file 'doc/images/logo-trlcdoc.pngx' not found.
+  trlcdoc.yaml:37: documents[sw_architecture].include: 'unknown' is no document of type trlc or test_results.
+```
+
+Editors like Visual Studio Code open the file at this line from the terminal.
+An error about a missing key, e.g. `'author' is a required property`, points to
+the line of the enclosing entry. A repeated document id or level name points to
+its second occurrence. A value taken from a YAML alias points to the line of the
+alias. A file that is no valid YAML is reported with the line and column of the
+syntax error.
+
+Run `trlcdoc check` after every change of the configuration.
 
 With a project start page (`html.index`), the `check` step also compares its
 table of contents with the page names of the documents, see
@@ -1216,6 +1230,8 @@ Publish the `html` folder. Each step clears its own folders before it runs,
 so stale files of a previous run do not remain.
 
 ## 10. Typical errors
+
+Configuration errors are listed without the leading `<file>:<line>:`.
 
 | Message | Cause and fix |
 |---------|---------------|

@@ -150,8 +150,10 @@ section "trlcdoc" {
                     - validate the configuration against a defined schema
                     - check the references between its entries
 
-                    An invalid configuration shall be reported with the location of each error. A configuration file
-                    that is no valid YAML shall be reported with the position of the syntax error.
+                    An invalid configuration shall be reported with the location of each error in the configuration
+                    and the line of the entry in the configuration file. An error about a missing entry shall be
+                    reported with the line of its parent entry. A configuration file that is no valid YAML shall be
+                    reported with the position of the syntax error.
                     '''
                 verification_criteria =
                     '''

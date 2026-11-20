@@ -23,7 +23,7 @@
 import json
 import re
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import jsonschema
 import yaml
@@ -44,6 +44,12 @@ TRLC_DOCUMENT_TYPES = ("trlc", "test_results")
 # Placeholder in project owned pages for the page name of a document, {page:<id>}.
 # Everything up to the closing brace is taken as id, so a misspelled id is reported.
 PAGE_PLACEHOLDER = re.compile(r"\{page:([^}]*)\}")
+
+# Path of an entry in the configuration, e.g. ("documents", 1, "include").
+ConfigPath = Tuple[Union[str, int], ...]
+
+# Configuration error: path of the entry and message.
+ConfigError = Tuple[ConfigPath, str]
 
 # Classes **********************************************************************
 
@@ -220,17 +226,20 @@ class Config:
             result = f"{doc['id']}/index"
         return result
 
-    def placeholder_files(self) -> List[Tuple[str, Path]]:
+    def placeholder_files(self) -> List[Tuple[str, ConfigPath, Path]]:
         # lobster-trace: SwRequirements.sw_req_html_customization
         # lobster-trace: SwRequirements.sw_req_page_placeholders
         """Get the project owned files whose placeholders are replaced.
 
         Returns:
-            List[Tuple[str, Path]]: Configuration location and path of html.index, html.page_header and
-            the rst and markdown documents, except documents with 'placeholders: false'.
+            List[Tuple[str, ConfigPath, Path]]: Configuration location, its entry path and the path of html.index,
+            html.page_header and the rst and markdown documents, except documents with 'placeholders: false'.
         """
-        result = [(f"html.{key}", self.path(self.html[key])) for key in ("index", "page_header") if key in self.html]
-        result.extend((f"documents[{doc['id']}]", self.path(doc["source"])) for doc in self.documents
+        result: List[Tuple[str, ConfigPath, Path]] = [
+            (f"html.{key}", ("html", key), self.path(self.html[key]))
+            for key in ("index", "page_header") if key in self.html]
+        result.extend((f"documents[{doc['id']}]", ("documents", index, "source"), self.path(doc["source"]))
+                      for index, doc in enumerate(self.documents)
                       if doc["type"] in ("rst", "markdown") and doc.get("placeholders", True))
         return result
 
@@ -329,7 +338,7 @@ class Config:
 # Functions ********************************************************************
 
 
-def _check_references(cfg: Config) -> List[str]:
+def _check_references(cfg: Config) -> List[ConfigError]:
     # lobster-trace: SwRequirements.sw_req_config_validation
     # lobster-trace: SwRequirements.sw_req_output_folder
     """Check the cross references, which the JSON schema cannot express.
@@ -338,41 +347,43 @@ def _check_references(cfg: Config) -> List[str]:
         cfg (Config): Schema validated configuration.
 
     Returns:
-        List[str]: Error messages, empty if all references are valid.
+        List[ConfigError]: Errors, empty if all references are valid.
     """
-    errors: List[str] = []
+    errors: List[ConfigError] = []
     doc_ids = [doc["id"] for doc in cfg.documents]
     doc_types = {doc["id"]: doc["type"] for doc in cfg.documents}
 
-    for doc_id in sorted({doc_id for doc_id in doc_ids if doc_ids.count(doc_id) > 1}):
-        errors.append(f"documents: id '{doc_id}' is used more than once.")
+    # A repeated id is reported at its second occurrence.
+    for index, doc_id in enumerate(doc_ids):
+        if doc_ids[:index].count(doc_id) == 1:
+            errors.append((("documents", index, "id"), f"documents: id '{doc_id}' is used more than once."))
 
-    for doc in cfg.documents:
-        errors.extend(_check_document(cfg, doc, doc_types))
+    for index, doc in enumerate(cfg.documents):
+        errors.extend(_check_document(cfg, ("documents", index), doc, doc_types))
 
     if cfg.trace is not None:
         errors.extend(_check_levels(cfg, cfg.trace["levels"], doc_types))
 
     for key in ("logo", "favicon"):
         if cfg.project.get(key) and not cfg.path(cfg.project[key]).is_file():
-            errors.append(f"project.{key}: file '{cfg.project[key]}' not found.")
+            errors.append((("project", key), f"project.{key}: file '{cfg.project[key]}' not found."))
 
     for key in ("conf", "index", "page_header"):
         if key in cfg.html and not cfg.path(cfg.html[key]).is_file():
-            errors.append(f"html.{key}: file '{cfg.html[key]}' not found.")
+            errors.append((("html", key), f"html.{key}: file '{cfg.html[key]}' not found."))
 
     errors.extend(_check_page_placeholders(cfg, doc_ids))
 
     if cfg.output.is_relative_to(PACKAGE_DIR):
-        errors.append("paths.output: must not be inside the trlcdoc package folder.")
+        errors.append((("paths", "output"), "paths.output: must not be inside the trlcdoc package folder."))
     # The clean step removes the output folder, so it must never contain the project.
     if cfg.root.is_relative_to(cfg.output):
-        errors.append("paths.output: must not be the project root or one of its parents.")
+        errors.append((("paths", "output"), "paths.output: must not be the project root or one of its parents."))
 
     return errors
 
 
-def _check_page_placeholders(cfg: Config, doc_ids: List[str]) -> List[str]:
+def _check_page_placeholders(cfg: Config, doc_ids: List[str]) -> List[ConfigError]:
     # lobster-trace: SwRequirements.sw_req_config_validation
     # lobster-trace: SwRequirements.sw_req_page_placeholders
     """Check that the {page:<id>} placeholders of the project owned files name configured documents.
@@ -382,52 +393,56 @@ def _check_page_placeholders(cfg: Config, doc_ids: List[str]) -> List[str]:
         doc_ids (List[str]): Ids of the configured documents.
 
     Returns:
-        List[str]: Error messages, empty if all placeholders name a document.
+        List[ConfigError]: Errors, empty if all placeholders name a document.
     """
-    errors: List[str] = []
-    for where, file in cfg.placeholder_files():
+    errors: List[ConfigError] = []
+    for where, entry, file in cfg.placeholder_files():
         if file.is_file():
             ids = PAGE_PLACEHOLDER.findall(file.read_text(encoding="utf-8"))
-            errors.extend(f"{where}: placeholder '{{page:{doc_id}}}' names no document."
+            errors.extend((entry, f"{where}: placeholder '{{page:{doc_id}}}' names no document.")
                           for doc_id in sorted(set(ids)) if doc_id not in doc_ids)
     return errors
 
 
-def _check_document(cfg: Config, doc: Dict[str, Any], doc_types: Dict[str, str]) -> List[str]:
+def _check_document(cfg: Config, entry: ConfigPath, doc: Dict[str, Any],
+                    doc_types: Dict[str, str]) -> List[ConfigError]:
     # lobster-trace: SwRequirements.sw_req_config_validation
     """Check the references of one document.
 
     Args:
         cfg (Config): Schema validated configuration.
+        entry (ConfigPath): Path of the document in the configuration.
         doc (Dict[str, Any]): The document.
         doc_types (Dict[str, str]): Document type per document id.
 
     Returns:
-        List[str]: Error messages, empty if all references are valid.
+        List[ConfigError]: Errors, empty if all references are valid.
     """
-    errors: List[str] = []
+    errors: List[ConfigError] = []
     where = f"documents[{doc['id']}]"
 
-    for inc in doc.get("include", []):
+    for index, inc in enumerate(doc.get("include", [])):
         if doc_types.get(inc) not in TRLC_DOCUMENT_TYPES:
-            errors.append(f"{where}.include: '{inc}' is no document of type trlc or test_results.")
+            errors.append(((*entry, "include", index),
+                           f"{where}.include: '{inc}' is no document of type trlc or test_results."))
 
     options = doc.get("pytrlcconverter", {})
-    files = {f"pytrlcconverter.converter.{fmt}": value for fmt, value in options.get("converter", {}).items()}
-    files.update({f"pytrlcconverter.{key}": options[key] for key in ("translation", "render_cfg") if key in options})
-    for key, value in files.items():
+    files = {("converter", fmt): value for fmt, value in options.get("converter", {}).items()}
+    files.update({(key,): options[key] for key in ("translation", "render_cfg") if key in options})
+    for keys, value in files.items():
         if not cfg.file_reference(value).is_file():
-            errors.append(f"{where}.{key}: file '{value}' not found.")
+            errors.append(((*entry, "pytrlcconverter", *keys),
+                           f"{where}.pytrlcconverter.{'.'.join(keys)}: file '{value}' not found."))
 
     needs_tests = doc["type"] == "test_results" or doc.get("source") == TESTS_COVERAGE
     if needs_tests and cfg.tests is None:
-        errors.append(f"{where}: needs a 'tests' section.")
+        errors.append((entry, f"{where}: needs a 'tests' section."))
     if doc["type"] == "trace_report" and cfg.trace is None:
-        errors.append(f"{where}: type trace_report needs a 'trace' section.")
+        errors.append((entry, f"{where}: type trace_report needs a 'trace' section."))
     return errors
 
 
-def _check_levels(cfg: Config, levels: List[Dict[str, Any]], doc_types: Dict[str, str]) -> List[str]:
+def _check_levels(cfg: Config, levels: List[Dict[str, Any]], doc_types: Dict[str, str]) -> List[ConfigError]:
     # lobster-trace: SwRequirements.sw_req_config_validation
     # lobster-trace: SwRequirements.sw_req_trace_levels
     # lobster-trace: SwRequirements.sw_req_trace_doxygen
@@ -439,25 +454,105 @@ def _check_levels(cfg: Config, levels: List[Dict[str, Any]], doc_types: Dict[str
         doc_types (Dict[str, str]): Document type per document id.
 
     Returns:
-        List[str]: Error messages, empty if all references are valid.
+        List[ConfigError]: Errors, empty if all references are valid.
     """
-    errors: List[str] = []
+    errors: List[ConfigError] = []
     names = [level["name"] for level in levels]
 
-    for name in sorted({name for name in names if names.count(name) > 1}):
-        errors.append(f"trace.levels: name '{name}' is used more than once.")
+    # A repeated name is reported at its second occurrence.
+    for index, name in enumerate(names):
+        if names[:index].count(name) == 1:
+            errors.append((("trace", "levels", index, "name"), f"trace.levels: name '{name}' is used more than once."))
 
-    for level in levels:
+    for index, level in enumerate(levels):
+        entry: ConfigPath = ("trace", "levels", index)
         where = f"trace.levels[{level['name']}]"
         if "document" in level and doc_types.get(level["document"]) not in TRLC_DOCUMENT_TYPES:
-            errors.append(f"{where}.document: '{level['document']}' is no document of type trlc or test_results.")
+            errors.append(((*entry, "document"),
+                           f"{where}.document: '{level['document']}' is no document of type trlc or test_results."))
         if "doxyfile" in level and not cfg.path(level["doxyfile"]).is_file():
-            errors.append(f"{where}.doxyfile: file '{level['doxyfile']}' not found.")
+            errors.append(((*entry, "doxyfile"), f"{where}.doxyfile: file '{level['doxyfile']}' not found."))
         for key in ("trace_to", "requires"):
-            for target in level.get(key, []):
+            for target_index, target in enumerate(level.get(key, [])):
                 if target not in names:
-                    errors.append(f"{where}.{key}: level '{target}' is not defined.")
+                    errors.append(((*entry, key, target_index), f"{where}.{key}: level '{target}' is not defined."))
     return errors
+
+
+def _line_map(text: str) -> Dict[ConfigPath, int]:
+    # lobster-trace: SwRequirements.sw_req_config_validation
+    """Map the path of every configuration entry to its line in the file.
+
+    Args:
+        text (str): Content of the configuration file, valid YAML.
+
+    Returns:
+        Dict[ConfigPath, int]: Line number, starting at 1, per entry path. A mapping key gives the line of the
+        key, a list item the line of the item. The root is line 1.
+    """
+    lines: Dict[ConfigPath, int] = {(): 1}
+
+    def walk(node: yaml.Node, path: ConfigPath, parents: Tuple[int, ...]) -> None:
+        # Aliases may refer to an enclosing node, which would recurse forever.
+        if id(node) in parents:
+            return
+        parents = (*parents, id(node))
+        children: List[Tuple[Union[str, int], yaml.Node, yaml.Node]] = []
+        if isinstance(node, yaml.MappingNode):
+            children = [(key.value, key, value) for key, value in node.value if isinstance(key, yaml.ScalarNode)]
+        elif isinstance(node, yaml.SequenceNode):
+            children = [(index, item, item) for index, item in enumerate(node.value)]
+        for name, position, value in children:
+            lines.setdefault((*path, name), position.start_mark.line + 1)
+            walk(value, (*path, name), parents)
+
+    root = yaml.compose(text, Loader=yaml.SafeLoader)
+    if root is not None:
+        walk(root, (), ())
+    return lines
+
+
+def _schema_error_path(err: jsonschema.ValidationError) -> ConfigPath:
+    # lobster-trace: SwRequirements.sw_req_config_validation
+    """Get the path of the entry a schema error is about.
+
+    Args:
+        err (jsonschema.ValidationError): The schema error.
+
+    Returns:
+        ConfigPath: The path of the value, or of the key for a key that is not allowed.
+    """
+    path: ConfigPath = tuple(err.absolute_path)
+    if "propertyNames" in err.schema_path:
+        path = (*path, err.instance)
+    elif err.validator == "additionalProperties" and isinstance(err.instance, dict):
+        allowed = err.schema.get("properties", {})
+        path = (*path, *[key for key in err.instance if key not in allowed][:1])
+    return path
+
+
+def _format_errors(config_file: Path, text: str, errors: List[ConfigError]) -> str:
+    # lobster-trace: SwRequirements.sw_req_config_validation
+    """Format configuration errors with file and line of their entry, ordered by line.
+
+    Args:
+        config_file (Path): The configuration file.
+        text (str): Content of the configuration file, valid YAML.
+        errors (List[ConfigError]): The errors.
+
+    Returns:
+        str: One line '<file>:<line>: <message>' per error. An entry that is not in the file, e.g. a
+        missing key, gets the line of its closest parent.
+    """
+    lines = _line_map(text)
+
+    def line(path: ConfigPath) -> int:
+        while path not in lines:
+            path = path[:-1]
+        return lines[path]
+
+    numbered = sorted(((line(path), message) for path, message in errors), key=lambda error: error[0])
+    return "\n  ".join(f"{config_file}:{number}: {message}" for number, message in numbered)
 
 
 def load_config(config_file: Path) -> Config:
@@ -477,26 +572,28 @@ def load_config(config_file: Path) -> Config:
     if not config_file.is_file():
         raise TrlcdocError(f"Configuration file {config_file} not found.")
 
-    with open(config_file, encoding="utf-8") as file:
-        try:
-            data = yaml.safe_load(file)
-        except yaml.YAMLError as error:
-            raise TrlcdocError(f"{config_file} is no valid YAML: {error}") from error
+    text = config_file.read_text(encoding="utf-8")
+    try:
+        data = yaml.safe_load(text)
+    except yaml.YAMLError as error:
+        raise TrlcdocError(f"{config_file} is no valid YAML: {error}") from error
 
     with open(SCHEMA_FILE, encoding="utf-8") as file:
         schema = json.load(file)
 
     validator = jsonschema.Draft202012Validator(schema)
-    schema_errors = sorted(validator.iter_errors(data), key=lambda err: list(err.absolute_path))
+    schema_errors: List[ConfigError] = [
+        (_schema_error_path(err), f"{'/'.join(str(p) for p in err.absolute_path) or '<root>'}: {err.message}")
+        for err in sorted(validator.iter_errors(data), key=lambda err: list(err.absolute_path))]
     if schema_errors:
-        messages = [f"{'/'.join(str(p) for p in err.absolute_path) or '<root>'}: {err.message}"
-                    for err in schema_errors]
-        raise TrlcdocError(f"{config_file} does not match the schema:\n  " + "\n  ".join(messages))
+        raise TrlcdocError(f"{config_file} does not match the schema:\n  "
+                           + _format_errors(config_file, text, schema_errors))
 
     cfg = Config(data, config_file)
     reference_errors = _check_references(cfg)
     if reference_errors:
-        raise TrlcdocError(f"{config_file} has invalid settings:\n  " + "\n  ".join(reference_errors))
+        raise TrlcdocError(f"{config_file} has invalid settings:\n  "
+                           + _format_errors(config_file, text, reference_errors))
 
     return cfg
 
