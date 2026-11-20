@@ -526,9 +526,10 @@ section "trlcdoc" {
                     reStructuredText and Markdown documents:
 
                     - `{page:<id>}` by the page name of the document, relative to the page
-                    - `{documents}` by the page names of all documents in configuration order, one per line, except the
-                      documents that a toctree of the start page or of a reStructuredText or Markdown document lists
-                      explicitly
+                    - `{documents}` by the page names of all documents in configuration order, one per line
+
+                    `{documents}` leaves out the documents that a toctree of the start page or of a reStructuredText or
+                    Markdown document lists explicitly.
 
                     A placeholder naming no document shall be reported as configuration error.
                     '''

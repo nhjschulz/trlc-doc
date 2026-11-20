@@ -12,6 +12,7 @@ project:
   author: Norbert Schulz
   copyright: "2026, Norbert Schulz"
   repository: https://github.com/nhjschulz/trlc-doc.git
+  logo: doc/images/logo-trlcdoc.png
 
 paths:
   trlc_model: trlc/model

@@ -353,6 +353,10 @@ def _check_references(cfg: Config) -> List[str]:
     if cfg.trace is not None:
         errors.extend(_check_levels(cfg, cfg.trace["levels"], doc_types))
 
+    for key in ("logo", "favicon"):
+        if cfg.project.get(key) and not cfg.path(cfg.project[key]).is_file():
+            errors.append(f"project.{key}: file '{cfg.project[key]}' not found.")
+
     for key in ("conf", "index", "page_header"):
         if key in cfg.html and not cfg.path(cfg.html[key]).is_file():
             errors.append(f"html.{key}: file '{cfg.html[key]}' not found.")
