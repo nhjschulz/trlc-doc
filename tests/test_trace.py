@@ -149,7 +149,8 @@ def test_trace_markdown(tmp_path: Path) -> None:
     req_file = project.parent / "trlc" / "swe-req" / "swe-req.trlc"
     req_file.write_text(req_file.read_text(encoding="utf-8").replace(
         'description = "The software shall greet."',
-        "description =\n            '''\n            The software shall **greet** with\n            `hello()`.\n            '''"),
+        "description =\n            '''\n            The software shall **greet** with\n"
+        "            `hello()`.\n            '''"),
         encoding="utf-8")
     cfg = load_config(project)
     run_tests(cfg)
@@ -265,7 +266,7 @@ def test_trace_doxygen(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     which = shutil.which
     monkeypatch.setattr(shutil, "which", lambda name, *args, **kwargs:
                         None if Path(name).stem == "doxygen" else which(name, *args, **kwargs))
-    with pytest.raises(TrlcdocError, match="Tool 'doxygen' not found.*trace level 'SW Code'"):
+    with pytest.raises(TrlcdocError, match=r"Tool 'doxygen' not found\..*trace level 'SW Code'"):
         build_trace_report(cfg, online=False)
     cfg = load_config(write_config(root, base_config()))
     assert build_trace_report(cfg, online=False) == 0

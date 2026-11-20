@@ -239,6 +239,14 @@ The HTML site tests need a Java runtime for PlantUML. They use the jar from
 [Tests workflow](.github/workflows/test.yml) runs the tests on every push and
 pull request on Linux and Windows.
 
+The code is checked with [ruff](https://docs.astral.sh/ruff/), configured in
+[pyproject.toml](pyproject.toml). The workflow runs it as a separate job.
+
+```bash
+pip install -e ".[lint]"
+ruff check .
+```
+
 ## License
 
 GPL-3.0-or-later, see [LICENSE](LICENSE).
