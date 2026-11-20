@@ -110,6 +110,7 @@ def test_config_validation(project: Path, capsys: pytest.CaptureFixture) -> None
     data["documents"][0]["pytrlcconverter"]["render_cfg"] = "missing.json"
     data["trace"]["levels"][1]["trace_to"] = ["Unknown Level"]
     data["html"] = {"index": "docs/index.rst", "page_header": "docs/header.rst", "conf": "docs/conf.py"}
+    data["project"].update({"logo": "docs/logo.pngx", "favicon": "docs/favicon.ico"})
     data["trace"]["levels"].append({"name": "SW Code", "kind": "implementation", "extractor": "lobster-doxygen",
                                     "doxyfile": "tools/Doxyfile"})
     errors = _config_errors(root, data)
@@ -122,6 +123,8 @@ def test_config_validation(project: Path, capsys: pytest.CaptureFixture) -> None
     assert "trace.levels[SW Architecture].trace_to: level 'Unknown Level' is not defined" in errors
     for key, value in data["html"].items():
         assert f"html.{key}: file '{value}' not found" in errors
+    for key in ("logo", "favicon"):
+        assert f"project.{key}: file '{data['project'][key]}' not found" in errors
     assert "trace.levels[SW Code].doxyfile: file 'tools/Doxyfile' not found" in errors
 
     # No step runs with an invalid configuration.

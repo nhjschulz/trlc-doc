@@ -138,7 +138,8 @@ The configuration is checked in two stages before any step runs, including the
    - `trace_to` and `requires` refer to defined levels,
    - the converter, translation and render configuration files of the
      `pytrlcconverter` options exist,
-   - `html.conf`, `html.index` and `html.page_header` files exist,
+   - `project.logo`, `project.favicon`, `html.conf`, `html.index` and
+     `html.page_header` files exist,
    - the `{page:<id>}` placeholders ([8.5](#85-placeholders)) name documents,
    - a `test_results` document or a `tests:coverage` source has a `tests` section,
    - a `trace_report` document has a `trace` section,

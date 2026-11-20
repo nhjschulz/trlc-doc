@@ -118,7 +118,7 @@ section "SW-Tests" {
                 - an unknown include
                 - a duplicate document id
                 - a missing converter file
-                - missing HTML site files
+                - missing HTML site files and a missing project logo and favicon
                 - an undefined trace level
                 - a missing Doxyfile
 
