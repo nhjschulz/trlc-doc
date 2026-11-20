@@ -76,7 +76,8 @@ the [module](../hello.py), the [tests](../tests/) and the [web site](https://exa
 # Project owned files of the customized site, placed in the docs folder.
 CUSTOM_FILES = {
     "index.rst": ("Welcome\n=======\n\n.. image:: {project_root}/docs/logo.png\n\n"
-                  ".. toctree::\n   :caption: Chapters:\n\n   guide\n   placeholder\n   sw_requirements/index\n   license\n"),
+                  ".. toctree::\n   :caption: Chapters:\n\n"
+                  "   guide\n   placeholder\n   sw_requirements/index\n   license\n"),
     "header.rst": ".. image:: {project_root}/docs/logo.png\n   :alt: Project Logo\n",
     "guide.rst": "Guide\n=====\n\n.. literalinclude:: {project_root}/LICENSE\n   :language: none\n",
     "placeholder.md": "# Placeholder\n\nWrite `{project_root}/docs/logo.png` for the logo.\n",
@@ -170,7 +171,7 @@ def test_documents(site: Dict[str, Any]) -> None:
     Args:
         site (Dict[str, Any]): The built site.
     """
-    for page, heading in zip(PAGES, HEADINGS):
+    for page, heading in zip(PAGES, HEADINGS, strict=True):
         assert f"<h1>{heading}" in _page(site, page)
 
     # The configured title of a Markdown page is its navigation and browser title.
@@ -227,7 +228,8 @@ def test_html_customization(tmp_path: Path, plantuml_jar: Path, monkeypatch: pyt
     del data["tests"], data["trace"]
     sw_requirements = {key: value for key, value in data["documents"][0].items() if key != "title"}
     data["documents"] = [{"id": "guide", "type": "rst", "source": "docs/guide.rst"},
-                         {"id": "placeholder", "type": "markdown", "source": "docs/placeholder.md", "placeholders": False},
+                         {"id": "placeholder", "type": "markdown", "source": "docs/placeholder.md",
+                          "placeholders": False},
                          sw_requirements,
                          {"id": "license", "title": "License information", "type": "text", "source": "LICENSE"}]
     data["html"] = {"index": "docs/index.rst", "page_header": "docs/header.rst", "conf": "docs/conf.py"}

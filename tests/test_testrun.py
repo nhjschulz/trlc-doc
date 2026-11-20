@@ -183,7 +183,7 @@ def test_test_results_output(tmp_path: Path) -> None:
     # Ceedling/Unity: the suite output names the test of each line, duplicates are removed.
     junit = tmp_path / "ceedling.xml"
     junit.write_text(CEEDLING_XML, encoding="utf-8")
-    with pytest.raises(TrlcdocError, match="needs tests.link.array: test_Greeter_morning$"):
+    with pytest.raises(TrlcdocError, match=r"needs tests\.link\.array: test_Greeter_morning$"):
         read_junit(junit, OUTPUT_LINK)
     array_link = {**OUTPUT_LINK, "array": True}
     results = read_junit(junit, array_link)
