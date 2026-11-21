@@ -32,6 +32,7 @@ from conftest import base_config, git_init, make_project, write_config
 
 from trlcdoc import cli, html
 from trlcdoc.config import load_config
+from trlcdoc.html import _link_settings
 from trlcdoc.util import clean_dir
 
 # Variables ********************************************************************
@@ -94,7 +95,7 @@ CUSTOM_FILES = {
 
 @pytest.fixture(name="site", scope="module")
 def fixture_site(tmp_path_factory: pytest.TempPathFactory, plantuml_jar: Path) -> Dict[str, Any]:
-    """Build the HTML site of the example project with 'trlcdoc all'.
+    """Build the HTML site of the example project with 'trlcdoc all'. The project is a subfolder of its repository.
 
     Args:
         tmp_path_factory (pytest.TempPathFactory): pytest temporary folder factory.
@@ -115,7 +116,7 @@ def fixture_site(tmp_path_factory: pytest.TempPathFactory, plantuml_jar: Path) -
     # The project page comes first, to check that the configured order is kept.
     data["documents"] = [EXTRA_DOCUMENTS[1], *data["documents"], EXTRA_DOCUMENTS[0], *EXTRA_DOCUMENTS[2:]]
     config_file = write_config(root, data)
-    commit = git_init(root)
+    commit = git_init(root.parent)
 
     with pytest.MonkeyPatch.context() as monkeypatch:
         monkeypatch.setenv("PLANTUML", str(plantuml_jar))
@@ -361,13 +362,14 @@ def test_html_version_info(site: Dict[str, Any]) -> None:
 
 def test_markdown_links(site: Dict[str, Any]) -> None:
     """The relative links and images of a Markdown page are resolved against its location in the project.
+    Links to the repository contain the path of the project in the repository.
 
     Args:
         site (Dict[str, Any]): The built site.
     """
     notes = _page(site, "notes.html")
-    blob = f"https://github.com/example/example/blob/{site['commit']}"
-    tree = f"https://github.com/example/example/tree/{site['commit']}"
+    blob = f"https://github.com/example/example/blob/{site['commit']}/project"
+    tree = f"https://github.com/example/example/tree/{site['commit']}/project"
     links = re.findall(r'<a class="reference (internal|external)" href="([^"]+)">', notes)
     assert links == [("internal", "manual.html#user-manual"), ("internal", "license.html"),
                      ("internal", "sw_requirements/index.html"), ("external", f"{blob}/hello.py"),
@@ -401,6 +403,10 @@ def test_markdown_links_as_text(tmp_path: Path, plantuml_jar: Path, monkeypatch:
     assert "<p>See <span>the module</span>.</p>" in readme
     assert "hello.py" not in readme
     assert "Link to project file 'hello.py' shown as text" in capfd.readouterr().err
+
+    # In the repository root, the links to the repository start with the project files.
+    git_init(root)
+    assert _link_settings(load_config(root / "trlcdoc.yaml"))["repository_path"] == "."
 
 
 class _Browser:  # pylint: disable=too-few-public-methods

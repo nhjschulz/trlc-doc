@@ -110,7 +110,8 @@ def test_trace_levels(project: Path) -> None:
 
 
 def test_trace_report(tmp_path: Path) -> None:
-    """The HTML tracing report links to local files, or to the repository when online.
+    """The HTML tracing report links to local files, or to the repository when online, also for a project in a
+    subfolder of the repository.
 
     Args:
         tmp_path (Path): pytest temporary folder.
@@ -135,6 +136,15 @@ def test_trace_report(tmp_path: Path) -> None:
     data["project"]["repository"] = "auto"
     cfg = load_config(write_config(cfg.root, data))
     assert build_trace_report(cfg, online=True) == 0
+    assert link in cfg.trace_report_html.read_text(encoding="utf-8")
+
+    # A project in a subfolder of the repository links to its files in the subfolder.
+    project = make_project(tmp_path / "repo" / "examples" / "greeter")
+    cfg = load_config(project)
+    run_tests(cfg)
+    commit = git_init(tmp_path / "repo")
+    assert build_trace_report(cfg, online=True) == 0
+    link = f"https://github.com/example/example/blob/{commit}/examples/greeter/trlc/swe-req/swe-req.trlc"
     assert link in cfg.trace_report_html.read_text(encoding="utf-8")
 
 

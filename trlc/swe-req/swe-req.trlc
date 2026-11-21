@@ -380,13 +380,14 @@ section "trlcdoc" {
                 description =
                     '''
                     The software shall create an HTML tracing report. On request, the report shall link the items to
-                    their sources in the project repository. On request, the report shall render the item descriptions
-                    as Markdown.
+                    their sources in the project repository, also for a project in a subfolder of the repository. On
+                    request, the report shall render the item descriptions as Markdown.
                     '''
                 verification_criteria =
                     '''
-                    Create the tracing report offline and online. Check the item links of both reports. Create the
-                    report with and without Markdown rendering and check the descriptions.
+                    Create the tracing report offline and online, online also for a project in a subfolder of the
+                    repository. Check the item links of the reports. Create the report with and without Markdown
+                    rendering and check the descriptions.
                     '''
                 valid_status = AbstractRequirements.VALID_STATUS.valid
             }
@@ -508,13 +509,14 @@ section "trlcdoc" {
                     - an image shall be shown in the site
                     - a link to the file or folder of a site page shall link to that page
                     - a link to another project file or folder shall link to it in the repository at the built commit
+                    - the link to the repository shall contain the path of a project in a subfolder of the repository
                     - without a repository, such a link shall be shown as text with a warning
                     '''
                 verification_criteria =
                     '''
                     Build a site with a Markdown page linking to a site page, a TRLC document folder, a project file
                     and a project folder, and showing a project image. Check the links and the image, with and without
-                    a repository.
+                    a repository, for a project in the repository root and in a subfolder.
                     '''
                 valid_status = AbstractRequirements.VALID_STATUS.valid
             }

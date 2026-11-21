@@ -433,7 +433,7 @@ a detailed design, release notes.
   |---|---|
   | An image | The image, copied into the site. |
   | The `source` of a document of type `trlc`, `rst`, `markdown` or `text` | A link to that page. An anchor (`file.md#section`) is kept. |
-  | Any other project file or folder | A link to it in the repository at the commit the site is built from (`<repository>/blob/<commit>/<path>`, `tree` for folders), see `project.repository`. |
+  | Any other project file or folder | A link to it in the repository at the commit the site is built from (`<repository>/blob/<commit>/<path>`, `tree` for folders), see `project.repository`. In a project in a subfolder of the repository, `<path>` starts with the subfolder. |
   | Any other project file or folder, without git repository or repository URL | Plain text, with a warning. |
   | A target that does not exist, or lies outside the project | Left to MyST, which warns about it. |
 
@@ -956,6 +956,8 @@ By default the report links each item to its local file. `trlcdoc trace
 --online` (or `trlcdoc --online`) links to the files in the repository at the
 current commit instead, which is what you want for a published site. This
 uses `project.repository` and needs a git repository with the commit pushed.
+The project may be a subfolder of the repository, e.g. one of several example
+projects: the links contain the path of the project in the repository.
 
 ## 7. plantuml
 
@@ -1042,7 +1044,7 @@ an import:
 | Name                                                  | Content |
 |-------------------------------------------------------|---------|
 | `PROJECT_ROOT`                                        | `pathlib.Path` of the project root. |
-| `trlcdoc_links`                                       | Dict with `repository` (HTTPS URL, `None` without git or origin remote), `commit` (`HEAD`, `None` outside git), `root` and the page mappings of the Markdown link resolution. |
+| `trlcdoc_links`                                       | Dict with `repository` (HTTPS URL, `None` without git or origin remote), `repository_path` (path of the project root in the repository, `.` in the repository root), `commit` (`HEAD`, `None` outside git), `root` and the page mappings of the Markdown link resolution. |
 | `project`, `author`, `copyright`, `version`, `release` | From the `project` section. |
 | `extensions`                                          | trlcdoc's extensions plus `html: extensions`. |
 | `html_theme`, `html_static_path`, `html_logo`, `html_favicon`, `html_last_updated_fmt` | Site settings. |
@@ -1070,8 +1072,8 @@ def setup(app):
   from `PROJECT_ROOT`**, not relative to the file.
 - Functions defined in the file become Sphinx configuration values too, e.g.
   `linkcode_resolve()` for `sphinx.ext.linkcode`. They can use the names
-  above, e.g. `trlcdoc_links["repository"]` and `trlcdoc_links["commit"]` to
-  link the API sources to the repository.
+  above, e.g. `trlcdoc_links["repository"]`, `trlcdoc_links["repository_path"]`
+  and `trlcdoc_links["commit"]` to link the API sources to the repository.
 - A `setup(app)` function is called after trlcdoc's own setup.
 - Do not reassign `html_static_path`, append to it: trlcdoc's `_static`
   folder holds the stylesheet and the `s5defs.txt` roles included in every

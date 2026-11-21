@@ -387,8 +387,9 @@ section "SW-Tests" {
                 - offline
                 - online with a configured repository
                 - online with the repository derived from the git origin remote
+                - online for a project in a subfolder of the repository
 
-                Check the links to the repository files at the current commit.
+                Check the links to the repository files at the current commit, with the subfolder for the last one.
                 '''
             verifies = [SwRequirements.sw_req_trace_report]
         }
@@ -602,10 +603,11 @@ section "SW-Tests" {
                 '''
                 **Relative links of Markdown pages** (`tests/test_html.py`)
 
-                Build the site of a git repository with a Markdown page in a sub folder. Check
+                Build the site of a project in a subfolder of a git repository with a Markdown page in a sub folder.
+                Check
 
                 - the links to a site page and to a TRLC document folder link to their pages
-                - the links to a project file and folder link to the repository at the built commit
+                - the links to a project file and folder link to the project path in the repository at the built commit
                 - the anchor of a link is kept
                 - the project image is shown
                 '''
@@ -616,7 +618,8 @@ section "SW-Tests" {
             description =
                 '''
                 Build a site without git repository with a Markdown page linking to a project file. Check that the
-                link is shown as text and a warning is reported (`tests/test_html.py`).
+                link is shown as text and a warning is reported (`tests/test_html.py`). Make the project a git
+                repository and check that the repository path of its links is the repository root.
                 '''
             verifies = [SwRequirements.sw_req_markdown_links]
         }

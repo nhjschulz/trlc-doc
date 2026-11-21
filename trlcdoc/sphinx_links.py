@@ -124,7 +124,8 @@ class MarkdownLinks(SphinxPostTransform):
             elif settings.get("repository") and settings.get("commit"):
                 kind = "tree" if (Path(settings["root"]) / project_path).is_dir() else "blob"
                 fragment = f"#{anchor}" if anchor else ""
-                uri = f"{settings['repository']}/{kind}/{settings['commit']}/{quote(path)}{fragment}"
+                repository_path = posixpath.normpath(posixpath.join(settings.get("repository_path", "."), path))
+                uri = f"{settings['repository']}/{kind}/{settings['commit']}/{quote(repository_path)}{fragment}"
                 xref.replace_self(nodes.reference("", "", *_link_content(xref, target), internal=False,
                                                   refuri=uri))
             else:
