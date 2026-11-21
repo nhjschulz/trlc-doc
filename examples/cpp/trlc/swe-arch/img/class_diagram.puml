@@ -1,0 +1,53 @@
+@startuml class_diagram
+
+class "main" as main <<module>> {
+    +main(): int
+}
+
+class "Greet" as greet {
+    + Greet(hourThresholdMorning: int, hourThresholdMidday: int, hourThresholdAfternoon: int, hourThresholdNight: int)
+    + greet(name: const char*): std::string
+}
+
+package "C/C++ Library" {
+    
+    class "getopt" as getopt <<module>> {
+        + optind
+        + getopt_long()
+    }
+
+    class "time" as time <<module>> {
+        + time()
+        + localtime()
+    }
+
+    class "getenv" as getenv <<module>> {
+        +getenv()
+    }
+
+    class "stdio" as stdio <<module>> {
+        + vprintf()
+    }
+
+    class "string" as string <<module>> {
+        + strcmp()
+    }
+
+    package "std" as std <<namespace>> {
+        class "string" as stdString <<module>> {
+            + c_str()
+        }
+    }
+}
+
+main ..> getopt: <<use>>
+main --> greet
+main ..> stdio: <<use>>
+main ..> string: <<use>>
+main ...> stdString: <<use>>
+
+greet ..> time: <<use>>
+greet ..> getenv: <<use>>
+greet ...> stdString: <<use>>
+
+@enduml

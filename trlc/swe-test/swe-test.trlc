@@ -129,8 +129,9 @@ section "SW-Tests" {
                 occurrence. Load a file that is no valid YAML and check that the syntax error is reported with its
                 position and exit code 2.
 
-                Load test link configurations with output pattern, name pattern, both, an output pattern without
-                `{id}`, `from` without `to`, `to` alone and property alone. Check that only the first three are valid.
+                Load test link configurations with property, output pattern, name pattern, output and name pattern,
+                no link method, an output pattern without `{id}`, `from` without `to` and `to` alone. Check that only
+                the first four are valid.
 
                 Load implementation levels with lobster-python and lobster-doxygen, each with `sources`, `doxyfile` or
                 both. Check that only lobster-python with `sources` and lobster-doxygen with `doxyfile` are valid.

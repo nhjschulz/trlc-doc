@@ -31,6 +31,7 @@ document adds the behavior behind the keys.
   - [5.2 runner: command](#52-runner-command)
   - [5.3 link: from test results to test cases](#53-link-from-test-results-to-test-cases)
   - [5.4 The generated test result records](#54-the-generated-test-result-records)
+  - [5.5 googletest](#55-googletest)
 - [6. trace](#6-trace)
   - [6.1 Requirement levels](#61-requirement-levels)
   - [6.2 Implementation levels](#62-implementation-levels)
@@ -683,8 +684,10 @@ one that finds a test case:
 | `to`       |                 | Qualified test case id pattern `Package.record`, must contain `{name}`. |
 | `array`    | `false`         | Write the linked test cases as a list. Needed as soon as one test records more than one test case. |
 
-`link` needs `output`, or `from` and `to`, or both. The property is always
-tried first.
+`link` needs at least one of `property`, `output`, or `from` and `to`. The
+property is always tried first, with its default name if `property` is not
+set. A `link` with `property` only links every test by its property, e.g. for
+googletest (see [5.5](#55-googletest)).
 
 Tests that cannot be linked are a build error that lists them all. Fix them by
 recording the property, writing the test case id to the output or renaming the
@@ -745,6 +748,42 @@ type SwTestCaseResult {
 The record names are the test names with `_result` appended (with a number
 appended for duplicates). These records are the input of the `test_results`
 document and of a trace level with `document: <test_results id>`.
+
+### 5.5 googletest
+
+googletest tests record their TRLC test case with the `LOBSTER_TRACE()` macro
+of LOBSTER's
+[lobster_gtest.h](https://github.com/bmw-software-engineering/lobster/blob/main/support/gtest/include/lobster_gtest.h).
+It stores the id as test property `lobster-tracing`:
+
+```cpp
+#include "lobster_gtest.h"
+
+TEST(TSGreet, MorningTimeGreeting)
+{
+    LOBSTER_TRACE("SwTests.tc_greet_morning_time_greeting");
+    ...
+}
+```
+
+googletest writes the properties into its XML report
+(`--gtest_output=xml:<file>`), which is a JUnit XML file. Use this report, not
+the JUnit report of `ctest --output-junit`: ctest knows only its own tests and
+drops the properties.
+
+```yaml
+tests:
+  runner: command
+  command: [cmake, -P, tools/run_tests.cmake]   # builds and runs the tests
+  junit: build/test/greet_test.xml
+  coverage: build/test/coverage
+  link:
+    property: lobster-tracing
+```
+
+The C++ example [examples/cpp](examples/cpp) builds and runs its tests with
+CMake, traces the test code with `lobster-doxygen` and creates the coverage
+report with gcovr.
 
 ## 6. trace
 
@@ -1250,7 +1289,7 @@ Configuration errors are listed without the leading `<file>:<line>:`.
 | `Tests without test case link (property ..., output ..., name pattern ...)` | Tests without test case link, see [5.3](#53-link-from-test-results-to-test-cases). |
 | `Tests linked to several test cases, which needs tests.link.array` | Set `array: true` and make `relates` an array in the model. |
 | `Tests linked to test cases of several packages` | All test cases of the results must be in one package, see [5.4](#54-the-generated-test-result-records). |
-| `tests/link: {...} is not valid under any of the given schemas` | `link` needs `output`, or both `from` and `to`. |
+| `tests/link: {...} is not valid under any of the given schemas` | `link` needs `property`, `output`, or both `from` and `to`. |
 | `No test results in ..., run the tests step first.` | Run `trlcdoc tests convert` or `trlcdoc`. |
 | `No converted files in ..., run the convert step first.` | Run `convert` before `html`. |
 | `pyTRLCConverter` reports an unresolved reference | The referenced records' document is missing in `include`. |
