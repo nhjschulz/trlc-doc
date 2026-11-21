@@ -217,6 +217,23 @@ def git_output(args: List[str], cwd: Path) -> Optional[str]:
     return result
 
 
+def git_root(path: Path) -> Optional[Path]:
+    # lobster-trace: SwRequirements.sw_req_trace_report
+    # lobster-trace: SwRequirements.sw_req_markdown_links
+    """Get the root folder of the git repository that contains a folder.
+
+    The project root is a subfolder of the repository if several projects share one repository.
+
+    Args:
+        path (Path): A folder inside the repository, e.g. the project root.
+
+    Returns:
+        Optional[Path]: The resolved repository root, or None if the folder is not in a git repository.
+    """
+    toplevel = git_output(["rev-parse", "--show-toplevel"], path)
+    return Path(toplevel).resolve() if toplevel else None
+
+
 def repository_url(repository: str, root: Path) -> str:
     # lobster-trace: SwRequirements.sw_req_trace_report
     # lobster-trace: SwRequirements.sw_req_markdown_links

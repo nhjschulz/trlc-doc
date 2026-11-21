@@ -29,7 +29,7 @@ from typing import Any, Dict, List
 import yaml
 
 from .config import Config
-from .util import TrlcdocError, clean_dir, find_tool, git_output, repository_url, run
+from .util import TrlcdocError, clean_dir, find_tool, git_output, git_root, repository_url, run
 
 # Variables ********************************************************************
 
@@ -253,13 +253,14 @@ def _make_online(cfg: Config, report_file: Path) -> Path:
         TrlcdocError: If the commit id cannot be determined.
     """
     commit_id = git_output(["rev-parse", "HEAD"], cfg.root)
-    if commit_id is None:
+    repo_root = git_root(cfg.root)
+    if commit_id is None or repo_root is None:
         raise TrlcdocError("Online report needs a git repository ('git rev-parse HEAD' failed).")
 
     online_cfg = report_file.with_name("online_report_config.yaml")
     with open(online_cfg, "w", encoding="utf-8") as file:
         yaml.safe_dump({"report": str(report_file), "commit_id": commit_id,
-                        "repo_root": str(cfg.root), "base_url": repository_url(cfg.repository, cfg.root)}, file)
+                        "repo_root": str(repo_root), "base_url": repository_url(cfg.repository, cfg.root)}, file)
 
     online_report = report_file.with_suffix(".online")
     run([find_tool("lobster-online-report"), "--config", str(online_cfg), "--out", str(online_report)], cfg.root)

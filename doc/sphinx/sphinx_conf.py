@@ -25,10 +25,12 @@ inheritance_edge_attrs = {
 
 # sphinx.ext.linkcode: link the [source] buttons of the API pages to the repository
 # files at the built commit instead of copying the sources into the site (viewcode).
-# trlcdoc provides the repository URL and commit in trlcdoc_links.
+# trlcdoc provides the repository URL, the path of the project in the repository and the commit
+# in trlcdoc_links.
 # https://www.sphinx-doc.org/en/master/usage/extensions/linkcode.html
 import importlib
 import inspect
+import posixpath
 from typing import Dict, Optional
 
 
@@ -67,6 +69,8 @@ def linkcode_resolve(domain: str, info: Dict[str, str]) -> Optional[str]:
         path = source_file.relative_to(PROJECT_ROOT.resolve()).as_posix()
     except ValueError:  # Object of an installed third party package.
         return None
+    # The project may be a subfolder of the repository.
+    path = posixpath.normpath(posixpath.join(trlcdoc_links.get("repository_path", "."), path))
 
     # Modules report line 0, they link to the whole file.
     anchor = "" if start == 0 else f"#L{start}-L{start + len(lines) - 1}"
