@@ -1,0 +1,66 @@
+package SwTests
+
+import Generic
+import SwRequirements
+
+section "SW Tests" {
+
+    Generic.Info sw_test_info_about_sw_test {
+        description = "This file contains the software test cases for the Greeter tool."
+    }
+
+     section "General" {
+
+        SwTestCase tc_cli {
+            description = "This test case checks whether the tool supports the command line arguments."
+            verifies = [SwRequirements.sw_req_cli]
+        }
+
+        SwTestCase tc_cli_stdout {
+            description = "This test case checks whether the tool produces console output."
+            verifies = [SwRequirements.sw_func_msg_output]
+        }
+
+        SwTestCase tc_cli_usage_help {
+            description = "This test case checks whether the tool supports the -h/--help argument."
+            verifies = [SwRequirements.sw_req_cli_help]
+        }
+
+        SwTestCase tc_cli_usage_error {
+            description = "This test case checks whether the tool provides an error if called with wrong argument."
+            verifies = [SwRequirements.sw_req_cli_usage_error]
+        }
+    }
+
+    section  "Greeter Functionality" {
+        SwTestCase tc_greet_night_time_greeting {
+            description = "This test verifies that the greet function returns 'Good night <name>!' when the time is between 19:00 and 04:59."
+            verifies = [SwRequirements.sw_func_night_time_greeting, SwRequirements.sw_func_daytime_greeting_selection]
+        }
+
+        SwTestCase tc_greet_morning_time_greeting {
+            description = "This test verifies that the greet function returns 'Good morning <name>!' when the time is between 5:00 and 10:59."
+            verifies = [SwRequirements.sw_func_morning_time_greeting, SwRequirements.sw_func_daytime_greeting_selection]
+        }
+
+        SwTestCase tc_greet_midday_time_greeting {
+            description = "This test verifies that the greet function returns 'Good midday <name>!' when the time is between 11:00 and 12:59."
+            verifies = [SwRequirements.sw_func_midday_time_greeting, SwRequirements.sw_func_daytime_greeting_selection]
+        }
+
+        SwTestCase tc_greet_afternoon_time_greeting {
+            description = "This test verifies that the greet function returns 'Good afternoon <name>!' when the time is between 13:00 and 18:59."
+            verifies = [SwRequirements.sw_func_afternoon_time_greeting, SwRequirements.sw_func_daytime_greeting_selection]
+        }
+
+        SwTestCase tc_greet_user_name {
+            description = "This test verifies that the greeter uses the name given on the commandline."
+            verifies = [SwRequirements.sw_req_cli_user_name]
+        }
+
+        SwTestCase tc_greet_default_name {
+            description = "This test verifies that  greeter uses the login name if called without arguments."
+            verifies = [SwRequirements.sw_req_cli_default_name]
+        }
+    }
+}
