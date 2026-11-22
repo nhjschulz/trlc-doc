@@ -13,7 +13,6 @@ project:
   name: Greeter
   author: NewTec GmbH
   copyright: 2025 - 2026, NewTec GmbH
-  repository: https://github.com/NewTec-GmbH/trlcWorkInstructions
 
 paths:
   trlc_model: trlc/model
