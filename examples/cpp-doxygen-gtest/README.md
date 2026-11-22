@@ -44,11 +44,11 @@ Install trlcdoc and gcovr into a virtual environment:
 ```bash
 python -m venv .venv
 source .venv/bin/activate        # Windows: .venv\Scripts\activate
-pip install trlcdoc gcovr
+pip install "trlcdoc>=0.6.0" gcovr
 ```
 
-The example needs a trlcdoc release newer than 0.5.0, which links googletest
-results by their test property alone. The other tools come from the system package manager:
+The example needs trlcdoc 0.6.0 or newer, which links googletest results by
+their test property alone. The other tools come from the system package manager:
 
 ```bash
 # Debian, Ubuntu
