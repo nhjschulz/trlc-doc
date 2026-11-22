@@ -781,7 +781,7 @@ tests:
     property: lobster-tracing
 ```
 
-The C++ example [examples/cpp](examples/cpp) builds and runs its tests with
+The C++ example [examples/cpp-doxygen-gtest](examples/cpp-doxygen-gtest) builds and runs its tests with
 CMake, traces the test code with `lobster-doxygen` and creates the coverage
 report with gcovr.
 

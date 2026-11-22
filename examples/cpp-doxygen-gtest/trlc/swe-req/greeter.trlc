@@ -1,0 +1,98 @@
+package SwRequirements
+import AbstractRequirements
+import Generic
+
+section "SW Requirements" {
+
+    Generic.Info sw_req_info_about_sw_req {
+        description = "This file contains the software requirements for the Greeter tool."
+    }
+
+    section "General" {
+
+        SwReq sw_req_cli {
+            description = "The software shall be a command-line interface (CLI) application."
+            verification_criteria = "Every feature shall be accessible via the command line. Therefore its verified by CLI tests."
+            valid_status = AbstractRequirements.VALID_STATUS.valid
+        }
+
+        SwReq sw_func_msg_output {
+            description = "The software shall show provide all user message texts as console output."
+            verification_criteria = "Every feature user visible messages shall be compared with a reference by capturing the console output."
+            valid_status = AbstractRequirements.VALID_STATUS.valid
+        }           
+    }
+
+    section "Functionality" {
+
+        SwReq sw_func_daytime_greeting_selection {
+            description = "The software shall use the local system time for selecting a greeting message."
+            verification_criteria = "Verify that messages change after manipulating the local system time values."
+            valid_status = AbstractRequirements.VALID_STATUS.valid
+        }
+
+        SwReq sw_func_night_time_greeting {
+            description = "The software shall provide the message 'Good night <USER>!' starting at 7:00 pm and before 5:00 am system time."
+            verification_criteria = "Verify that the correct message appears in this time range.."
+            valid_status = AbstractRequirements.VALID_STATUS.valid
+        }
+
+        SwReq sw_func_morning_time_greeting {
+            description = "The software shall provide the message 'Good morning <USER>!' starting at 5:00 am and before 11:00 am system time."
+            verification_criteria = "Verify that the correct message appears in this time range.."
+            valid_status = AbstractRequirements.VALID_STATUS.valid
+        }
+
+        SwReq sw_func_midday_time_greeting {
+            description = "The software shall provide the message 'Good midday <USER>!' starting at 11:00 am and before 13:00 pm system time."
+            verification_criteria = "Verify that the correct message appears in this time range.."
+            valid_status = AbstractRequirements.VALID_STATUS.valid
+        }
+
+        SwReq sw_func_afternoon_time_greeting {
+            description = "The software shall provide the message 'Good afternoon <USER>!' starting at 13:00 pm before 19:00 pm system time."
+            verification_criteria = "Verify that the correct message appears in this time range.."
+            valid_status = AbstractRequirements.VALID_STATUS.valid
+        }
+    }
+
+    section "User Interface" {
+
+        SwReq sw_req_cli_help {
+            description = "The software shall support the command line argument '-h' or '--help' to show usage help information."
+            verification_criteria = "Verify by calling the software with either '-h' or --help' and check if the help information is shown."
+            valid_status = AbstractRequirements.VALID_STATUS.valid
+        }
+
+        SwReq sw_req_cli_user_name {
+            description = "The software shall support a single parameter to specify the user name to use in the greeting message."
+            verification_criteria = "Verify by calling the software with a text parameter and check if it appears as the user name in greetings."
+            valid_status = AbstractRequirements.VALID_STATUS.valid
+        }
+
+        SwReq sw_req_cli_default_name {
+            description = "The software shall use the login name for greeting messages if no user name was specified as parameter."
+            verification_criteria = "Verify by calling the software without a text parameter and check if the login name is used in greetings."
+            valid_status = AbstractRequirements.VALID_STATUS.valid
+        }
+
+        SwReq sw_req_cli_usage_error {
+            description = "The software shall provide an error message if the tool is called with missing or unexpected arguments."
+            verification_criteria = "Verify error message by calling the software with missing or wrong arguments."
+            valid_status = AbstractRequirements.VALID_STATUS.valid
+        }
+    }
+
+    section "Software Constraints" {
+    
+        SwConstraint sw_constraint_os_win {
+            description = "The software shall support the Windows operating system."
+            valid_status = AbstractRequirements.VALID_STATUS.valid
+        }
+
+        SwConstraint sw_constraint_os_linux {
+            description = "The software shall support the Linux operating system."
+            valid_status = AbstractRequirements.VALID_STATUS.valid
+        }
+    }
+}

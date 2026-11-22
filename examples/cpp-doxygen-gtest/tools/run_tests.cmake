@@ -13,7 +13,16 @@ cmake_minimum_required(VERSION 3.20)
 get_filename_component(ROOT "${CMAKE_CURRENT_LIST_DIR}/.." ABSOLUTE)
 set(BUILD "${ROOT}/build/test")
 
-find_program(GCOVR gcovr REQUIRED)
+# Remove the results of a previous run first, so that a run failing at any point
+# leaves no old report behind that trlcdoc would take as the current one.
+file(GLOB_RECURSE STALE "${BUILD}/*.gcda")
+file(REMOVE ${STALE} "${BUILD}/greet_test.xml")
+file(REMOVE_RECURSE "${BUILD}/coverage")
+
+find_program(GCOVR gcovr)
+if(NOT GCOVR)
+    message(FATAL_ERROR "gcovr not found, it creates the coverage report. Install it with: pip install gcovr")
+endif()
 
 execute_process(
     COMMAND "${CMAKE_COMMAND}" -S "${ROOT}" -B "${BUILD}" -DCMAKE_BUILD_TYPE=Debug -DGREETER_COVERAGE=ON
@@ -23,11 +32,6 @@ execute_process(
     COMMAND "${CMAKE_COMMAND}" --build "${BUILD}"
     COMMAND_ERROR_IS_FATAL ANY
 )
-
-# Results of a previous run must not survive a run that fails early.
-file(GLOB_RECURSE STALE "${BUILD}/*.gcda")
-file(REMOVE ${STALE} "${BUILD}/greet_test.xml")
-file(REMOVE_RECURSE "${BUILD}/coverage")
 file(MAKE_DIRECTORY "${BUILD}/coverage")
 
 # Failed tests are no error here: trlcdoc takes the results from the XML report.

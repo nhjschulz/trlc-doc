@@ -1,0 +1,66 @@
+@startuml class_diagram
+
+class "main" as main <<module>> {
+    +main(argc: int, argv: char**): int
+}
+
+class "App" as app <<module>> {
+    + App_run(argc: int, argv: char**): int
+}
+
+class "Greeter" as greeter <<module>> {
+    + Greeter_init(hourThresholdMorning: int, hourThresholdMidday: int, hourThresholdAfternoon: int, hourThresholdNight: int): void
+    + Greeter_greet(name: const char*): void
+}
+
+class "LocalTime" as localTime <<module>> {
+    + LocalTime_time(timeVar: time_t*): time_t
+    + LocalTime_localtime(timeVar: const time_t*): struct tm*
+}
+
+class "Printer" as printer <<module>> {
+    + Printer_printf(format: const char*, ...): void
+    + Printer_printInfo(format: const char*, ...): void
+    + Printer_printError(format: const char*, ...): void
+}
+
+package "C Library" {
+    
+    class "getopt" as getopt <<module>> {
+        + optind
+        + getopt_long()
+    }
+
+    class "time" as time <<module>> {
+        + time()
+        + localtime()
+    }
+
+    class "getenv" as getenv <<module>> {
+        +getenv()
+    }
+
+    class "stdio" as stdio <<module>> {
+        + vprintf()
+    }
+
+    class "string" as string <<module>> {
+        + strcmp()
+    }
+}
+
+main --> app
+
+app ..> getopt: <<use>>
+app --> greeter
+app ..> printer: <<use>>
+app ..> string: <<use>>
+
+greeter ..> localTime: <<use>>
+greeter ..> getenv: <<use>>
+greeter ...> printer: <<use>>
+
+localTime ..> time: <<use>>
+printer ..> stdio: <<use>>
+
+@enduml

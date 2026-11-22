@@ -1,0 +1,69 @@
+package SwArch
+
+import Generic
+import SwRequirements
+
+section "SW Architecture" {
+
+    Generic.Info sw_arch_info_about {
+        description = "This file contains the software architecture for the Greeter tool."
+    }
+
+    section "Static View" {
+        SwArchSpec sw_arch_cpp_cli_tool {
+            description = "Greeter is a console application implemented using ANSI-C"
+            verification_criteria = "Call the tool using the `greeter` frontend. Check console output."
+            satisfies = [SwRequirements.sw_req_cli, SwRequirements.sw_constraint_os_win, SwRequirements.sw_constraint_os_linux]
+        }
+
+        Generic.PlantUML sw_arch_class_diagram {
+            caption = "Context Diagram"
+            file_path ="img/class_diagram.puml"
+        }
+
+        section "Components" {
+            section "main" {
+
+                SwArchSpec sw_arch_comp_main {
+                    description = "The main component builds the application entry point. It processes command arguments and provides the greeter output using print()."
+                    verification_criteria = "Call the tool using the `greeter` frontend. Check console output."
+                    satisfies = [SwRequirements.sw_req_cli, SwRequirements.sw_func_msg_output]
+                }
+
+                SwArchSpec sw_arch_comp_main_args {
+                    description = "Main uses the getopt C library to provide argument help message and usage errors."
+                    verification_criteria = "Call the tool using the `greeter` frontend. Check console output."
+                    satisfies = [SwRequirements.sw_req_cli_usage_error, SwRequirements.sw_req_cli_help]
+                }
+
+                SwArchSpec sw_arch_comp_user_name {
+                    description = "Main accepts an optional positional string argument to specify the name to greet. A user login name as provided by the getpass Python Library is used, if the the argument is missing."
+                    verification_criteria = "Call the tool using the `greeter` with and without positional argument. Check console output."
+                    satisfies = [SwRequirements.sw_req_cli_user_name, SwRequirements.sw_req_cli_default_name]
+                }
+            }
+
+            section "greeter" {
+
+                SwArchSpec sw_arch_comp_greeter {
+                    description = "The greeter component calculates that greeting message content based on the system time provided by the C library time."
+                    verification_criteria = "Code Review"
+                    satisfies = [SwRequirements.sw_func_daytime_greeting_selection]
+                }
+            }
+        }
+    }
+
+    section "Dynamic View" {
+        SwArchSpec sw_arch_greeter_interaction {
+            description = "The greeter tool component interaction flow is defined in the following diagram."
+            verification_criteria = "Check public function alls from components using mock testing"
+            satisfies = [SwRequirements.sw_func_night_time_greeting, SwRequirements.sw_func_morning_time_greeting, SwRequirements.sw_func_midday_time_greeting, SwRequirements.sw_func_afternoon_time_greeting]
+        }
+
+        Generic.PlantUML sw_arch_interaction_diagram {
+            caption = "Interaction Diagram"
+            file_path ="img/interaction_diagram.puml"
+        }
+    }
+}

@@ -1,0 +1,90 @@
+# Ceedling configuration of the greeter unit tests (Unity, CMock and gcov).
+#
+#   ceedling gcov:all     # all tests with coverage, the test command of trlcdoc.yaml
+#
+# Writes into build/ceedling/artifacts/gcov:
+#   junit_tests_report.xml   JUnit report, the LOBSTER_TRACE() lines are in the suite output
+#   gcovr/index.html         HTML coverage report of the src folder
+#
+# Settings not listed here have their Ceedling default.
+
+---
+:project:
+  :which_ceedling: gem
+  :ceedling_version: 1.1.9
+  :use_mocks: TRUE
+  :use_test_preprocessor: :none
+  :use_deep_preprocessor: :none
+  :use_backtrace: :simple
+  :use_decorators: :auto
+  :build_root: build/ceedling
+  :test_file_prefix: test_
+  :default_tasks:
+    - gcov:all
+  :test_threads: 8
+  :compile_threads: 8
+
+:plugins:
+  :enabled:
+    - gcov                        # coverage with gcov and gcovr
+    - report_tests_log_factory    # JUnit report for trlcdoc
+    - report_tests_pretty_stdout
+
+:report_tests_log_factory:
+  :reports:
+    - junit
+
+:extension:
+  :executable: .out
+
+:paths:
+  :test:
+    - +:test/**
+    - -:test/support
+  :source:
+    - src/**
+  :include:
+    - src/**
+  :support:
+    - test/support
+
+:defines:
+  :test:
+    - TEST
+
+:cmock:
+  :plugins:
+    - :ignore
+    - :callback
+  :when_no_prototypes: :warn
+  :mock_prefix: 'mock_'
+  :treat_externs: :include
+  :enforce_strict_ordering: true
+  :fail_on_unexpected_calls: true
+  :callback_include_count: true
+  :treat_as:
+    uint8: HEX8
+    uint16: HEX16
+    uint32: UINT32
+    int8: INT8
+    bool: UINT8
+
+:unity:
+  :defines:
+    - UNITY_EXCLUDE_FLOAT
+
+:gcov:
+  # The coverage is shown by the gcovr report in the site. The console summary is off,
+  # it reports "no coverage results" with some GCC versions although gcovr finds them.
+  :summaries: FALSE
+  :report_task: FALSE
+  :utilities:
+    - gcovr
+  :reports:
+    - HtmlDetailed
+  :gcovr:
+    # trlcdoc shows a coverage folder with an index.html as site page.
+    :html_artifact_filename: index.html
+    :html_medium_threshold: 75
+    :html_high_threshold: 90
+...
