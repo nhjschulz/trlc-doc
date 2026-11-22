@@ -1,0 +1,46 @@
+[build-system]
+requires = ["setuptools", "setuptools-scm", "wheel", "toml"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "greeter"
+version = "1.0.0"
+description = "A python CLI tool example to show TRLC usage."
+readme = "README.md"
+requires-python = ">=3.10"
+authors = [
+    { name = "NewTec GmbH", email = "info@newtec.de" }
+]
+license = {text = "BSD"}
+classifiers = [
+    "License :: OSI Approved :: BSD License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12"
+]
+
+dependencies = []
+
+[project.optional-dependencies]
+dev = [
+    "trlcdoc >= 0.5.0",
+    "pytest >= 8.3.3",
+    "pytest-cov >= 6.0.0",
+    "freezegun >= 1.5.0"
+]
+
+[project.urls]
+documentation = "https://github.com/NewTec-GmbH/trlcWorkInstructions/examples/greeter"
+repository = "https://github.com/NewTec-GmbH/trlcWorkInstructions"
+
+[project.scripts]
+greet = "greeter.__main__:main"
+
+[tool.pytest.ini_options]
+pythonpath = [
+  "src"
+]
+
+[tool.setuptools.package-data]
+greeter = ["pyproject.toml"]

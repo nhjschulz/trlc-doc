@@ -29,7 +29,7 @@ from typing import Any, Dict, List
 import yaml
 
 from .config import Config
-from .util import TrlcdocError, clean_dir, find_tool, git_output, repository_url, run
+from .util import TrlcdocError, clean_dir, find_tool, git_output, git_root, repository_url, run
 
 # Variables ********************************************************************
 
@@ -160,6 +160,7 @@ def _extract_trlc(cfg: Config, level: Dict[str, Any], out_file: Path) -> Path:
 
 def _extract_code(cfg: Config, level: Dict[str, Any], out_file: Path) -> Path:
     # lobster-trace: SwRequirements.sw_req_trace_levels
+    # lobster-trace: SwRequirements.sw_req_trace_doxygen
     """Extract an implementation level from source code.
 
     Args:
@@ -170,9 +171,73 @@ def _extract_code(cfg: Config, level: Dict[str, Any], out_file: Path) -> Path:
     Returns:
         Path: The LOBSTER output file.
     """
+    if level["extractor"] == "lobster-doxygen":
+        return _extract_doxygen(cfg, level, out_file)
     sources = [str(cfg.path(source)) for source in level["sources"]]
     run([find_tool(level["extractor"]), "--out", str(out_file), *sources], cfg.root)
     return out_file
+
+
+def _extract_doxygen(cfg: Config, level: Dict[str, Any], out_file: Path) -> Path:
+    # lobster-trace: SwRequirements.sw_req_trace_doxygen
+    """Extract an implementation level from C/C++ sources with doxygen and lobster-doxygen.
+
+    Doxygen runs in the folder of the configured Doxyfile, so its relative paths keep
+    working. The Doxyfile is included unchanged and followed by settings that write
+    only the XML output into the trace folder.
+
+    Args:
+        cfg (Config): Project configuration.
+        level (Dict[str, Any]): Trace level of kind implementation with a doxyfile.
+        out_file (Path): LOBSTER output file.
+
+    Returns:
+        Path: The LOBSTER output file.
+    """
+    doxygen = find_tool("doxygen", f"It is needed by the lobster-doxygen extractor of trace level "
+                                   f"'{level['name']}', see https://www.doxygen.nl.")
+    doxyfile = cfg.path(level["doxyfile"])
+    doxygen_dir = out_file.with_name(f"{out_file.stem}-doxygen")
+    settings = [
+        f'@INCLUDE = "{doxyfile.as_posix()}"',
+        f'OUTPUT_DIRECTORY = "{doxygen_dir.as_posix()}"',
+        "GENERATE_XML = YES",
+        "XML_OUTPUT = xml",
+        "GENERATE_HTML = NO",
+        "GENERATE_LATEX = NO",
+        "GENERATE_RTF = NO",
+        "GENERATE_MAN = NO",
+        "GENERATE_DOCBOOK = NO",
+    ]
+    run([doxygen, "-"], doxyfile.parent, stdin="\n".join(settings) + "\n")
+    run([find_tool("lobster-doxygen"), "-o", str(out_file), str(doxygen_dir / "xml")], cfg.root)
+    return _absolute_locations(out_file, doxyfile.parent)
+
+
+def _absolute_locations(lobster_file: Path, base: Path) -> Path:
+    # lobster-trace: SwRequirements.sw_req_trace_doxygen
+    """Make the relative file locations of a LOBSTER file absolute.
+
+    Doxygen strips the folder it runs in from the file paths (STRIP_FROM_PATH), so lobster-doxygen
+    writes them relative to the folder of the Doxyfile. The report links need them absolute, like
+    the locations of the other levels.
+
+    See also: https://github.com/NewTec-GmbH/lobster-doxygen/issues/68
+
+    Args:
+        lobster_file (Path): LOBSTER file, updated in place.
+        base (Path): Folder the relative paths refer to.
+
+    Returns:
+        Path: The updated LOBSTER file.
+    """
+    data = json.loads(lobster_file.read_text(encoding="utf-8"))
+    for item in data.get("data", []):
+        location = item.get("location", {})
+        if location.get("kind") == "file" and not Path(location["file"]).is_absolute():
+            location["file"] = str((base / location["file"]).resolve())
+    lobster_file.write_text(json.dumps(data, indent=2), encoding="utf-8")
+    return lobster_file
 
 
 def _write_policy(cfg: Config, sources: Dict[str, Path], policy_file: Path) -> Path:
@@ -214,13 +279,14 @@ def _make_online(cfg: Config, report_file: Path) -> Path:
         TrlcdocError: If the commit id cannot be determined.
     """
     commit_id = git_output(["rev-parse", "HEAD"], cfg.root)
-    if commit_id is None:
+    repo_root = git_root(cfg.root)
+    if commit_id is None or repo_root is None:
         raise TrlcdocError("Online report needs a git repository ('git rev-parse HEAD' failed).")
 
     online_cfg = report_file.with_name("online_report_config.yaml")
     with open(online_cfg, "w", encoding="utf-8") as file:
         yaml.safe_dump({"report": str(report_file), "commit_id": commit_id,
-                        "repo_root": str(cfg.root), "base_url": repository_url(cfg.repository, cfg.root)}, file)
+                        "repo_root": str(repo_root), "base_url": repository_url(cfg.repository, cfg.root)}, file)
 
     online_report = report_file.with_suffix(".online")
     run([find_tool("lobster-online-report"), "--config", str(online_cfg), "--out", str(online_report)], cfg.root)

@@ -1,7 +1,12 @@
 name: Tests
 
+# Pull requests are tested on every update. Pushes are tested only on the protected
+# branches, which receive the merged pull requests; a push to a pull request branch
+# would otherwise run the same tests a second time. Other branches can be tested
+# with a manual run.
 on:
   push:
+    branches: [main, develop]
   pull_request:
   workflow_dispatch:
 
@@ -9,6 +14,27 @@ permissions:
   contents: read
 
 jobs:
+  lint:
+    name: ruff
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      # Only ruff, the version range comes from the lint extra in pyproject.toml.
+      - name: Install ruff
+        run: |
+          python -m pip install --upgrade pip
+          pip install "$(python -c "import tomllib; print(tomllib.load(open('pyproject.toml', 'rb'))['project']['optional-dependencies']['lint'][0])")"
+
+      - name: Run ruff
+        run: ruff check --output-format=github .
+
   test:
     name: pytest (${{ matrix.os }}, Python ${{ matrix.python-version }})
     runs-on: ${{ matrix.os }}
@@ -41,6 +67,17 @@ jobs:
         with:
           path: .pytest_cache/d/plantuml
           key: plantuml-${{ hashFiles('trlcdoc/plantuml.py') }}
+
+      # doxygen is needed by the C/C++ tracing test (lobster-doxygen extractor).
+      - name: Install doxygen (Linux)
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y doxygen
+
+      - name: Install doxygen (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          choco install doxygen.install -y --no-progress
+          echo "C:\Program Files\doxygen\bin" >> $env:GITHUB_PATH
 
       - name: Install trlcdoc with test dependencies
         run: |

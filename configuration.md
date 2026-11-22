@@ -31,9 +31,11 @@ document adds the behavior behind the keys.
   - [5.2 runner: command](#52-runner-command)
   - [5.3 link: from test results to test cases](#53-link-from-test-results-to-test-cases)
   - [5.4 The generated test result records](#54-the-generated-test-result-records)
+  - [5.5 googletest](#55-googletest)
 - [6. trace](#6-trace)
   - [6.1 Requirement levels](#61-requirement-levels)
   - [6.2 Implementation levels](#62-implementation-levels)
+    - [6.2.1 C/C++ code with lobster-doxygen](#621-cc-code-with-lobster-doxygen)
   - [6.3 trace\_to and requires](#63-trace_to-and-requires)
   - [6.4 Online tracing report](#64-online-tracing-report)
 - [7. plantuml](#7-plantuml)
@@ -137,15 +139,30 @@ The configuration is checked in two stages before any step runs, including the
    - `trace_to` and `requires` refer to defined levels,
    - the converter, translation and render configuration files of the
      `pytrlcconverter` options exist,
-   - `html.conf`, `html.index` and `html.page_header` files exist,
+   - `project.logo`, `project.favicon`, `html.conf`, `html.index` and
+     `html.page_header` files exist,
    - the `{page:<id>}` placeholders ([8.5](#85-placeholders)) name documents,
    - a `test_results` document or a `tests:coverage` source has a `tests` section,
    - a `trace_report` document has a `trace` section,
    - `paths.output` is neither inside the trlcdoc package nor the project root
      or one of its parents.
 
-All problems are reported at once. Run `trlcdoc check` after every change of
-the configuration.
+All problems are reported at once, each with the file and line of its entry:
+
+```text
+trlcdoc error: trlcdoc.yaml has invalid settings:
+  trlcdoc.yaml:15: project.logo: file 'doc/images/logo-trlcdoc.pngx' not found.
+  trlcdoc.yaml:37: documents[sw_architecture].include: 'unknown' is no document of type trlc or test_results.
+```
+
+Editors like Visual Studio Code open the file at this line from the terminal.
+An error about a missing key, e.g. `'author' is a required property`, points to
+the line of the enclosing entry. A repeated document id or level name points to
+its second occurrence. A value taken from a YAML alias points to the line of the
+alias. A file that is no valid YAML is reported with the line and column of the
+syntax error.
+
+Run `trlcdoc check` after every change of the configuration.
 
 With a project start page (`html.index`), the `check` step also compares its
 table of contents with the page names of the documents, see
@@ -417,7 +434,7 @@ a detailed design, release notes.
   |---|---|
   | An image | The image, copied into the site. |
   | The `source` of a document of type `trlc`, `rst`, `markdown` or `text` | A link to that page. An anchor (`file.md#section`) is kept. |
-  | Any other project file or folder | A link to it in the repository at the commit the site is built from (`<repository>/blob/<commit>/<path>`, `tree` for folders), see `project.repository`. |
+  | Any other project file or folder | A link to it in the repository at the commit the site is built from (`<repository>/blob/<commit>/<path>`, `tree` for folders), see `project.repository`. In a project in a subfolder of the repository, `<path>` starts with the subfolder. |
   | Any other project file or folder, without git repository or repository URL | Plain text, with a warning. |
   | A target that does not exist, or lies outside the project | Left to MyST, which warns about it. |
 
@@ -572,9 +589,11 @@ tests:
 - `command` runs in the project root, without a shell. Its exit code is
   ignored, because test tools usually report failed tests with a non-zero
   code; the results are taken from the JUnit file.
-- `junit` is the JUnit XML file, relative to the project root. If it is
-  missing after the command, the step fails.
-- `coverage` is the HTML coverage folder the command writes, if any.
+- `junit` is the JUnit XML file, relative to the project root. trlcdoc deletes
+  it before the command runs. If it is missing after the command, the step
+  fails, so the results of a previous run are never reported as current ones.
+- `coverage` is the HTML coverage folder the command writes, if any. Its
+  `index.html` must be written by the command, otherwise the step fails.
 
 ### 5.3 link: from test results to test cases
 
@@ -667,8 +686,10 @@ one that finds a test case:
 | `to`       |                 | Qualified test case id pattern `Package.record`, must contain `{name}`. |
 | `array`    | `false`         | Write the linked test cases as a list. Needed as soon as one test records more than one test case. |
 
-`link` needs `output`, or `from` and `to`, or both. The property is always
-tried first.
+`link` needs at least one of `property`, `output`, or `from` and `to`. The
+property is always tried first, with its default name if `property` is not
+set. A `link` with `property` only links every test by its property, e.g. for
+googletest (see [5.5](#55-googletest)).
 
 Tests that cannot be linked are a build error that lists them all. Fix them by
 recording the property, writing the test case id to the output or renaming the
@@ -729,6 +750,42 @@ type SwTestCaseResult {
 The record names are the test names with `_result` appended (with a number
 appended for duplicates). These records are the input of the `test_results`
 document and of a trace level with `document: <test_results id>`.
+
+### 5.5 googletest
+
+googletest tests record their TRLC test case with the `LOBSTER_TRACE()` macro
+of LOBSTER's
+[lobster_gtest.h](https://github.com/bmw-software-engineering/lobster/blob/main/support/gtest/include/lobster_gtest.h).
+It stores the id as test property `lobster-tracing`:
+
+```cpp
+#include "lobster_gtest.h"
+
+TEST(TSGreet, MorningTimeGreeting)
+{
+    LOBSTER_TRACE("SwTests.tc_greet_morning_time_greeting");
+    ...
+}
+```
+
+googletest writes the properties into its XML report
+(`--gtest_output=xml:<file>`), which is a JUnit XML file. Use this report, not
+the JUnit report of `ctest --output-junit`: ctest knows only its own tests and
+drops the properties.
+
+```yaml
+tests:
+  runner: command
+  command: [cmake, -P, tools/run_tests.cmake]   # builds and runs the tests
+  junit: build/test/greet_test.xml
+  coverage: build/test/coverage
+  link:
+    property: lobster-tracing
+```
+
+The C++ example [examples/cpp-doxygen-gtest](examples/cpp-doxygen-gtest) builds and runs its tests with
+CMake, traces the test code with `lobster-doxygen` and creates the coverage
+report with gcovr.
 
 ## 6. trace
 
@@ -808,9 +865,13 @@ TRLC document (extracted with lobster-trlc).
 
 ### 6.2 Implementation levels
 
-`kind: implementation` takes the items from source code. The only extractor is
-`lobster-python`: every function and method is an item, linked by
-`# lobster-trace:` comments.
+`kind: implementation` takes the items from source code. The `extractor` decides
+the language:
+
+- `lobster-python`: every Python function and method is an item, linked by
+  `# lobster-trace:` comments.
+- `lobster-doxygen`: every C/C++ function, method, class, struct and union is an
+  item, linked by doxygen `@implements{...}` tags. See [6.2.1](#621-cc-code-with-lobster-doxygen).
 
 ```yaml
     - name: SW Code
@@ -828,16 +889,73 @@ def convert_section(self, section, level):
 
 | Key         | Meaning and impact |
 |-------------|--------------------|
-| `extractor` | `lobster-python`. |
-| `sources`   | Files or folders to scan, relative to the project root. |
+| `extractor` | `lobster-python` or `lobster-doxygen`. |
+| `sources`   | `lobster-python` only: files or folders to scan, relative to the project root. |
+| `doxyfile`  | `lobster-doxygen` only: the Doxyfile that selects the sources, relative to the project root. |
 
-`document`, `record_type` are not allowed here; `extractor` and `sources` are
-not allowed for requirement levels. `tags` and `description_fields` have no
-effect.
+`document`, `record_type` are not allowed here; `extractor`, `sources` and
+`doxyfile` are not allowed for requirement levels. `tags` and
+`description_fields` have no effect.
 
 Use a second implementation level for test code (`sources: [tests]`,
 `trace_to: [SW Test Case]`) to check that every test function traces to a test
 case.
+
+#### 6.2.1 C/C++ code with lobster-doxygen
+
+C projects differ a lot in where their sources live and which preprocessor
+defines they need, so the project provides its own Doxyfile per level:
+
+```yaml
+    - name: SW Code
+      kind: implementation
+      extractor: lobster-doxygen
+      doxyfile: tools/doxygen/Doxyfile
+      trace_to: [SW Requirement]
+
+    - name: SW Test Code
+      kind: implementation
+      extractor: lobster-doxygen
+      doxyfile: tools/doxygen/Doxyfile_test     # e.g. other INPUT, EXCLUDE, PREDEFINED
+      trace_to: [SW Test Case]
+```
+
+```c
+/**
+ * @file greeter.c
+ */
+
+/**
+ * @brief Print the greeting.
+ * @implements{SwRequirements.sw_req_greet}
+ */
+void Greeter_greet(void);
+```
+
+The `trace` step runs `doxygen -` in the folder of the Doxyfile, so its relative
+paths (`INPUT`, `EXCLUDE`, `@INCLUDE`) keep working. It includes the Doxyfile
+unchanged and overrides only the output settings: XML goes to
+`<output>/trace/<level>-doxygen/xml`, all other formats are off. Then
+`lobster-doxygen` turns the XML into the level's items. Settings like
+`WARN_LOGFILE` still apply as written in the Doxyfile.
+
+The Doxyfile must
+
+- define the aliases that lobster-doxygen reads:
+  ```text
+  ALIASES = "implements{1}=@xrefitem implements \"Implements\" \"Requirement Traceability\" Requirement: \1" \
+            "justification{1}=@xrefitem justified \"Justified\" \"Justification Overview\" Justification: \1"
+  ```
+- select the sources with `INPUT` (and `EXCLUDE`, `FILE_PATTERNS`, ...).
+- set `PREDEFINED` with `MACRO_EXPANSION = YES` if functions are declared by
+  macros, e.g. Unity's `TEST(...)`.
+
+Every source file needs a `@file` comment, otherwise doxygen drops the tags of
+its functions. `@justification{reason}` marks an item as intentionally
+untraced.
+
+`lobster-doxygen` is installed with trlcdoc. Doxygen itself must be on the
+`PATH`, but only when a level uses `lobster-doxygen`.
 
 ### 6.3 trace_to and requires
 
@@ -879,6 +997,8 @@ By default the report links each item to its local file. `trlcdoc trace
 --online` (or `trlcdoc --online`) links to the files in the repository at the
 current commit instead, which is what you want for a published site. This
 uses `project.repository` and needs a git repository with the commit pushed.
+The project may be a subfolder of the repository, e.g. one of several example
+projects: the links contain the path of the project in the repository.
 
 ## 7. plantuml
 
@@ -965,7 +1085,7 @@ an import:
 | Name                                                  | Content |
 |-------------------------------------------------------|---------|
 | `PROJECT_ROOT`                                        | `pathlib.Path` of the project root. |
-| `trlcdoc_links`                                       | Dict with `repository` (HTTPS URL, `None` without git or origin remote), `commit` (`HEAD`, `None` outside git), `root` and the page mappings of the Markdown link resolution. |
+| `trlcdoc_links`                                       | Dict with `repository` (HTTPS URL, `None` without git or origin remote), `repository_path` (path of the project root in the repository, `.` in the repository root), `commit` (`HEAD`, `None` outside git), `root` and the page mappings of the Markdown link resolution. |
 | `project`, `author`, `copyright`, `version`, `release` | From the `project` section. |
 | `extensions`                                          | trlcdoc's extensions plus `html: extensions`. |
 | `html_theme`, `html_static_path`, `html_logo`, `html_favicon`, `html_last_updated_fmt` | Site settings. |
@@ -993,8 +1113,8 @@ def setup(app):
   from `PROJECT_ROOT`**, not relative to the file.
 - Functions defined in the file become Sphinx configuration values too, e.g.
   `linkcode_resolve()` for `sphinx.ext.linkcode`. They can use the names
-  above, e.g. `trlcdoc_links["repository"]` and `trlcdoc_links["commit"]` to
-  link the API sources to the repository.
+  above, e.g. `trlcdoc_links["repository"]`, `trlcdoc_links["repository_path"]`
+  and `trlcdoc_links["commit"]` to link the API sources to the repository.
 - A `setup(app)` function is called after trlcdoc's own setup.
 - Do not reassign `html_static_path`, append to it: trlcdoc's `_static`
   folder holds the stylesheet and the `s5defs.txt` roles included in every
@@ -1140,6 +1260,7 @@ build/trlcdoc/
 │   └── markdown/<id>/                  convert --format markdown
 ├── trace/
 │   ├── <level>.yaml, <level>.lobster   extracted items per level
+│   ├── <level>-doxygen/xml/            doxygen XML of lobster-doxygen levels
 │   ├── lobster-report.conf             generated policy
 │   ├── report.lobster
 │   └── tracing_report.html
@@ -1153,6 +1274,8 @@ so stale files of a previous run do not remain.
 
 ## 10. Typical errors
 
+Configuration errors are listed without the leading `<file>:<line>:`.
+
 | Message | Cause and fix |
 |---------|---------------|
 | `... does not match the schema: documents/1: 'title' is a required property` | The document type needs this key, see the table in [4](#4-documents). The number is the position in the list, starting at 0. |
@@ -1162,10 +1285,13 @@ so stale files of a previous run do not remain.
 | `documents[x].pytrlcconverter.converter.rst: file '...' not found.` | Wrong path, or `builtin:` prefix missing for a built-in file. |
 | `documents/0: 'converter' is not one of ['id', 'title', ...]` | A pyTRLCConverter option on document level. Move it into the `pytrlcconverter` block. |
 | `trace.levels[A].requires: level 'B' is not defined.` | The level name must match exactly, including spaces and case. |
+| `trace.levels[A].doxyfile: file '...' not found.` | The Doxyfile path is relative to the project root. |
+| `Tool 'doxygen' not found. It is needed by the lobster-doxygen extractor of trace level 'A'` | Install doxygen and put it on the `PATH`. |
+| lobster-doxygen: `... has requirements or justifications on file level.` | An `@implements` tag in the `@file` comment. Move it to a function, struct or class. |
 | `Tests without test case link (property ..., output ..., name pattern ...)` | Tests without test case link, see [5.3](#53-link-from-test-results-to-test-cases). |
 | `Tests linked to several test cases, which needs tests.link.array` | Set `array: true` and make `relates` an array in the model. |
 | `Tests linked to test cases of several packages` | All test cases of the results must be in one package, see [5.4](#54-the-generated-test-result-records). |
-| `tests/link: {...} is not valid under any of the given schemas` | `link` needs `output`, or both `from` and `to`. |
+| `tests/link: {...} is not valid under any of the given schemas` | `link` needs `property`, `output`, or both `from` and `to`. |
 | `No test results in ..., run the tests step first.` | Run `trlcdoc tests convert` or `trlcdoc`. |
 | `No converted files in ..., run the convert step first.` | Run `convert` before `html`. |
 | `pyTRLCConverter` reports an unresolved reference | The referenced records' document is missing in `include`. |

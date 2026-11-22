@@ -20,6 +20,7 @@
 
 # Imports **********************************************************************
 
+import os
 import shutil
 import sys
 from pathlib import Path
@@ -128,9 +129,20 @@ def test_test_run(tmp_path: Path) -> None:
     assert run_tests(cfg) is True
     assert "tc_hello" in (cfg.test_results_dir / RESULTS_FILE).read_text(encoding="utf-8")
 
+    # A command that fails to write its reports must not leave old ones behind.
     data["tests"]["command"] = [sys.executable, "-c", "pass"]
-    data["tests"]["junit"] = "out/none.xml"
-    with pytest.raises(TrlcdocError, match="was not created"):
+    with pytest.raises(TrlcdocError, match=r"results\.xml was not created"):
+        run_tests(load_config(write_config(root, data)))
+    assert not (root / "out" / "results.xml").exists()
+
+    data["tests"]["command"] = [sys.executable, "-m", "pytest", "tests", "--junitxml=out/results.xml",
+                                "--cov=hello", "--cov-report=html:out/coverage"]
+    data["tests"]["coverage"] = "out/coverage"
+    assert run_tests(load_config(write_config(root, data))) is True
+    index = root / "out" / "coverage" / "index.html"
+    os.utime(index, (index.stat().st_atime, index.stat().st_mtime - 3600))
+    data["tests"]["command"] = [sys.executable, "-m", "pytest", "tests", "--junitxml=out/results.xml"]
+    with pytest.raises(TrlcdocError, match=r"Coverage report .* was not created by the test command"):
         run_tests(load_config(write_config(root, data)))
 
 
@@ -183,7 +195,7 @@ def test_test_results_output(tmp_path: Path) -> None:
     # Ceedling/Unity: the suite output names the test of each line, duplicates are removed.
     junit = tmp_path / "ceedling.xml"
     junit.write_text(CEEDLING_XML, encoding="utf-8")
-    with pytest.raises(TrlcdocError, match="needs tests.link.array: test_Greeter_morning$"):
+    with pytest.raises(TrlcdocError, match=r"needs tests\.link\.array: test_Greeter_morning$"):
         read_junit(junit, OUTPUT_LINK)
     array_link = {**OUTPUT_LINK, "array": True}
     results = read_junit(junit, array_link)

@@ -21,6 +21,9 @@
 # Imports **********************************************************************
 
 import json
+import os
+import shutil
+import sys
 from pathlib import Path
 
 import pytest
@@ -31,8 +34,31 @@ from trlcdoc import cli
 from trlcdoc.config import load_config
 from trlcdoc.testrun import run_tests
 from trlcdoc.trace import build_trace_report
+from trlcdoc.util import TrlcdocError
 
 # Variables ********************************************************************
+
+HELLO_C = """/**
+ * @file hello.c
+ * @brief Example module.
+ */
+
+/**
+ * @brief Return the greeting.
+ * @implements{SwRequirements.sw_req_hello}
+ */
+const char *hello(void)
+{
+    return "Hello";
+}
+"""
+
+# Minimal Doxyfile with the aliases of lobster-doxygen; doxygen uses the defaults for all other settings.
+DOXYFILE = """INPUT    = ../../src
+ALIASES  = "implements{1}=@xrefitem implements \\"Implements\\" \\"Requirement Traceability\\" Requirement: \\1"
+ALIASES += "justification{1}=@xrefitem justified \\"Justified\\" \\"Justification Overview\\" Justification: \\1"
+QUIET    = YES
+"""
 
 # Classes **********************************************************************
 
@@ -84,7 +110,8 @@ def test_trace_levels(project: Path) -> None:
 
 
 def test_trace_report(tmp_path: Path) -> None:
-    """The HTML tracing report links to local files, or to the repository when online.
+    """The HTML tracing report links to local files, or to the repository when online, also for a project in a
+    subfolder of the repository.
 
     Args:
         tmp_path (Path): pytest temporary folder.
@@ -111,6 +138,15 @@ def test_trace_report(tmp_path: Path) -> None:
     assert build_trace_report(cfg, online=True) == 0
     assert link in cfg.trace_report_html.read_text(encoding="utf-8")
 
+    # A project in a subfolder of the repository links to its files in the subfolder.
+    project = make_project(tmp_path / "repo" / "examples" / "greeter")
+    cfg = load_config(project)
+    run_tests(cfg)
+    commit = git_init(tmp_path / "repo")
+    assert build_trace_report(cfg, online=True) == 0
+    link = f"https://github.com/example/example/blob/{commit}/examples/greeter/trlc/swe-req/swe-req.trlc"
+    assert link in cfg.trace_report_html.read_text(encoding="utf-8")
+
 
 
 def test_trace_markdown(tmp_path: Path) -> None:
@@ -123,7 +159,8 @@ def test_trace_markdown(tmp_path: Path) -> None:
     req_file = project.parent / "trlc" / "swe-req" / "swe-req.trlc"
     req_file.write_text(req_file.read_text(encoding="utf-8").replace(
         'description = "The software shall greet."',
-        "description =\n            '''\n            The software shall **greet** with\n            `hello()`.\n            '''"),
+        "description =\n            '''\n            The software shall **greet** with\n"
+        "            `hello()`.\n            '''"),
         encoding="utf-8")
     cfg = load_config(project)
     run_tests(cfg)
@@ -195,5 +232,63 @@ def test_trace_justified(tmp_path: Path, capsys: pytest.CaptureFixture) -> None:
     assert "SW Code: 2 items, 0 not traced, 1 justified" in out
     assert "python code.helper" not in out
     assert _report_items(project)["python code.helper"]["tracing_status"] == "JUSTIFIED"
+
+
+def test_trace_doxygen(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """C/C++ code is traced with doxygen and lobster-doxygen, configured by a Doxyfile.
+
+    Args:
+        tmp_path (Path): pytest temporary folder.
+        monkeypatch (pytest.MonkeyPatch): pytest monkeypatch.
+    """
+    if shutil.which("doxygen") is None:
+        pytest.skip("doxygen not found.")
+
+    project = make_project(tmp_path / "project")
+    root = project.parent
+    (root / "src").mkdir()
+    (root / "src" / "hello.c").write_text(HELLO_C, encoding="utf-8")
+    doxyfile = root / "tools" / "doxygen" / "Doxyfile"
+    doxyfile.parent.mkdir(parents=True)
+    doxyfile.write_text(DOXYFILE, encoding="utf-8")
+
+    data = base_config()
+    data["trace"]["levels"][0]["requires"].append("SW Code")
+    data["trace"]["levels"].append({"name": "SW Code", "kind": "implementation", "extractor": "lobster-doxygen",
+                                    "doxyfile": "tools/doxygen/Doxyfile", "trace_to": ["SW Requirement"]})
+    cfg = load_config(write_config(root, data))
+    run_tests(cfg)
+
+    assert build_trace_report(cfg, online=False) == 0
+    code_items = [item for tag, item in _report_items(project).items() if tag.startswith("cpp ")]
+    assert [item["name"] for item in code_items] == ["hello"]
+    assert code_items[0]["tracing_status"] == "OK"
+    assert code_items[0]["ref_up"] == ["req SwRequirements.sw_req_hello"]
+    assert Path(code_items[0]["location"]["file"]) == (root / "src" / "hello.c").resolve()
+    # The doxygen output goes into the trace folder, not next to the Doxyfile.
+    assert sorted(path.name for path in doxyfile.parent.iterdir()) == ["Doxyfile"]
+    assert (cfg.trace_dir / "sw_code-doxygen" / "xml" / "index.xml").is_file()
+
+    # Doxygen writes the paths of sources below the folder of the Doxyfile relative to it.
+    # The source links of the report are absolute nevertheless.
+    (root / "src" / "Doxyfile").write_text(DOXYFILE.replace("../../src", "."), encoding="utf-8")
+    data["trace"]["levels"][-1]["doxyfile"] = "src/Doxyfile"
+    cfg = load_config(write_config(root, data))
+    assert build_trace_report(cfg, online=False) == 0
+    code_items = [item for tag, item in _report_items(project).items() if tag.startswith("cpp ")]
+    assert Path(code_items[0]["location"]["file"]) == (root / "src" / "hello.c").resolve()
+
+    # Without doxygen, only a project with a lobster-doxygen level fails.
+    # Hide only doxygen. The LOBSTER tools stay reachable through the PATH, where Windows
+    # without venv has them anyway; the interpreter folder may also contain doxygen.
+    monkeypatch.setenv("PATH", os.pathsep.join([str(Path(sys.executable).parent), os.environ.get("PATH", "")]))
+    monkeypatch.setattr(sys, "executable", str(tmp_path / "python"))
+    which = shutil.which
+    monkeypatch.setattr(shutil, "which", lambda name, *args, **kwargs:
+                        None if Path(name).stem == "doxygen" else which(name, *args, **kwargs))
+    with pytest.raises(TrlcdocError, match=r"Tool 'doxygen' not found\..*trace level 'SW Code'"):
+        build_trace_report(cfg, online=False)
+    cfg = load_config(write_config(root, base_config()))
+    assert build_trace_report(cfg, online=False) == 0
 
 # Main *************************************************************************

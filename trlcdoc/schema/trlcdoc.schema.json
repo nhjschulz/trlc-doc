@@ -179,10 +179,10 @@
                     "description": "How a test result is linked to its TRLC test case: by a JUnit property, by the test output ('output') or by a name pattern ('from' and 'to'). The result records are written into the package of the linked test cases.",
                     "type": "object",
                     "additionalProperties": false,
-                    "anyOf": [{"required": ["output"]}, {"required": ["from", "to"]}],
+                    "anyOf": [{"required": ["property"]}, {"required": ["output"]}, {"required": ["from", "to"]}],
                     "dependentRequired": {"from": ["to"], "to": ["from"]},
                     "properties": {
-                        "property": {"description": "JUnit test case property holding the test case id. Used first, if present. A test may record it several times.", "type": "string", "default": "lobster-trace"},
+                        "property": {"description": "JUnit test case property holding the test case id. Used first, if present. A test may record it several times. Set it to link by property only, e.g. for googletest.", "type": "string", "default": "lobster-trace"},
                         "output": {"description": "Pattern with an {id} placeholder for the qualified test case id (Package.record), searched in the test output (JUnit system-out). Used after the property, before the name pattern. Suite output lines in Unity format '<file>:<line>:<test>:<level>: <message>' belong to the named test.", "type": "string", "pattern": "\\{id\\}"},
                         "array": {"description": "The relates component of the test result records is an array (e.g. 'SwTestCase [1 .. *]'): write the linked test cases as list. Needed for tests linked to several test cases.", "type": "boolean", "default": false},
                         "from": {"description": "Test function name pattern with a {name} placeholder.", "type": "string", "pattern": "\\{name\\}"},
@@ -221,17 +221,21 @@
                 "description_fields": {"type": "array", "items": {"type": "string"}, "default": ["description"]},
                 "trace_to": {"type": "array", "items": {"type": "string"}, "uniqueItems": true, "default": []},
                 "requires": {"type": "array", "items": {"type": "string"}, "uniqueItems": true, "default": []},
-                "extractor": {"enum": ["lobster-python"]},
-                "sources": {"type": "array", "minItems": 1, "items": {"type": "string"}}
+                "extractor": {"enum": ["lobster-python", "lobster-doxygen"]},
+                "sources": {"description": "Files or folders scanned by lobster-python.", "type": "array", "minItems": 1, "items": {"type": "string"}},
+                "doxyfile": {"description": "Doxygen configuration of the sources scanned by lobster-doxygen.", "type": "string", "minLength": 1}
             },
             "if": {"properties": {"kind": {"const": "implementation"}}, "required": ["kind"]},
             "then": {
-                "required": ["extractor", "sources"],
-                "not": {"anyOf": [{"required": ["document"]}, {"required": ["record_type"]}]}
+                "required": ["extractor"],
+                "not": {"anyOf": [{"required": ["document"]}, {"required": ["record_type"]}]},
+                "if": {"properties": {"extractor": {"const": "lobster-doxygen"}}},
+                "then": {"required": ["doxyfile"], "not": {"required": ["sources"]}},
+                "else": {"required": ["sources"], "not": {"required": ["doxyfile"]}}
             },
             "else": {
                 "required": ["document", "record_type"],
-                "not": {"anyOf": [{"required": ["extractor"]}, {"required": ["sources"]}]}
+                "not": {"anyOf": [{"required": ["extractor"]}, {"required": ["sources"]}, {"required": ["doxyfile"]}]}
             }
         }
     }

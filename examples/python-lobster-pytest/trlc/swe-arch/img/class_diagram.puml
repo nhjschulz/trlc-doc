@@ -1,0 +1,39 @@
+@startuml class_diagram
+
+package "greeter" as greeter{
+    class "main" as main <<module>>{
+        + main(): int
+    }
+
+    class "greet" as greet <<module>> {
+        + greet(name: optional String): String
+    }
+}
+
+package "Python Library" {
+
+    class "argparse" as argparse {
+        + add_argument()
+        + parse_args()
+    }
+
+    class "datetime" as datetime {
+        + now()
+    }
+
+    class "getpass" as getpass {
+        + getuser()
+    }
+
+    class "builtins" as builtins {
+        + print()
+    }
+}
+
+main ..> argparse: <<use>>
+main .r.> greet: <<use>>
+main ..> builtins: <<use>>
+greet ..> datetime: <<use>>
+greet ..> getpass: <<use>>
+
+@enduml

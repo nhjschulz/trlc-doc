@@ -43,7 +43,7 @@ class TrlcdocError(Exception):
 # Functions ********************************************************************
 
 
-def find_tool(name: str) -> str:
+def find_tool(name: str, hint: str = "Install the trlcdoc package dependencies.") -> str:
     # lobster-trace: SwRequirements.sw_req_trlc_conversion
     # lobster-trace: SwRequirements.sw_req_test_run
     # lobster-trace: SwRequirements.sw_req_trace_report
@@ -51,6 +51,7 @@ def find_tool(name: str) -> str:
 
     Args:
         name (str): Name of the console script, e.g. 'lobster-trlc'.
+        hint (str): How to install the tool, added to the error message.
 
     Returns:
         str: Path of the executable.
@@ -62,11 +63,11 @@ def find_tool(name: str) -> str:
     candidates = [script_dir / name, script_dir / f"{name}.exe"]
     tool = next((str(path) for path in candidates if path.is_file()), shutil.which(name))
     if tool is None:
-        raise TrlcdocError(f"Tool '{name}' not found. Install the trlcdoc package dependencies.")
+        raise TrlcdocError(f"Tool '{name}' not found. {hint}")
     return tool
 
 
-def run(cmd: List[str], cwd: Path, env: Optional[Dict[str, str]] = None) -> int:
+def run(cmd: List[str], cwd: Path, env: Optional[Dict[str, str]] = None, stdin: Optional[str] = None) -> int:
     # lobster-trace: SwRequirements.sw_req_exit_code
     """Run an external command and stop the build if it fails.
 
@@ -74,6 +75,7 @@ def run(cmd: List[str], cwd: Path, env: Optional[Dict[str, str]] = None) -> int:
         cmd (List[str]): Command and its arguments.
         cwd (Path): Working directory.
         env (Optional[Dict[str, str]]): Additional environment variables.
+        stdin (Optional[str]): Text passed to the standard input of the command.
 
     Returns:
         int: The exit code, which is always 0.
@@ -81,13 +83,14 @@ def run(cmd: List[str], cwd: Path, env: Optional[Dict[str, str]] = None) -> int:
     Raises:
         TrlcdocError: If the command returns a non-zero exit code.
     """
-    returncode = run_unchecked(cmd, cwd, env)
+    returncode = run_unchecked(cmd, cwd, env, stdin)
     if returncode != 0:
         raise TrlcdocError(f"Command failed with exit code {returncode}: {' '.join(cmd)}")
     return returncode
 
 
-def run_unchecked(cmd: List[str], cwd: Path, env: Optional[Dict[str, str]] = None) -> int:
+def run_unchecked(cmd: List[str], cwd: Path, env: Optional[Dict[str, str]] = None,
+                  stdin: Optional[str] = None) -> int:
     # lobster-trace: SwRequirements.sw_req_test_run
     """Run an external command and return its exit code.
 
@@ -95,6 +98,7 @@ def run_unchecked(cmd: List[str], cwd: Path, env: Optional[Dict[str, str]] = Non
         cmd (List[str]): Command and its arguments.
         cwd (Path): Working directory.
         env (Optional[Dict[str, str]]): Additional environment variables.
+        stdin (Optional[str]): Text passed to the standard input of the command.
 
     Returns:
         int: The exit code of the command.
@@ -102,7 +106,7 @@ def run_unchecked(cmd: List[str], cwd: Path, env: Optional[Dict[str, str]] = Non
     full_env = dict(os.environ)
     full_env.update(env or {})
     print(f"  $ {' '.join(cmd)}", flush=True)
-    return subprocess.run(cmd, cwd=cwd, env=full_env, check=False).returncode
+    return subprocess.run(cmd, cwd=cwd, env=full_env, input=stdin, text=stdin is not None, check=False).returncode
 
 
 def _check_owned(output: Path) -> Path:
@@ -211,6 +215,23 @@ def git_output(args: List[str], cwd: Path) -> Optional[str]:
     except OSError:
         result = None
     return result
+
+
+def git_root(path: Path) -> Optional[Path]:
+    # lobster-trace: SwRequirements.sw_req_trace_report
+    # lobster-trace: SwRequirements.sw_req_markdown_links
+    """Get the root folder of the git repository that contains a folder.
+
+    The project root is a subfolder of the repository if several projects share one repository.
+
+    Args:
+        path (Path): A folder inside the repository, e.g. the project root.
+
+    Returns:
+        Optional[Path]: The resolved repository root, or None if the folder is not in a git repository.
+    """
+    toplevel = git_output(["rev-parse", "--show-toplevel"], path)
+    return Path(toplevel).resolve() if toplevel else None
 
 
 def repository_url(repository: str, root: Path) -> str:

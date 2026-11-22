@@ -32,6 +32,7 @@ from conftest import base_config, git_init, make_project, write_config
 
 from trlcdoc import cli, html
 from trlcdoc.config import load_config
+from trlcdoc.html import _link_settings
 from trlcdoc.util import clean_dir
 
 # Variables ********************************************************************
@@ -76,7 +77,8 @@ the [module](../hello.py), the [tests](../tests/) and the [web site](https://exa
 # Project owned files of the customized site, placed in the docs folder.
 CUSTOM_FILES = {
     "index.rst": ("Welcome\n=======\n\n.. image:: {project_root}/docs/logo.png\n\n"
-                  ".. toctree::\n   :caption: Chapters:\n\n   guide\n   placeholder\n   sw_requirements/index\n   license\n"),
+                  ".. toctree::\n   :caption: Chapters:\n\n"
+                  "   guide\n   placeholder\n   sw_requirements/index\n   license\n"),
     "header.rst": ".. image:: {project_root}/docs/logo.png\n   :alt: Project Logo\n",
     "guide.rst": "Guide\n=====\n\n.. literalinclude:: {project_root}/LICENSE\n   :language: none\n",
     "placeholder.md": "# Placeholder\n\nWrite `{project_root}/docs/logo.png` for the logo.\n",
@@ -93,7 +95,7 @@ CUSTOM_FILES = {
 
 @pytest.fixture(name="site", scope="module")
 def fixture_site(tmp_path_factory: pytest.TempPathFactory, plantuml_jar: Path) -> Dict[str, Any]:
-    """Build the HTML site of the example project with 'trlcdoc all'.
+    """Build the HTML site of the example project with 'trlcdoc all'. The project is a subfolder of its repository.
 
     Args:
         tmp_path_factory (pytest.TempPathFactory): pytest temporary folder factory.
@@ -114,7 +116,7 @@ def fixture_site(tmp_path_factory: pytest.TempPathFactory, plantuml_jar: Path) -
     # The project page comes first, to check that the configured order is kept.
     data["documents"] = [EXTRA_DOCUMENTS[1], *data["documents"], EXTRA_DOCUMENTS[0], *EXTRA_DOCUMENTS[2:]]
     config_file = write_config(root, data)
-    commit = git_init(root)
+    commit = git_init(root.parent)
 
     with pytest.MonkeyPatch.context() as monkeypatch:
         monkeypatch.setenv("PLANTUML", str(plantuml_jar))
@@ -170,7 +172,7 @@ def test_documents(site: Dict[str, Any]) -> None:
     Args:
         site (Dict[str, Any]): The built site.
     """
-    for page, heading in zip(PAGES, HEADINGS):
+    for page, heading in zip(PAGES, HEADINGS, strict=True):
         assert f"<h1>{heading}" in _page(site, page)
 
     # The configured title of a Markdown page is its navigation and browser title.
@@ -227,7 +229,8 @@ def test_html_customization(tmp_path: Path, plantuml_jar: Path, monkeypatch: pyt
     del data["tests"], data["trace"]
     sw_requirements = {key: value for key, value in data["documents"][0].items() if key != "title"}
     data["documents"] = [{"id": "guide", "type": "rst", "source": "docs/guide.rst"},
-                         {"id": "placeholder", "type": "markdown", "source": "docs/placeholder.md", "placeholders": False},
+                         {"id": "placeholder", "type": "markdown", "source": "docs/placeholder.md",
+                          "placeholders": False},
                          sw_requirements,
                          {"id": "license", "title": "License information", "type": "text", "source": "LICENSE"}]
     data["html"] = {"index": "docs/index.rst", "page_header": "docs/header.rst", "conf": "docs/conf.py"}
@@ -359,13 +362,14 @@ def test_html_version_info(site: Dict[str, Any]) -> None:
 
 def test_markdown_links(site: Dict[str, Any]) -> None:
     """The relative links and images of a Markdown page are resolved against its location in the project.
+    Links to the repository contain the path of the project in the repository.
 
     Args:
         site (Dict[str, Any]): The built site.
     """
     notes = _page(site, "notes.html")
-    blob = f"https://github.com/example/example/blob/{site['commit']}"
-    tree = f"https://github.com/example/example/tree/{site['commit']}"
+    blob = f"https://github.com/example/example/blob/{site['commit']}/project"
+    tree = f"https://github.com/example/example/tree/{site['commit']}/project"
     links = re.findall(r'<a class="reference (internal|external)" href="([^"]+)">', notes)
     assert links == [("internal", "manual.html#user-manual"), ("internal", "license.html"),
                      ("internal", "sw_requirements/index.html"), ("external", f"{blob}/hello.py"),
@@ -399,6 +403,10 @@ def test_markdown_links_as_text(tmp_path: Path, plantuml_jar: Path, monkeypatch:
     assert "<p>See <span>the module</span>.</p>" in readme
     assert "hello.py" not in readme
     assert "Link to project file 'hello.py' shown as text" in capfd.readouterr().err
+
+    # In the repository root, the links to the repository start with the project files.
+    git_init(root)
+    assert _link_settings(load_config(root / "trlcdoc.yaml"))["repository_path"] == "."
 
 
 class _Browser:  # pylint: disable=too-few-public-methods

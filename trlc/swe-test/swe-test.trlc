@@ -118,13 +118,23 @@ section "SW-Tests" {
                 - an unknown include
                 - a duplicate document id
                 - a missing converter file
-                - missing HTML site files
+                - missing HTML site files and a missing project logo and favicon
                 - an undefined trace level
+                - a missing Doxyfile
 
-                Check that every error is reported with its location, and that no step runs.
+                Check that every error is reported with its location, and that no step runs. Load a configuration
+                file with known line numbers and reference errors, schema errors, a missing key, a key that is not
+                allowed and a repeated document id. Check that each error starts with the file and line of its
+                entry, the missing key with the line of its parent, the repeated id with the line of its second
+                occurrence. Load a file that is no valid YAML and check that the syntax error is reported with its
+                position and exit code 2.
 
-                Load test link configurations with output pattern, name pattern, both, an output pattern without
-                `{id}`, `from` without `to`, `to` alone and property alone. Check that only the first three are valid.
+                Load test link configurations with property, output pattern, name pattern, output and name pattern,
+                no link method, an output pattern without `{id}`, `from` without `to` and `to` alone. Check that only
+                the first four are valid.
+
+                Load implementation levels with lobster-python and lobster-doxygen, each with `sources`, `doxyfile` or
+                both. Check that only lobster-python with `sources` and lobster-doxygen with `doxyfile` are valid.
                 '''
             verifies = [SwRequirements.sw_req_config_validation]
         }
@@ -291,9 +301,11 @@ section "SW-Tests" {
                 - with pytest and coverage
                 - with a failing test
                 - with a test command
-                - with a command not writing the result file
+                - with a command not writing the result file, after a run that wrote it
+                - with a command writing its coverage report
+                - with a command not writing its coverage report, after a run that wrote it
 
-                Check the result file, the coverage report, the test result and the error.
+                Check the result file, the coverage report, the test result and the errors.
                 '''
             verifies = [SwRequirements.sw_req_test_run]
         }
@@ -378,8 +390,9 @@ section "SW-Tests" {
                 - offline
                 - online with a configured repository
                 - online with the repository derived from the git origin remote
+                - online for a project in a subfolder of the repository
 
-                Check the links to the repository files at the current commit.
+                Check the links to the repository files at the current commit, with the subfolder for the last one.
                 '''
             verifies = [SwRequirements.sw_req_trace_report]
         }
@@ -468,6 +481,21 @@ section "SW-Tests" {
                 exit code 0 (`tests/test_trace.py`).
                 '''
             verifies = [SwRequirements.sw_req_trace_findings]
+        }
+
+        SwTestCase tc_trace_doxygen {
+            description =
+                '''
+                **C/C++ code tracing** (`tests/test_trace.py`)
+
+                Create the tracing report of a project with a C function, an `@implements` tag and a Doxyfile in a
+                tools folder. Check that the function traces to its requirement and that no doxygen output lands next
+                to the Doxyfile. Repeat with the Doxyfile in the source folder, and check that the source file of the
+                item is absolute in both cases. Without doxygen on the PATH, check the error naming the trace level, and that a
+                project without lobster-doxygen level still creates its report. The test is skipped if doxygen is
+                not installed.
+                '''
+            verifies = [SwRequirements.sw_req_trace_doxygen]
         }
     }
 
@@ -579,10 +607,11 @@ section "SW-Tests" {
                 '''
                 **Relative links of Markdown pages** (`tests/test_html.py`)
 
-                Build the site of a git repository with a Markdown page in a sub folder. Check
+                Build the site of a project in a subfolder of a git repository with a Markdown page in a sub folder.
+                Check
 
                 - the links to a site page and to a TRLC document folder link to their pages
-                - the links to a project file and folder link to the repository at the built commit
+                - the links to a project file and folder link to the project path in the repository at the built commit
                 - the anchor of a link is kept
                 - the project image is shown
                 '''
@@ -593,7 +622,8 @@ section "SW-Tests" {
             description =
                 '''
                 Build a site without git repository with a Markdown page linking to a project file. Check that the
-                link is shown as text and a warning is reported (`tests/test_html.py`).
+                link is shown as text and a warning is reported (`tests/test_html.py`). Make the project a git
+                repository and check that the repository path of its links is the repository root.
                 '''
             verifies = [SwRequirements.sw_req_markdown_links]
         }

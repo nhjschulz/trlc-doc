@@ -27,7 +27,8 @@ pip install trlcdoc
 ```
 
 The HTML site needs a Java runtime for PlantUML, and Graphviz for all
-diagrams except sequence diagrams.
+diagrams except sequence diagrams. Tracing C/C++ code needs
+[doxygen](https://www.doxygen.nl).
 
 ## Usage
 

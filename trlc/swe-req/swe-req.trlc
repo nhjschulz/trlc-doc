@@ -150,7 +150,10 @@ section "trlcdoc" {
                     - validate the configuration against a defined schema
                     - check the references between its entries
 
-                    An invalid configuration shall be reported with the location of each error.
+                    An invalid configuration shall be reported with the location of each error in the configuration
+                    and the line of the entry in the configuration file. An error about a missing entry shall be
+                    reported with the line of its parent entry. A configuration file that is no valid YAML shall be
+                    reported with the position of the syntax error.
                     '''
                 verification_criteria =
                     '''
@@ -309,12 +312,15 @@ section "trlcdoc" {
                 description =
                     '''
                     The software shall run the project tests with pytest or a configured command and read their results
-                    from a JUnit XML file. If configured, it shall create a code coverage report.
+                    from a JUnit XML file. If configured, it shall create a code coverage report. Results and coverage
+                    reports of a previous run shall not be reported as the results of a test command that does not
+                    create them.
                     '''
                 verification_criteria =
                     '''
                     Run the tests step with pytest, with coverage and with a custom command. Check the result file and
-                    the coverage report.
+                    the coverage report. Run a custom command that writes neither of them after a successful run, and
+                    check the error.
                     '''
                 valid_status = AbstractRequirements.VALID_STATUS.valid
             }
@@ -377,13 +383,14 @@ section "trlcdoc" {
                 description =
                     '''
                     The software shall create an HTML tracing report. On request, the report shall link the items to
-                    their sources in the project repository. On request, the report shall render the item descriptions
-                    as Markdown.
+                    their sources in the project repository, also for a project in a subfolder of the repository. On
+                    request, the report shall render the item descriptions as Markdown.
                     '''
                 verification_criteria =
                     '''
-                    Create the tracing report offline and online. Check the item links of both reports. Create the
-                    report with and without Markdown rendering and check the descriptions.
+                    Create the tracing report offline and online, online also for a project in a subfolder of the
+                    repository. Check the item links of the reports. Create the report with and without Markdown
+                    rendering and check the descriptions.
                     '''
                 valid_status = AbstractRequirements.VALID_STATUS.valid
             }
@@ -416,6 +423,25 @@ section "trlcdoc" {
                     Run the trace step on a project with an untraced requirement. Check the listed item and the exit
                     code. Run it on a project with a justified function. Check that it is counted as justified and the
                     exit code is 0.
+                    '''
+                valid_status = AbstractRequirements.VALID_STATUS.valid
+            }
+
+            SwReq sw_req_trace_doxygen {
+                description =
+                    '''
+                    **C/C++ code tracing**
+
+                    The software shall extract the trace links of C/C++ code from the doxygen `@implements` tags with
+                    lobster-doxygen. A Doxyfile per trace level selects the sources. The items shall refer to their
+                    source files by absolute path, wherever the Doxyfile is. Doxygen shall be needed only for such
+                    trace levels.
+                    '''
+                verification_criteria =
+                    '''
+                    Trace a C function through a Doxyfile outside and above its source folder, check the traced item
+                    and its source file. Run the trace step without doxygen with and without such a level and check
+                    the error.
                     '''
                 valid_status = AbstractRequirements.VALID_STATUS.valid
             }
@@ -488,13 +514,14 @@ section "trlcdoc" {
                     - an image shall be shown in the site
                     - a link to the file or folder of a site page shall link to that page
                     - a link to another project file or folder shall link to it in the repository at the built commit
+                    - the link to the repository shall contain the path of a project in a subfolder of the repository
                     - without a repository, such a link shall be shown as text with a warning
                     '''
                 verification_criteria =
                     '''
                     Build a site with a Markdown page linking to a site page, a TRLC document folder, a project file
                     and a project folder, and showing a project image. Check the links and the image, with and without
-                    a repository.
+                    a repository, for a project in the repository root and in a subfolder.
                     '''
                 valid_status = AbstractRequirements.VALID_STATUS.valid
             }
@@ -508,9 +535,10 @@ section "trlcdoc" {
                     reStructuredText and Markdown documents:
 
                     - `{page:<id>}` by the page name of the document, relative to the page
-                    - `{documents}` by the page names of all documents in configuration order, one per line, except the
-                      documents that a toctree of the start page or of a reStructuredText or Markdown document lists
-                      explicitly
+                    - `{documents}` by the page names of all documents in configuration order, one per line
+
+                    `{documents}` leaves out the documents that a toctree of the start page or of a reStructuredText or
+                    Markdown document lists explicitly.
 
                     A placeholder naming no document shall be reported as configuration error.
                     '''

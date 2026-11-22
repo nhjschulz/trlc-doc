@@ -110,6 +110,9 @@ def test_config_validation(project: Path, capsys: pytest.CaptureFixture) -> None
     data["documents"][0]["pytrlcconverter"]["render_cfg"] = "missing.json"
     data["trace"]["levels"][1]["trace_to"] = ["Unknown Level"]
     data["html"] = {"index": "docs/index.rst", "page_header": "docs/header.rst", "conf": "docs/conf.py"}
+    data["project"].update({"logo": "docs/logo.pngx", "favicon": "docs/favicon.ico"})
+    data["trace"]["levels"].append({"name": "SW Code", "kind": "implementation", "extractor": "lobster-doxygen",
+                                    "doxyfile": "tools/Doxyfile"})
     errors = _config_errors(root, data)
     assert "has invalid settings" in errors
     assert "documents[sw_architecture].include: 'unknown'" in errors
@@ -120,24 +123,102 @@ def test_config_validation(project: Path, capsys: pytest.CaptureFixture) -> None
     assert "trace.levels[SW Architecture].trace_to: level 'Unknown Level' is not defined" in errors
     for key, value in data["html"].items():
         assert f"html.{key}: file '{value}' not found" in errors
+    for key in ("logo", "favicon"):
+        assert f"project.{key}: file '{data['project'][key]}' not found" in errors
+    assert "trace.levels[SW Code].doxyfile: file 'tools/Doxyfile' not found" in errors
 
     # No step runs with an invalid configuration.
     assert cli.main(["-c", str(project), "clean", "all"]) == 2
     assert "has invalid settings" in capsys.readouterr().out
     assert not (root / "build").exists()
 
-    # tests.link needs the output pattern, or the name pattern with 'from' and 'to'.
+    # Errors start with file and line of their entry, a missing key with the line of its parent.
+    lines = ["project:",                                 # 1
+             "  name: example",                          # 2
+             "  author: Jane Doe",                       # 3
+             "  copyright: '2026, Jane Doe'",            # 4
+             "  logo: docs/logo.pngx",                   # 5
+             "paths:",                                   # 6
+             "  trlc_model: trlc/model",                 # 7
+             "documents:",                               # 8
+             "  - id: sw_requirements",                  # 9
+             "    type: trlc",                           # 10
+             "    title: SW Requirements",               # 11
+             "    source: trlc/swe-req",                 # 12
+             "    pytrlcconverter:",                     # 13
+             "      converter:",                         # 14
+             "        rst: builtin:req2rst.py",          # 15
+             "  - id: sw_architecture",                  # 16
+             "    type: trlc",                           # 17
+             "    title: SW Architecture",               # 18
+             "    source: trlc/swe-arch",                # 19
+             "    include: [sw_requirements, unknown]",  # 20
+             "    pytrlcconverter:",                     # 21
+             "      converter:",                         # 22
+             "        rst: converters/missing.py",       # 23
+             "  - id: sw_requirements",                  # 24
+             "    type: trlc",                           # 25
+             "    title: SW Requirements",               # 26
+             "    source: trlc/swe-req",                 # 27
+             "    pytrlcconverter:",                     # 28
+             "      converter:",                         # 29
+             "        rst: builtin:req2rst.py"]          # 30
+    project.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    assert cli.main(["-c", str(project), "check"]) == 2
+    out = capsys.readouterr().out.splitlines()
+    assert out[-4:] == [
+        f"  {project}:5: project.logo: file 'docs/logo.pngx' not found.",
+        f"  {project}:20: documents[sw_architecture].include: 'unknown' is no document of type trlc or test_results.",
+        f"  {project}:23: documents[sw_architecture].pytrlcconverter.converter.rst: "
+        "file 'converters/missing.py' not found.",
+        f"  {project}:24: documents: id 'sw_requirements' is used more than once."]
+
+    lines[2] = "  authors: Jane Doe"
+    lines[18] = "    sorce: trlc/swe-arch"
+    lines[24] = "    type: pdf"
+    project.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    assert cli.main(["-c", str(project), "check"]) == 2
+    out = capsys.readouterr().out
+    assert f"\n  {project}:1: project: 'author' is a required property" in out
+    assert f"\n  {project}:3: project: Additional properties are not allowed ('authors' was unexpected)" in out
+    assert f"\n  {project}:25: documents/2/type: 'pdf' is not one of" in out
+    assert f"\n  {project}:19: documents/1: 'sorce' is not one of" in out
+
+    # A file that is no valid YAML is reported with the position of the error.
+    project.write_text("project:\n  name: x\n   author: y\n", encoding="utf-8")
+    assert cli.main(["-c", str(project), "check"]) == 2
+    out = capsys.readouterr().out
+    assert "is no valid YAML: mapping values are not allowed here" in out
+    assert "line 3, column 10" in out
+    assert "Traceback" not in out
+
+    # tests.link needs the property, the output pattern, or the name pattern with 'from' and 'to'.
     data = base_config()
-    for link, valid in (({"output": "lobster-trace: {id}"}, True),
+    for link, valid in (({"property": "lobster-tracing"}, True),
+                        ({"output": "lobster-trace: {id}"}, True),
                         ({"output": "lobster-trace: {id}", "from": "test_{name}", "to": "SwTests.tc_{name}"}, True),
                         ({"from": "test_{name}", "to": "SwTests.tc_{name}"}, True),
+                        ({}, False),
                         ({"output": "lobster-trace"}, False),
                         ({"output": "lobster-trace: {id}", "from": "test_{name}"}, False),
-                        ({"to": "SwTests.tc_{name}"}, False),
-                        ({"property": "lobster-trace"}, False)):
+                        ({"to": "SwTests.tc_{name}"}, False)):
         data["tests"]["link"] = link
         assert (_config_errors(root, data) == "") is valid, link
     assert "tests/link" in _config_errors(root, data)
+
+    # lobster-python scans sources, lobster-doxygen takes the sources from a Doxyfile.
+    (root / "Doxyfile").write_text("INPUT = src\n", encoding="utf-8")
+    for extractor, keys, valid in (("lobster-python", ("sources",), True),
+                                   ("lobster-python", ("doxyfile",), False),
+                                   ("lobster-python", ("sources", "doxyfile"), False),
+                                   ("lobster-doxygen", ("doxyfile",), True),
+                                   ("lobster-doxygen", ("sources",), False),
+                                   ("lobster-doxygen", ("sources", "doxyfile"), False)):
+        data = base_config()
+        level = {"name": "SW Code", "kind": "implementation", "extractor": extractor}
+        level.update({key: {"sources": ["src"], "doxyfile": "Doxyfile"}[key] for key in keys})
+        data["trace"]["levels"].append(level)
+        assert (_config_errors(root, data) == "") is valid, (extractor, keys)
 
 
 def test_project_settings(project: Path) -> None:

@@ -34,7 +34,7 @@ from sphinx.cmd.build import build_main
 
 from .config import PACKAGE_DIR, TRLC_DOCUMENT_TYPES, Config
 from .pages import replace_placeholders
-from .util import TrlcdocError, clean_dir, git_output, repository_url, run
+from .util import TrlcdocError, clean_dir, git_output, git_root, repository_url, run
 
 # Variables ********************************************************************
 
@@ -488,8 +488,9 @@ def _link_settings(cfg: Config) -> Dict[str, Any]:
 
     Returns:
         Dict[str, Any]: The project root, the Markdown file of each Markdown page, the site page
-            of each project file and folder shown in the site, and the repository and commit for
-            links to other project files (None if not available).
+            of each project file and folder shown in the site, and the repository, the path of the
+            project root in the repository and the commit for links to other project files
+            (repository and commit None if not available).
     """
     pages: Dict[str, str] = {}
     markdown_sources: Dict[str, str] = {}
@@ -501,13 +502,17 @@ def _link_settings(cfg: Config) -> Dict[str, Any]:
                 markdown_sources[doc["id"]] = source
 
     commit = git_output(["rev-parse", "HEAD"], cfg.root)
+    repo_root = git_root(cfg.root)
     repository = None
-    if commit is not None:
+    repository_path = "."
+    if commit is not None and repo_root is not None:
         try:
             repository = repository_url(cfg.repository, cfg.root)
         except TrlcdocError:
             repository = None
+        # The project may be a subfolder of the repository.
+        repository_path = Path(os.path.relpath(cfg.root, repo_root)).as_posix()
     return {"root": str(cfg.root), "markdown_sources": markdown_sources, "pages": pages,
-            "repository": repository, "commit": commit}
+            "repository": repository, "repository_path": repository_path, "commit": commit}
 
 # Main *************************************************************************

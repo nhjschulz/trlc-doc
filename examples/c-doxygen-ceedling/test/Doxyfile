@@ -1,0 +1,10 @@
+# Doxygen configuration of the Ceedling tests for the trace level "SW Test Code".
+# trlcdoc runs doxygen in this folder with XML output only, lobster-doxygen extracts
+# the @implements tags of the test functions.
+
+@INCLUDE               = ../Doxyfile
+
+INPUT                  = .
+EXCLUDE                = support
+USE_MDFILE_AS_MAINPAGE =
+HAVE_DOT               = NO

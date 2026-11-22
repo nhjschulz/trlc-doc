@@ -79,7 +79,8 @@ links), `2` build error. All generated files go to `paths.output`
 ### Installation
 
 The HTML site generation needs a Java runtime for PlantUML, and Graphviz for all
-diagrams except sequence diagrams.
+diagrams except sequence diagrams. Tracing C/C++ code needs
+[doxygen](https://www.doxygen.nl).
 
 **From PyPI:**
 
@@ -99,6 +100,13 @@ python3 -m venv .venv
 git submodule add https://github.com/nhjschulz/trlc-doc tools/trlc-doc
 pip install -e tools/trlc-doc       # the submodule folder
 
+trlcdoc --help
+```
+
+**For developing trlcdoc itself:**
+
+```bash
+pip install -e ."[test,doc,lint]"
 trlcdoc --help
 ```
 
@@ -199,41 +207,39 @@ trlcdoc -c trlcdoc.yaml
 
 The website is written to `build/trlcdoc/html`.
 
-## Code Tracing
+## Project Integration Examples
 
-Every function of the [trlcdoc](trlcdoc) package traces to the software
-requirements it implements with a comment before its docstring:
+The [examples](examples) folder contains the same small program, *Greeter*, in
+several languages, each with its own toolchain. All examples share the same
+requirements, architecture and test cases, so they show side by side how trlcdoc
+is configured for a toolchain. Each example builds its complete documentation
+site with a single `trlcdoc` call in its folder.
 
-```python
-def find_config(start: Path) -> Path:
-    # lobster-trace: SwRequirements.sw_req_config_file
-    """Find the default configuration file trlcdoc.yaml in a folder or its parents.
-```
+| Example | Language | Build and tests | Code tracing | Test result link | Coverage |
+| --- | --- | --- | --- | --- | --- |
+| [c-doxygen-ceedling](examples/c-doxygen-ceedling/README.md) | C | CMake, Ceedling (Unity, CMock) | doxygen, lobster-doxygen | test output | Ceedling gcov plugin, gcovr |
+| [cpp-doxygen-gtest](examples/cpp-doxygen-gtest/README.md) | C++ | CMake, googletest | doxygen, lobster-doxygen | test property | gcovr |
+| [python-lobster-pytest](examples/python-lobster-pytest/README.md) | Python | pip, pytest | lobster-python | test property | pytest-cov |
 
-The trace level `SW Code` in [trlcdoc.yaml](trlcdoc.yaml) extracts the comments with
-[lobster-python](https://pypi.org/project/bmw-lobster-tool-python/).
-A function without comment is reported as a finding by the trace step, and so is a
-requirement without an implementing function.
+- **Code tracing:** how the code names the requirements it implements, e.g.
+  doxygen `@implements{...}` tags in C and C++, `# lobster-trace:` comments in
+  Python. See [6.2](configuration.md#62-implementation-levels) of the
+  configuration reference.
+- **Test result link:** how a test result finds its TRLC test case, by a test
+  property or by a line in the test output. See
+  [5.3](configuration.md#53-link-from-test-results-to-test-cases).
 
-Note: Support for code tracing to other languages like C/C++ or Rust is currently
-under development.
+trlcdoc documents itself the same way as the Python example. Unlike the examples, which
+keep trlcdoc's default look, its own site is customized in the `html` section:
 
-## Tests
+- the [Read the Docs theme](https://sphinx-rtd-theme.readthedocs.io) instead of
+  the default `haiku`, and the trlcdoc logo (`project.logo`),
+- an API reference generated with sphinx-autoapi, with source links to the
+  repository (`sphinx.ext.linkcode`), and a full-width page layout, both set up
+  in the project Sphinx configuration
+  [doc/sphinx/sphinx_conf.py](doc/sphinx/sphinx_conf.py).
 
-The pytest unit tests in [tests](tests) verify the software requirements. Each
-test function `test_<name>` implements the TRLC test case `tc_<name>` in
-[trlc/swe-test](trlc/swe-test), which links it to its requirements. Most tests
-run trlcdoc on a minimal example project, created in a temporary folder.
-
-```bash
-pip install -e ".[test]"
-pytest
-```
-
-The HTML site tests need a Java runtime for PlantUML. They use the jar from
-`$PLANTUML`, or download it once into the pytest cache. The
-[Tests workflow](.github/workflows/test.yml) runs the tests on every push and
-pull request on Linux and Windows.
+The theme and the API reference need the `doc` extra: `pip install -e ".[doc]"`.
 
 ## License
 
