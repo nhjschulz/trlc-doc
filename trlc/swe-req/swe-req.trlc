@@ -430,13 +430,15 @@ section "trlcdoc" {
                     **C/C++ code tracing**
 
                     The software shall extract the trace links of C/C++ code from the doxygen `@implements` tags with
-                    lobster-doxygen. A Doxyfile per trace level selects the sources. Doxygen shall be needed only for
-                    such trace levels.
+                    lobster-doxygen. A Doxyfile per trace level selects the sources. The items shall refer to their
+                    source files by absolute path, wherever the Doxyfile is. Doxygen shall be needed only for such
+                    trace levels.
                     '''
                 verification_criteria =
                     '''
-                    Trace a C function through a Doxyfile and check the traced item. Run the trace step without doxygen
-                    with and without such a level and check the error.
+                    Trace a C function through a Doxyfile outside and above its source folder, check the traced item
+                    and its source file. Run the trace step without doxygen with and without such a level and check
+                    the error.
                     '''
                 valid_status = AbstractRequirements.VALID_STATUS.valid
             }
