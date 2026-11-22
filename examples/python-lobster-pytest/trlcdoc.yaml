@@ -1,0 +1,122 @@
+# yaml-language-server: $schema=https://nhjschulz.github.io/trlc-doc/schema/V0.5.0/trlcdoc.schema.json
+#
+# trlcdoc configuration of the Greeter example: requirements, architecture,
+# test cases, test results, tracing report, coverage report and the HTML site.
+#
+#   pip install -e ".[dev]"    # the greeter package, trlcdoc and the test tools
+#   trlcdoc                    # all steps, site in build/trlcdoc/html
+#
+# Exit codes: 0 success, 1 content findings (failed tests, missing trace links), 2 build error.
+# See https://github.com/nhjschulz/trlc-doc/blob/main/configuration.md for the reference.
+
+project:
+  name: Greeter
+  author: NewTec GmbH
+  copyright: 2025 - 2026, NewTec GmbH
+
+paths:
+  trlc_model: trlc/model
+  output: build/trlcdoc
+
+documents:
+  - id: sw_requirements
+    type: trlc
+    source: trlc/swe-req
+    pytrlcconverter: &requirement_converter
+      converter:
+        rst: builtin:req2rst.py
+        markdown: builtin:req2markdown.py
+      translation: builtin:translation.json
+      render_cfg: builtin:renderCfg.json
+
+  - id: sw_architecture
+    type: trlc
+    source: trlc/swe-arch
+    include: [sw_requirements]
+    pytrlcconverter: *requirement_converter
+
+  - id: sw_tests
+    type: trlc
+    source: trlc/swe-test
+    include: [sw_requirements]
+    pytrlcconverter:
+      converter:
+        rst: builtin:tc2rst.py
+        markdown: builtin:tc2markdown.py
+      translation: builtin:translation.json
+      render_cfg: builtin:renderCfg.json
+
+  - id: sw_test_results
+    type: test_results
+    include: [sw_tests]
+    pytrlcconverter:
+      converter:
+        rst: builtin:create_test_report_in_rst.py
+        markdown: builtin:create_test_report_in_markdown.py
+
+  - id: sw_tracing_report
+    title: SW Tracing Report
+    type: trace_report
+
+  - id: coverage_report
+    title: Coverage Report
+    type: html
+    source: tests:coverage
+
+  - id: license
+    title: License information
+    type: text
+    source: LICENSE
+
+tests:
+  runner: pytest
+  args: [tests, -v, --cov=src]
+  link:
+    # Every test records its test case with record_property("lobster-trace", ...).
+    property: lobster-trace
+    from: "test_{name}"
+    to: "SwTests.tc_{name}"
+
+trace:
+  levels:
+    - name: SW Requirement
+      document: sw_requirements
+      record_type: SwRequirements.SwReq
+      requires: [SW Code, SW Test Case, SW Architecture]
+
+    - name: SW Constraint
+      document: sw_requirements
+      record_type: SwRequirements.SwConstraint
+      requires: [SW Architecture]
+
+    - name: SW Architecture
+      document: sw_architecture
+      record_type: SwArch.SwArchSpec
+      tags: [satisfies]
+      trace_to: [SW Requirement, SW Constraint]
+
+    - name: SW Test Case
+      document: sw_tests
+      record_type: SwTests.SwTestCase
+      tags: [verifies]
+      trace_to: [SW Requirement]
+      requires: [SW Test Code, SW Test Result]
+
+    - name: SW Test Result
+      document: sw_test_results
+      record_type: SwTests.SwTestCaseResult
+      tags: [relates]
+      description_fields: [name]
+      trace_to: [SW Test Case]
+
+    - name: SW Code
+      kind: implementation
+      extractor: lobster-python
+      sources: [src/greeter]
+      trace_to: [SW Requirement]
+
+    - name: SW Test Code
+      kind: implementation
+      extractor: lobster-python
+      sources: [tests]
+      trace_to: [SW Test Case]
