@@ -211,7 +211,33 @@ def _extract_doxygen(cfg: Config, level: Dict[str, Any], out_file: Path) -> Path
     ]
     run([doxygen, "-"], doxyfile.parent, stdin="\n".join(settings) + "\n")
     run([find_tool("lobster-doxygen"), "-o", str(out_file), str(doxygen_dir / "xml")], cfg.root)
-    return out_file
+    return _absolute_locations(out_file, doxyfile.parent)
+
+
+def _absolute_locations(lobster_file: Path, base: Path) -> Path:
+    # lobster-trace: SwRequirements.sw_req_trace_doxygen
+    """Make the relative file locations of a LOBSTER file absolute.
+
+    Doxygen strips the folder it runs in from the file paths (STRIP_FROM_PATH), so lobster-doxygen
+    writes them relative to the folder of the Doxyfile. The report links need them absolute, like
+    the locations of the other levels.
+
+    See also: https://github.com/NewTec-GmbH/lobster-doxygen/issues/68
+
+    Args:
+        lobster_file (Path): LOBSTER file, updated in place.
+        base (Path): Folder the relative paths refer to.
+
+    Returns:
+        Path: The updated LOBSTER file.
+    """
+    data = json.loads(lobster_file.read_text(encoding="utf-8"))
+    for item in data.get("data", []):
+        location = item.get("location", {})
+        if location.get("kind") == "file" and not Path(location["file"]).is_absolute():
+            location["file"] = str((base / location["file"]).resolve())
+    lobster_file.write_text(json.dumps(data, indent=2), encoding="utf-8")
+    return lobster_file
 
 
 def _write_policy(cfg: Config, sources: Dict[str, Path], policy_file: Path) -> Path:

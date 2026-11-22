@@ -488,7 +488,8 @@ section "SW-Tests" {
 
                 Create the tracing report of a project with a C function, an `@implements` tag and a Doxyfile in a
                 tools folder. Check that the function traces to its requirement and that no doxygen output lands next
-                to the Doxyfile. Without doxygen on the PATH, check the error naming the trace level, and that a
+                to the Doxyfile. Repeat with the Doxyfile in the source folder, and check that the source file of the
+                item is absolute in both cases. Without doxygen on the PATH, check the error naming the trace level, and that a
                 project without lobster-doxygen level still creates its report. The test is skipped if doxygen is
                 not installed.
                 '''

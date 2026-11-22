@@ -264,9 +264,19 @@ def test_trace_doxygen(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     assert [item["name"] for item in code_items] == ["hello"]
     assert code_items[0]["tracing_status"] == "OK"
     assert code_items[0]["ref_up"] == ["req SwRequirements.sw_req_hello"]
+    assert Path(code_items[0]["location"]["file"]) == (root / "src" / "hello.c").resolve()
     # The doxygen output goes into the trace folder, not next to the Doxyfile.
     assert sorted(path.name for path in doxyfile.parent.iterdir()) == ["Doxyfile"]
     assert (cfg.trace_dir / "sw_code-doxygen" / "xml" / "index.xml").is_file()
+
+    # Doxygen writes the paths of sources below the folder of the Doxyfile relative to it.
+    # The source links of the report are absolute nevertheless.
+    (root / "src" / "Doxyfile").write_text(DOXYFILE.replace("../../src", "."), encoding="utf-8")
+    data["trace"]["levels"][-1]["doxyfile"] = "src/Doxyfile"
+    cfg = load_config(write_config(root, data))
+    assert build_trace_report(cfg, online=False) == 0
+    code_items = [item for tag, item in _report_items(project).items() if tag.startswith("cpp ")]
+    assert Path(code_items[0]["location"]["file"]) == (root / "src" / "hello.c").resolve()
 
     # Without doxygen, only a project with a lobster-doxygen level fails.
     # Hide only doxygen. The LOBSTER tools stay reachable through the PATH, where Windows
