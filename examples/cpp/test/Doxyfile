@@ -1,0 +1,17 @@
+# Doxygen configuration of the googletest sources for the trace level "SW Test Code".
+# trlcdoc runs doxygen in this folder with XML output only, lobster-doxygen extracts
+# the @implements tags of the tests.
+
+@INCLUDE               = ../Doxyfile
+
+INPUT                  = .
+USE_MDFILE_AS_MAINPAGE =
+HAVE_DOT               = NO
+
+# The tests are in an anonymous namespace.
+EXTRACT_ANON_NSPACES   = YES
+
+# Make each TEST(suite, name) a function suite_name(), which carries the tags of its comment.
+MACRO_EXPANSION        = YES
+EXPAND_ONLY_PREDEF     = YES
+PREDEFINED             = "TEST(test_suite_name, test_name)=##test_suite_name##_##test_name()"

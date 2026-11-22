@@ -192,15 +192,16 @@ def test_config_validation(project: Path, capsys: pytest.CaptureFixture) -> None
     assert "line 3, column 10" in out
     assert "Traceback" not in out
 
-    # tests.link needs the output pattern, or the name pattern with 'from' and 'to'.
+    # tests.link needs the property, the output pattern, or the name pattern with 'from' and 'to'.
     data = base_config()
-    for link, valid in (({"output": "lobster-trace: {id}"}, True),
+    for link, valid in (({"property": "lobster-tracing"}, True),
+                        ({"output": "lobster-trace: {id}"}, True),
                         ({"output": "lobster-trace: {id}", "from": "test_{name}", "to": "SwTests.tc_{name}"}, True),
                         ({"from": "test_{name}", "to": "SwTests.tc_{name}"}, True),
+                        ({}, False),
                         ({"output": "lobster-trace"}, False),
                         ({"output": "lobster-trace: {id}", "from": "test_{name}"}, False),
-                        ({"to": "SwTests.tc_{name}"}, False),
-                        ({"property": "lobster-trace"}, False)):
+                        ({"to": "SwTests.tc_{name}"}, False)):
         data["tests"]["link"] = link
         assert (_config_errors(root, data) == "") is valid, link
     assert "tests/link" in _config_errors(root, data)
