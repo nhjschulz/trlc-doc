@@ -3,9 +3,8 @@
 # trlcdoc configuration of the Greeter example: requirements, architecture,
 # test cases, test results, tracing report, coverage report and the HTML site.
 #
-#   pip install -r requirements.txt    # installs trlcdoc and the test tools
-#   pip install -e .                   # the greeter package for the tests
-#   trlcdoc                            # all steps, site in build/trlcdoc/html
+#   pip install -e ".[dev]"    # the greeter package, trlcdoc and the test tools
+#   trlcdoc                    # all steps, site in build/trlcdoc/html
 #
 # Exit codes: 0 success, 1 content findings (failed tests, missing trace links), 2 build error.
 # See https://github.com/nhjschulz/trlc-doc/blob/main/configuration.md for the reference.

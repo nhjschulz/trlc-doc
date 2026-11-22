@@ -37,32 +37,28 @@ Note:
 - For Linux/Macos, use ```source .venv/bin/activate``` to activate the virtual
   environment.
 
-Then install the necessary required TRLC components by using pip and the
-```requirements.txt``` file:
+Then install the greeter package with its development tools: trlcdoc, which
+brings the TRLC components, and the test tools pytest, pytest-cov and freezegun:
 
 ```bash
-pip install -r requirements.txt
+pip install -e ".[dev]"
 ```
 
 ## Running Greeter
 
 The Greeter tool itself is not the focus of this TRLC using example, but it
-is operational and can be installed and run like this:
-
-```bash
-pip install -e .
-````
+is operational. The installation above provides the ```greet``` command:
 
 ```bash
 greet [name]
-````
+```
 
 ## Creating Reports
 
 [trlcdoc](https://github.com/nhjschulz/trlc-doc) creates all reports and the
-documentation website in one run. It is installed with the
-```requirements.txt``` file and needs Java for the PlantUML diagrams (the
-PlantUML jar is downloaded automatically).
+documentation website in one run. It is installed with the ```dev``` extra
+and needs Java for the PlantUML diagrams (the PlantUML jar is downloaded
+automatically).
 
 ```bash
 trlcdoc
@@ -70,7 +66,7 @@ trlcdoc
 
 trlcdoc runs these steps:
 
-1. Check the configuration and the start page.
+1. Check the configuration.
 2. Run the unit tests with pytest, including the coverage report, and convert
    the test results into TRLC records.
 3. Convert the requirements, architecture, test cases and test results with
