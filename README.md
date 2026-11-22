@@ -236,8 +236,9 @@ pytest
 The C/C++ tracing test needs doxygen on the `PATH` and is skipped without it.
 The HTML site tests need a Java runtime for PlantUML. They use the jar from
 `$PLANTUML`, or download it once into the pytest cache. The
-[Tests workflow](.github/workflows/test.yml) runs the tests on every push and
-pull request on Linux and Windows.
+[Tests workflow](.github/workflows/test.yml) runs the tests on Linux and Windows
+for every pull request update and every push to `main` and `develop`. Other
+branches can be tested with a manual run of the workflow.
 
 The code is checked with [ruff](https://docs.astral.sh/ruff/), configured in
 [pyproject.toml](pyproject.toml). The workflow runs it as a separate job.

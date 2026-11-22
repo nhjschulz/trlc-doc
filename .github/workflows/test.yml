@@ -1,7 +1,12 @@
 name: Tests
 
+# Pull requests are tested on every update. Pushes are tested only on the protected
+# branches, which receive the merged pull requests; a push to a pull request branch
+# would otherwise run the same tests a second time. Other branches can be tested
+# with a manual run.
 on:
   push:
+    branches: [main, develop]
   pull_request:
   workflow_dispatch:
 
