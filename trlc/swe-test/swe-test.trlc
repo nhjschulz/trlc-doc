@@ -301,9 +301,11 @@ section "SW-Tests" {
                 - with pytest and coverage
                 - with a failing test
                 - with a test command
-                - with a command not writing the result file
+                - with a command not writing the result file, after a run that wrote it
+                - with a command writing its coverage report
+                - with a command not writing its coverage report, after a run that wrote it
 
-                Check the result file, the coverage report, the test result and the error.
+                Check the result file, the coverage report, the test result and the errors.
                 '''
             verifies = [SwRequirements.sw_req_test_run]
         }

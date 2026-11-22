@@ -312,12 +312,15 @@ section "trlcdoc" {
                 description =
                     '''
                     The software shall run the project tests with pytest or a configured command and read their results
-                    from a JUnit XML file. If configured, it shall create a code coverage report.
+                    from a JUnit XML file. If configured, it shall create a code coverage report. Results and coverage
+                    reports of a previous run shall not be reported as the results of a test command that does not
+                    create them.
                     '''
                 verification_criteria =
                     '''
                     Run the tests step with pytest, with coverage and with a custom command. Check the result file and
-                    the coverage report.
+                    the coverage report. Run a custom command that writes neither of them after a successful run, and
+                    check the error.
                     '''
                 valid_status = AbstractRequirements.VALID_STATUS.valid
             }

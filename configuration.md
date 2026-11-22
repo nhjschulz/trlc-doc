@@ -589,9 +589,11 @@ tests:
 - `command` runs in the project root, without a shell. Its exit code is
   ignored, because test tools usually report failed tests with a non-zero
   code; the results are taken from the JUnit file.
-- `junit` is the JUnit XML file, relative to the project root. If it is
-  missing after the command, the step fails.
-- `coverage` is the HTML coverage folder the command writes, if any.
+- `junit` is the JUnit XML file, relative to the project root. trlcdoc deletes
+  it before the command runs. If it is missing after the command, the step
+  fails, so the results of a previous run are never reported as current ones.
+- `coverage` is the HTML coverage folder the command writes, if any. Its
+  `index.html` must be written by the command, otherwise the step fails.
 
 ### 5.3 link: from test results to test cases
 

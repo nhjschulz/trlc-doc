@@ -22,6 +22,7 @@
 
 import re
 import sys
+import time
 import xml.etree.ElementTree as ET
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Pattern, Tuple
@@ -41,6 +42,10 @@ QUALIFIED_ID = r"(?P<id>[A-Za-z_][A-Za-z0-9_]*\.[A-Za-z_][A-Za-z0-9_]*)"
 
 # Unity test output line, e.g. 'test/test_a.c:12:test_a:INFO: lobster-trace: SwTests.tc_a'.
 UNITY_OUTPUT = re.compile(r"^(?P<file>.+?):(?P<line>\d+):(?P<test>[^:\s]+):(?P<level>[A-Z]+):\s*(?P<message>.*)$")
+
+# Seconds a coverage report written by the test command may seem older than its start,
+# for file systems with coarse modification times.
+MTIME_TOLERANCE = 2.0
 
 # Classes **********************************************************************
 
@@ -74,7 +79,15 @@ def run_tests(cfg: Config) -> bool:
         if returncode not in PYTEST_OK_CODES:
             raise TrlcdocError(f"pytest could not run the tests (exit code {returncode}).")
     else:
+        # The exit code of a test command is ignored, so a command that fails must not leave the
+        # results of a previous run behind: they would be reported as the current ones.
+        cfg.junit_file.unlink(missing_ok=True)
+        started = time.time()
         run_unchecked(tests["command"], cfg.root)
+        coverage_index = cfg.coverage_dir / "index.html"
+        if "coverage" in tests and (not coverage_index.is_file()
+                                    or coverage_index.stat().st_mtime < started - MTIME_TOLERANCE):
+            raise TrlcdocError(f"Coverage report {coverage_index} was not created by the test command.")
 
     if not cfg.junit_file.is_file():
         raise TrlcdocError(f"Test result file {cfg.junit_file} was not created.")
