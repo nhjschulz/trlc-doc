@@ -1,0 +1,16 @@
+# cargo-nextest configuration, used by the test command of trlcdoc.yaml:
+#
+#   cargo nextest run --profile ci
+#
+# Writes the JUnit report target/nextest/ci/junit.xml. The output of every test
+# is kept in the report, because trlcdoc finds the test case links of a test in
+# its output: the "lobster-trace: <test case>" lines of lobster_trace!().
+
+[profile.ci]
+# Run all tests, also after a failure, to report all results.
+fail-fast = false
+
+[profile.ci.junit]
+path = "junit.xml"
+store-success-output = true
+store-failure-output = true

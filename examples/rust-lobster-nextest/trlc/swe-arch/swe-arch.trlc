@@ -1,0 +1,69 @@
+package SwArch
+
+import Generic
+import SwRequirements
+
+section "SW Architecture" {
+
+    Generic.Info sw_arch_info_about {
+        description = "This file contains the software architecture for the Greeter tool, written in Rust."
+    }
+
+    section "Static View" {
+        SwArchSpec sw_arch_rust_cli_tool {
+            description = "Greeter is a console application, a Rust binary crate built with cargo. It uses only portable crates and the Rust standard library."
+            verification_criteria = "Build the tool with cargo on Linux and Windows and call `greet`. Check the console output."
+            satisfies = [SwRequirements.sw_req_cli, SwRequirements.sw_constraint_os_win, SwRequirements.sw_constraint_os_linux]
+        }
+
+        Generic.PlantUML sw_arch_class_diagram {
+            caption = "Module Diagram"
+            file_path ="img/class_diagram.puml"
+        }
+
+        section "Modules" {
+            section "main and app" {
+
+                SwArchSpec sw_arch_comp_main {
+                    description = "The main function is the program entry point. It passes the process arguments, the system environment and the console streams to the app module, which writes the greeting to the standard output."
+                    verification_criteria = "Run the app module with arguments and in-memory output streams. Check the output."
+                    satisfies = [SwRequirements.sw_req_cli, SwRequirements.sw_func_msg_output]
+                }
+
+                SwArchSpec sw_arch_comp_main_args {
+                    description = "The app module declares the command line arguments with the clap derive API. clap provides the help message and reports usage errors."
+                    verification_criteria = "Run the app module with -h, --help, an unknown option and too many arguments. Check the output and exit code."
+                    satisfies = [SwRequirements.sw_req_cli_usage_error, SwRequirements.sw_req_cli_help]
+                }
+
+                SwArchSpec sw_arch_comp_user_name {
+                    description = "The app module accepts an optional positional argument with the name to greet. Without it, the greeter uses the login name from the environment variable USER or USERNAME."
+                    verification_criteria = "Run the greeter with and without a user name. Check the greeting."
+                    satisfies = [SwRequirements.sw_req_cli_user_name, SwRequirements.sw_req_cli_default_name]
+                }
+            }
+
+            section "greeter and environment" {
+
+                SwArchSpec sw_arch_comp_greeter {
+                    description = "The greeter module selects the greeting by the hour of the local time. It gets the hour and the login name through the Environment trait, which the environment module implements with the chrono crate and the process environment."
+                    verification_criteria = "Run the greeter with a fake environment for every hour of the day. Check the greeting."
+                    satisfies = [SwRequirements.sw_func_daytime_greeting_selection]
+                }
+            }
+        }
+    }
+
+    section "Dynamic View" {
+        SwArchSpec sw_arch_greeter_interaction {
+            description = "The greeter tool module interaction flow is defined in the following diagram."
+            verification_criteria = "Run the app and greeter modules with a fake environment. Check the greeting."
+            satisfies = [SwRequirements.sw_func_night_time_greeting, SwRequirements.sw_func_morning_time_greeting, SwRequirements.sw_func_midday_time_greeting, SwRequirements.sw_func_afternoon_time_greeting]
+        }
+
+        Generic.PlantUML sw_arch_interaction_diagram {
+            caption = "Interaction Diagram"
+            file_path ="img/interaction_diagram.puml"
+        }
+    }
+}

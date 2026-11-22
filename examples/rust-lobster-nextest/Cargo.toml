@@ -1,0 +1,22 @@
+[package]
+name = "greeter"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.85"
+description = "Greets the user depending on the time of day, a trlcdoc example."
+license = "BSD-3-Clause"
+publish = false
+
+[[bin]]
+name = "greet"
+path = "src/main.rs"
+
+[dependencies]
+chrono = { version = "0.4", default-features = false, features = ["clock"] }
+clap = { version = "4.5", features = ["derive"] }
+
+[lints.rust]
+unsafe_code = "forbid"
+
+[lints.clippy]
+pedantic = { level = "warn", priority = -1 }

@@ -1,0 +1,68 @@
+@startuml class_diagram
+
+package "greeter crate" {
+
+    class "main" as main <<module>> {
+        + main(): ExitCode
+    }
+
+    class "app" as app <<module>> {
+        + run(args, environment, out, err): ExitCode
+        - report_usage(error, out, err): ExitCode
+    }
+
+    class "Args" as args <<struct>> {
+        name: Option<String>
+    }
+
+    class "Greeter" as greeter <<struct>> {
+        + new(environment: &E, thresholds: Thresholds): Greeter
+        + greet(user_name: Option<&str>): String
+        - salutation(hour: u32): &str
+    }
+
+    class "Thresholds" as thresholds <<struct>> {
+        + DEFAULT: Thresholds
+    }
+
+    interface "Environment" as environment <<trait>> {
+        + local_hour(): u32
+        + login_name(): String
+    }
+
+    class "SystemEnvironment" as system <<struct>> {
+    }
+}
+
+package "Crates and Rust standard library" {
+
+    class "clap" as clap <<crate>> {
+        + Parser
+    }
+
+    class "chrono" as chrono <<crate>> {
+        + Local::now()
+    }
+
+    class "std::env" as env <<module>> {
+        + var()
+    }
+
+    class "std::io" as io <<module>> {
+        + Write
+    }
+}
+
+main --> app
+main ..> system: <<create>>
+app --> args
+app --> greeter
+app ..> io: <<use>>
+args ..> clap: <<derive>>
+greeter --> environment
+greeter --> thresholds
+system ..|> environment
+system ..> chrono: <<use>>
+system ..> env: <<use>>
+
+@enduml

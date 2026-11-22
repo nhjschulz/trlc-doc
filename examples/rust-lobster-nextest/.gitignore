@@ -1,0 +1,3 @@
+# Build results of cargo and trlcdoc
+/target/
+/build/

@@ -1,0 +1,51 @@
+@startuml interaction_diagram
+
+autoactivate on
+
+participant "main" as main <<module>>
+participant "app" as app <<module>>
+participant "clap" as clap <<crate>>
+participant "Greeter" as greeter <<struct>>
+participant "SystemEnvironment" as system <<struct>>
+participant "std::io" as io <<module>>
+
+-> main: main()
+    main -> app: run(args, environment, stdout, stderr)
+        app -> clap: Args::try_parse_from(args)
+        return arguments or help / usage error
+
+        alt help or usage error
+            app -> io: write help to stdout, or usage error to stderr
+            return
+        else arguments
+            app -> greeter: greet(name)
+                greeter -> system: local_hour()
+                return hour of the local time
+
+                opt name is not provided
+                    greeter -> system: login_name()
+                    return login name
+                end
+
+                alt hour from 5 to 10
+                    greeter -> greeter: "Good morning <USER>!"
+                    return
+                else hour from 11 to 12
+                    greeter -> greeter: "Good midday <USER>!"
+                    return
+                else hour from 13 to 18
+                    greeter -> greeter: "Good afternoon <USER>!"
+                    return
+                else
+                    greeter -> greeter: "Good night <USER>!"
+                    return
+                end
+            return greeting
+
+            app -> io: writeln!(stdout, greeting)
+            return
+        end
+    return exit code
+return exit code
+
+@enduml
