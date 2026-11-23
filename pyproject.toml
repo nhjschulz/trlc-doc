@@ -86,8 +86,8 @@ extend-exclude = ["trlcdoc/converters"]
 
 [tool.ruff.lint]
 # pycodestyle, Pyflakes, isort, bugbear, comprehensions, simplify, ruff, pylint errors and warnings,
-# pyupgrade (built-in generics and X | None type hints).
-select = ["E", "W", "F", "I", "B", "C4", "SIM", "RUF", "PLE", "PLW", "UP"]
+# pyupgrade (built-in generics and X | None type hints), pep8-naming (PEP 8 naming conventions).
+select = ["E", "W", "F", "I", "B", "C4", "SIM", "RUF", "PLE", "PLW", "UP", "N"]
 
 [tool.ruff.lint.per-file-ignores]
 # Executed at the end of trlcdoc's conf.py, which defines PROJECT_ROOT, Path and the Sphinx settings.
