@@ -24,7 +24,7 @@ import os
 import shutil
 import subprocess
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any
 
 import pytest
 import yaml
@@ -118,11 +118,11 @@ addopts = -p no:cacheprovider
 # Functions ********************************************************************
 
 
-def base_config() -> Dict[str, Any]:
+def base_config() -> dict[str, Any]:
     """Get the configuration of the example project with all TRLC levels.
 
     Returns:
-        Dict[str, Any]: The configuration data.
+        dict[str, Any]: The configuration data.
     """
     return {
         "project": {"name": "example", "author": "Jane Doe", "copyright": "2026, Jane Doe",
@@ -160,12 +160,12 @@ def base_config() -> Dict[str, Any]:
     }
 
 
-def write_config(root: Path, data: Dict[str, Any]) -> Path:
+def write_config(root: Path, data: dict[str, Any]) -> Path:
     """Write a trlcdoc configuration file into a project.
 
     Args:
         root (Path): Project root.
-        data (Dict[str, Any]): Configuration data.
+        data (dict[str, Any]): Configuration data.
 
     Returns:
         Path: The configuration file.

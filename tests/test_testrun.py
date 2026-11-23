@@ -24,7 +24,7 @@ import os
 import shutil
 import sys
 from pathlib import Path
-from typing import Any, Dict, List, Tuple
+from typing import Any
 
 import pytest
 from conftest import MODEL_DIR, base_config, make_project, write_config
@@ -253,14 +253,14 @@ def test_test_results_package(tmp_path: Path) -> None:
             write_results(results, trlc_file, LINK)
 
 
-def _write_valid_results(folder: Path, results: List[Tuple[str, bool, List[str]]], link: Dict[str, Any],
+def _write_valid_results(folder: Path, results: list[tuple[str, bool, list[str]]], link: dict[str, Any],
                          relates: str) -> str:
     """Write the test results and check that they are valid TRLC with the test model.
 
     Args:
         folder (Path): Folder for the model and the records, created.
-        results (List[Tuple[str, bool, List[str]]]): Test results from read_junit().
-        link (Dict[str, Any]): The tests.link configuration.
+        results (list[tuple[str, bool, list[str]]]): Test results from read_junit().
+        link (dict[str, Any]): The tests.link configuration.
         relates (str): Declaration of the relates component in the model.
 
     Returns:

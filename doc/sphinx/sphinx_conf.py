@@ -31,10 +31,9 @@ inheritance_edge_attrs = {
 import importlib
 import inspect
 import posixpath
-from typing import Dict, Optional
 
 
-def linkcode_resolve(domain: str, info: Dict[str, str]) -> Optional[str]:
+def linkcode_resolve(domain: str, info: dict[str, str]) -> str | None:
     """Get the repository URL of the source code of a documented object.
 
     This version generates GitHub URLs for Python objects in the project,
@@ -42,11 +41,11 @@ def linkcode_resolve(domain: str, info: Dict[str, str]) -> Optional[str]:
 
     Args:
         domain (str): Sphinx domain of the object, only 'py' is resolved.
-        info (Dict[str, str]): Object description of the domain, for 'py' the
+        info (dict[str, str]): Object description of the domain, for 'py' the
             'module' name and the 'fullname' of the object in the module.
 
     Returns:
-        Optional[str]: URL of the object's source lines at the built commit, or None
+        str | None: URL of the object's source lines at the built commit, or None
             if the object has no Python source in the project or the repository
             or commit is not known.
     """

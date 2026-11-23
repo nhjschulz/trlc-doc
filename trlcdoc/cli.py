@@ -22,7 +22,6 @@
 
 import argparse
 from pathlib import Path
-from typing import List, Optional
 
 from . import __version__
 from .config import Config, find_config, load_config
@@ -49,7 +48,7 @@ tests, test results, tracing report and HTML site."""
 # Functions ********************************************************************
 
 
-def _parse_args(argv: Optional[List[str]]) -> argparse.Namespace:
+def _parse_args(argv: list[str] | None) -> argparse.Namespace:
     # lobster-trace: SwRequirements.sw_req_cli
     # lobster-trace: SwRequirements.sw_req_cli_help
     # lobster-trace: SwRequirements.sw_req_cli_version
@@ -58,7 +57,7 @@ def _parse_args(argv: Optional[List[str]]) -> argparse.Namespace:
     """Parse the command line arguments.
 
     Args:
-        argv (Optional[List[str]]): Arguments, defaults to sys.argv[1:].
+        argv (list[str] | None): Arguments, defaults to sys.argv[1:].
 
     Returns:
         argparse.Namespace: The parsed arguments.
@@ -88,17 +87,17 @@ def _parse_args(argv: Optional[List[str]]) -> argparse.Namespace:
     return args
 
 
-def _selected_steps(cfg: Config, requested: List[str]) -> List[str]:
+def _selected_steps(cfg: Config, requested: list[str]) -> list[str]:
     # lobster-trace: SwRequirements.sw_req_steps
     # lobster-trace: SwRequirements.sw_req_step_order
     """Determine the steps to run, in execution order.
 
     Args:
         cfg (Config): Project configuration.
-        requested (List[str]): Steps from the command line.
+        requested (list[str]): Steps from the command line.
 
     Returns:
-        List[str]: The steps to run.
+        list[str]: The steps to run.
     """
     selected = {step for step in STEPS if step in requested}
     if "all" in requested:
@@ -163,14 +162,14 @@ def _run_step(step: str, cfg: Config, args: argparse.Namespace) -> bool:
     return ok
 
 
-def main(argv: Optional[List[str]] = None) -> int:
+def main(argv: list[str] | None = None) -> int:
     # lobster-trace: SwRequirements.sw_req_cli
     # lobster-trace: SwRequirements.sw_req_config_validation
     # lobster-trace: SwRequirements.sw_req_exit_code
     """Run the requested trlcdoc steps.
 
     Args:
-        argv (Optional[List[str]]): Arguments, defaults to sys.argv[1:].
+        argv (list[str] | None): Arguments, defaults to sys.argv[1:].
 
     Returns:
         int: 0 if all steps succeeded and the content has no findings,
@@ -180,7 +179,7 @@ def main(argv: Optional[List[str]] = None) -> int:
     exit_code = 0
     try:
         cfg = load_config(args.config if args.config is not None else find_config(Path.cwd()))
-        findings: List[str] = []
+        findings: list[str] = []
         for step in _selected_steps(cfg, args.steps):
             if not _run_step(step, cfg, args):
                 findings.append(step)

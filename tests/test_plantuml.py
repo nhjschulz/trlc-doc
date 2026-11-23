@@ -23,7 +23,6 @@
 import os
 import urllib.request
 from pathlib import Path
-from typing import List
 
 import pytest
 from conftest import base_config, write_config
@@ -47,7 +46,7 @@ def test_plantuml(project: Path, monkeypatch: pytest.MonkeyPatch) -> None:
         monkeypatch (pytest.MonkeyPatch): pytest monkeypatch.
     """
     root = project.parent
-    downloads: List[str] = []
+    downloads: list[str] = []
 
     def fake_download(url: str, target: str) -> None:
         downloads.append(url)

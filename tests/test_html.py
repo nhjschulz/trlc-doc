@@ -24,7 +24,7 @@ import re
 import sys
 import webbrowser
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any
 
 import pytest
 import sphinx
@@ -41,7 +41,7 @@ API_COMMAND = ("import pathlib; p = pathlib.Path('apidoc'); p.mkdir(exist_ok=Tru
                "(p / 'index.html').write_text('<p>API reference</p>')")
 
 # Documents in addition to the TRLC levels and the tracing report, one per remaining type.
-EXTRA_DOCUMENTS: List[Dict[str, Any]] = [
+EXTRA_DOCUMENTS: list[dict[str, Any]] = [
     {"id": "coverage_report", "title": "Coverage Report", "type": "html", "source": "tests:coverage"},
     {"id": "manual", "type": "rst", "source": "docs/manual.rst"},
     # A configured title replaces the first heading 'Release Notes' as page title.
@@ -94,7 +94,7 @@ CUSTOM_FILES = {
 
 
 @pytest.fixture(name="site", scope="module")
-def fixture_site(tmp_path_factory: pytest.TempPathFactory, plantuml_jar: Path) -> Dict[str, Any]:
+def fixture_site(tmp_path_factory: pytest.TempPathFactory, plantuml_jar: Path) -> dict[str, Any]:
     """Build the HTML site of the example project with 'trlcdoc all'. The project is a subfolder of its repository.
 
     Args:
@@ -102,7 +102,7 @@ def fixture_site(tmp_path_factory: pytest.TempPathFactory, plantuml_jar: Path) -
         plantuml_jar (Path): The PlantUML jar.
 
     Returns:
-        Dict[str, Any]: Exit code, project root, HTML folder and commit id.
+        dict[str, Any]: Exit code, project root, HTML folder and commit id.
     """
     root = tmp_path_factory.mktemp("site") / "project"
     make_project(root, diagram=True)
@@ -134,11 +134,11 @@ def _sphinx_png() -> bytes:
     return next(Path(sphinx.__file__).parent.rglob("*.png")).read_bytes()
 
 
-def _page(site: Dict[str, Any], name: str) -> str:
+def _page(site: dict[str, Any], name: str) -> str:
     """Read a page of the site.
 
     Args:
-        site (Dict[str, Any]): The built site.
+        site (dict[str, Any]): The built site.
         name (str): Page path relative to the HTML folder.
 
     Returns:
@@ -147,11 +147,11 @@ def _page(site: Dict[str, Any], name: str) -> str:
     return (site["html"] / name).read_text(encoding="utf-8")
 
 
-def test_html_site(site: Dict[str, Any]) -> None:
+def test_html_site(site: dict[str, Any]) -> None:
     """The site has a start page with the table of contents and one page per document.
 
     Args:
-        site (Dict[str, Any]): The built site.
+        site (dict[str, Any]): The built site.
     """
     assert site["exit_code"] == 0
     index = _page(site, "index.html")
@@ -166,11 +166,11 @@ def test_html_site(site: Dict[str, Any]) -> None:
         assert (site["html"] / href).is_file()
 
 
-def test_documents(site: Dict[str, Any]) -> None:
+def test_documents(site: dict[str, Any]) -> None:
     """The documents appear in the configured order, with their configured titles.
 
     Args:
-        site (Dict[str, Any]): The built site.
+        site (dict[str, Any]): The built site.
     """
     for page, heading in zip(PAGES, HEADINGS, strict=True):
         assert f"<h1>{heading}" in _page(site, page)
@@ -185,11 +185,11 @@ def test_documents(site: Dict[str, Any]) -> None:
     assert '<link rel="next" title="SW-Requirements" href="sw_requirements/index.html" />' in _page(site, "manual.html")
 
 
-def test_document_types(site: Dict[str, Any]) -> None:
+def test_document_types(site: dict[str, Any]) -> None:
     """Every document type is rendered into the site.
 
     Args:
-        site (Dict[str, Any]): The built site.
+        site (dict[str, Any]): The built site.
     """
     assert "The software shall greet." in _page(site, "sw_requirements/index.html")
     architecture = _page(site, "sw_architecture/index.html")
@@ -350,22 +350,22 @@ def test_page_placeholders_site(tmp_path: Path, plantuml_jar: Path, monkeypatch:
         assert 'href="../sw_requirements/index.html"' in tests, report
 
 
-def test_html_version_info(site: Dict[str, Any]) -> None:
+def test_html_version_info(site: dict[str, Any]) -> None:
     """Every page shows the commit the documentation was built from.
 
     Args:
-        site (Dict[str, Any]): The built site.
+        site (dict[str, Any]): The built site.
     """
     for page in ["index.html", *PAGES]:
         assert f"from commit {site['commit']}" in _page(site, page), page
 
 
-def test_markdown_links(site: Dict[str, Any]) -> None:
+def test_markdown_links(site: dict[str, Any]) -> None:
     """The relative links and images of a Markdown page are resolved against its location in the project.
     Links to the repository contain the path of the project in the repository.
 
     Args:
-        site (Dict[str, Any]): The built site.
+        site (dict[str, Any]): The built site.
     """
     notes = _page(site, "notes.html")
     blob = f"https://github.com/example/example/blob/{site['commit']}/project"
@@ -413,7 +413,7 @@ class _Browser:  # pylint: disable=too-few-public-methods
     """Web browser stub, which records the opened URLs."""
 
     def __init__(self) -> None:
-        self.urls: List[str] = []
+        self.urls: list[str] = []
 
     def open(self, url: str) -> bool:
         """Record the URL.
@@ -467,9 +467,9 @@ def test_show(project: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.Cap
     assert "No web browser found" in capsys.readouterr().out
 
     # WSL: explorer.exe opens the Windows path of the page, also if it returns 1.
-    commands: List[List[str]] = []
+    commands: list[list[str]] = []
 
-    def run(cmd: List[str], **_: Any) -> Any:
+    def run(cmd: list[str], **_: Any) -> Any:
         commands.append(cmd)
         stdout = "\\\\wsl.localhost\\distro\\index.html\n" if cmd[0] == "wslpath" else ""
         return type("Proc", (), {"returncode": 0 if cmd[0] == "wslpath" else 1, "stdout": stdout})

@@ -35,7 +35,7 @@ the format of the tracing report.
 import os
 import re
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Set, Tuple
+from typing import Any
 
 from .config import PAGE_PLACEHOLDER, Config
 
@@ -119,7 +119,7 @@ def _relative_page(cfg: Config, page: str, page_dir: Path) -> str:
     return Path(os.path.relpath(cfg.sphinx_dir / page, page_dir)).as_posix()
 
 
-def toctree_entries(text: str, markdown: bool = False) -> List[str]:
+def toctree_entries(text: str, markdown: bool = False) -> list[str]:
     # lobster-trace: SwRequirements.sw_req_toctree_check
     """Get the page names listed in the toctrees of a page.
 
@@ -131,7 +131,7 @@ def toctree_entries(text: str, markdown: bool = False) -> List[str]:
         markdown (bool): The page is Markdown, with MyST toctree directives in code fences.
 
     Returns:
-        List[str]: The page names in the order of the page.
+        list[str]: The page names in the order of the page.
     """
     raw_entries = _md_toctree_lines(text) if markdown else _rst_toctree_lines(text)
     entries = []
@@ -146,7 +146,7 @@ def toctree_entries(text: str, markdown: bool = False) -> List[str]:
     return entries
 
 
-def _rst_toctree_lines(text: str) -> List[str]:
+def _rst_toctree_lines(text: str) -> list[str]:
     # lobster-trace: SwRequirements.sw_req_toctree_check
     """Get the content lines of the reStructuredText toctree directives, without their options.
 
@@ -154,10 +154,10 @@ def _rst_toctree_lines(text: str) -> List[str]:
         text (str): Content of a reStructuredText page.
 
     Returns:
-        List[str]: The stripped entry lines.
+        list[str]: The stripped entry lines.
     """
-    lines: List[str] = []
-    directive_indent: Optional[int] = None
+    lines: list[str] = []
+    directive_indent: int | None = None
     for line in text.splitlines():
         stripped = line.strip()
         indent = len(line) - len(line.lstrip())
@@ -174,7 +174,7 @@ def _rst_toctree_lines(text: str) -> List[str]:
     return lines
 
 
-def _md_toctree_lines(text: str) -> List[str]:
+def _md_toctree_lines(text: str) -> list[str]:
     # lobster-trace: SwRequirements.sw_req_toctree_check
     """Get the content lines of the MyST toctree directives of a Markdown page, without their options.
 
@@ -182,10 +182,10 @@ def _md_toctree_lines(text: str) -> List[str]:
         text (str): Content of a Markdown page.
 
     Returns:
-        List[str]: The stripped entry lines.
+        list[str]: The stripped entry lines.
     """
-    lines: List[str] = []
-    fence: Optional[str] = None
+    lines: list[str] = []
+    fence: str | None = None
     in_yaml_options = False
     for line in text.splitlines():
         stripped = line.strip()
@@ -201,7 +201,7 @@ def _md_toctree_lines(text: str) -> List[str]:
     return lines
 
 
-def check_toctrees(cfg: Config) -> List[str]:
+def check_toctrees(cfg: Config) -> list[str]:
     # lobster-trace: SwRequirements.sw_req_toctree_check
     """Check the tables of contents of a project start page against the page names of the documents.
 
@@ -219,12 +219,12 @@ def check_toctrees(cfg: Config) -> List[str]:
         cfg (Config): Project configuration.
 
     Returns:
-        List[str]: Findings, empty if the tables of contents list every document correctly.
+        list[str]: Findings, empty if the tables of contents list every document correctly.
     """
-    findings: List[str] = []
+    findings: list[str] = []
     if "index" in cfg.html:
         pages = {cfg.page_name(doc): doc for doc in cfg.documents}
-        listed: Set[str] = set()
+        listed: set[str] = set()
         for where, entry in _toctree_entries_of_project_pages(cfg):
             finding, page = _check_entry(cfg, pages, where, entry)
             # A wrong entry naming a document lists it, its finding already tells the fix.
@@ -236,7 +236,7 @@ def check_toctrees(cfg: Config) -> List[str]:
     return findings
 
 
-def _toctree_entries_of_project_pages(cfg: Config, with_documents: bool = True) -> List[Tuple[str, str]]:
+def _toctree_entries_of_project_pages(cfg: Config, with_documents: bool = True) -> list[tuple[str, str]]:
     # lobster-trace: SwRequirements.sw_req_toctree_check
     # lobster-trace: SwRequirements.sw_req_page_placeholders
     """Get the toctree entries of html.index and the rst and markdown documents.
@@ -250,7 +250,7 @@ def _toctree_entries_of_project_pages(cfg: Config, with_documents: bool = True) 
             explicitly listed entries.
 
     Returns:
-        List[Tuple[str, str]]: Configuration location of the page and the entry.
+        list[tuple[str, str]]: Configuration location of the page and the entry.
     """
     project_pages = []
     if "index" in cfg.html:
@@ -270,25 +270,25 @@ def _toctree_entries_of_project_pages(cfg: Config, with_documents: bool = True) 
     return result
 
 
-def _check_entry(cfg: Config, pages: Dict[str, Dict[str, Any]], where: str,
-                 entry: str) -> Tuple[Optional[str], str]:
+def _check_entry(cfg: Config, pages: dict[str, dict[str, Any]], where: str,
+                 entry: str) -> tuple[str | None, str]:
     # lobster-trace: SwRequirements.sw_req_toctree_check
     """Check one toctree entry against the page names of the documents.
 
     Args:
         cfg (Config): Project configuration.
-        pages (Dict[str, Dict[str, Any]]): Document per page name.
+        pages (dict[str, dict[str, Any]]): Document per page name.
         where (str): Configuration location of the page with the toctree.
         entry (str): The toctree entry, a page name relative to the Sphinx folder.
 
     Returns:
-        Tuple[Optional[str], str]: A finding, or None if the entry is a page of a document or cannot be
+        tuple[str | None, str]: A finding, or None if the entry is a page of a document or cannot be
         checked, and the page the entry means: the page of a document with a similar name, else the entry.
     """
     folder = entry.split("/", 1)[0]
     documents = {doc["id"]: doc for doc in cfg.documents}
     similar = [page for page in (f"{entry}/index", entry.removesuffix("/index")) if page in pages]
-    finding: Optional[str] = None
+    finding: str | None = None
     page = entry
     if entry in pages:
         finding = None
@@ -302,13 +302,13 @@ def _check_entry(cfg: Config, pages: Dict[str, Dict[str, Any]], where: str,
     return finding, page
 
 
-def _has_subpages(cfg: Config, doc: Dict[str, Any]) -> bool:
+def _has_subpages(cfg: Config, doc: dict[str, Any]) -> bool:
     # lobster-trace: SwRequirements.sw_req_toctree_check
     """Check whether the folder of a document contains further pages besides its index page.
 
     Args:
         cfg (Config): Project configuration.
-        doc (Dict[str, Any]): Document configuration.
+        doc (dict[str, Any]): Document configuration.
 
     Returns:
         bool: True for the reStructuredText tracing report, which has a page per trace level.
@@ -316,13 +316,13 @@ def _has_subpages(cfg: Config, doc: Dict[str, Any]) -> bool:
     return doc["type"] == "trace_report" and cfg.trace_report_format == "rst"
 
 
-def _page_reason(cfg: Config, doc: Dict[str, Any]) -> str:
+def _page_reason(cfg: Config, doc: dict[str, Any]) -> str:
     # lobster-trace: SwRequirements.sw_req_toctree_check
     """Explain the page name of a document by its type.
 
     Args:
         cfg (Config): Project configuration.
-        doc (Dict[str, Any]): Document configuration.
+        doc (dict[str, Any]): Document configuration.
 
     Returns:
         str: The settings that determine the page name.

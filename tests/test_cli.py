@@ -23,7 +23,6 @@
 import subprocess
 import sys
 from pathlib import Path
-from typing import List
 
 import pytest
 from conftest import base_config, make_project, write_config
@@ -39,16 +38,16 @@ from trlcdoc.util import find_tool
 # Functions ********************************************************************
 
 
-def _record_steps(monkeypatch: pytest.MonkeyPatch) -> List[str]:
+def _record_steps(monkeypatch: pytest.MonkeyPatch) -> list[str]:
     """Replace the step execution by recording the executed step names.
 
     Args:
         monkeypatch (pytest.MonkeyPatch): pytest monkeypatch.
 
     Returns:
-        List[str]: The list the executed steps are appended to.
+        list[str]: The list the executed steps are appended to.
     """
-    executed: List[str] = []
+    executed: list[str] = []
     monkeypatch.setattr(cli, "_run_step", lambda step, cfg, args: executed.append(step) is None)
     return executed
 

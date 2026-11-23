@@ -21,7 +21,7 @@
 # Imports **********************************************************************
 
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any
 
 import pytest
 from conftest import base_config, write_config
@@ -85,7 +85,7 @@ maxdepth: 1
 # Functions ********************************************************************
 
 
-def _config(root: Path, index: str, report: str = "rst") -> Dict[str, Any]:
+def _config(root: Path, index: str, report: str = "rst") -> dict[str, Any]:
     """Write a start page and get the example configuration using it.
 
     Args:
@@ -94,7 +94,7 @@ def _config(root: Path, index: str, report: str = "rst") -> Dict[str, Any]:
         report (str): Format of the tracing report.
 
     Returns:
-        Dict[str, Any]: The configuration data.
+        dict[str, Any]: The configuration data.
     """
     (root / "docs").mkdir(exist_ok=True)
     (root / "docs" / "index.rst").write_text(index, encoding="utf-8")

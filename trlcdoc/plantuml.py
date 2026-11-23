@@ -23,7 +23,6 @@
 import os
 import urllib.request
 from pathlib import Path
-from typing import Union
 from urllib.parse import urlparse
 
 from .config import Config
@@ -39,7 +38,7 @@ DOWNLOAD_URL = "https://github.com/plantuml/plantuml/releases/download/v{version
 # Functions ********************************************************************
 
 
-def provide_plantuml(cfg: Config) -> Union[Path, str]:
+def provide_plantuml(cfg: Config) -> Path | str:
     # lobster-trace: SwRequirements.sw_req_plantuml
     """Locate or download plantuml.jar and export it in the PLANTUML environment variable.
 
@@ -50,7 +49,7 @@ def provide_plantuml(cfg: Config) -> Union[Path, str]:
         cfg (Config): Project configuration.
 
     Returns:
-        Union[Path, str]: The plantuml.jar file, or the PlantUML server URL.
+        Path | str: The plantuml.jar file, or the PlantUML server URL.
 
     Raises:
         TrlcdocError: If the jar is missing and cannot be downloaded.

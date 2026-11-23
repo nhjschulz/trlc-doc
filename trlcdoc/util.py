@@ -26,7 +26,6 @@ import shutil
 import subprocess
 import sys
 from pathlib import Path
-from typing import Dict, List, Optional
 
 # Variables ********************************************************************
 
@@ -67,15 +66,15 @@ def find_tool(name: str, hint: str = "Install the trlcdoc package dependencies."
     return tool
 
 
-def run(cmd: List[str], cwd: Path, env: Optional[Dict[str, str]] = None, stdin: Optional[str] = None) -> int:
+def run(cmd: list[str], cwd: Path, env: dict[str, str] | None = None, stdin: str | None = None) -> int:
     # lobster-trace: SwRequirements.sw_req_exit_code
     """Run an external command and stop the build if it fails.
 
     Args:
-        cmd (List[str]): Command and its arguments.
+        cmd (list[str]): Command and its arguments.
         cwd (Path): Working directory.
-        env (Optional[Dict[str, str]]): Additional environment variables.
-        stdin (Optional[str]): Text passed to the standard input of the command.
+        env (dict[str, str] | None): Additional environment variables.
+        stdin (str | None): Text passed to the standard input of the command.
 
     Returns:
         int: The exit code, which is always 0.
@@ -89,16 +88,16 @@ def run(cmd: List[str], cwd: Path, env: Optional[Dict[str, str]] = None, stdin: 
     return returncode
 
 
-def run_unchecked(cmd: List[str], cwd: Path, env: Optional[Dict[str, str]] = None,
-                  stdin: Optional[str] = None) -> int:
+def run_unchecked(cmd: list[str], cwd: Path, env: dict[str, str] | None = None,
+                  stdin: str | None = None) -> int:
     # lobster-trace: SwRequirements.sw_req_test_run
     """Run an external command and return its exit code.
 
     Args:
-        cmd (List[str]): Command and its arguments.
+        cmd (list[str]): Command and its arguments.
         cwd (Path): Working directory.
-        env (Optional[Dict[str, str]]): Additional environment variables.
-        stdin (Optional[str]): Text passed to the standard input of the command.
+        env (dict[str, str] | None): Additional environment variables.
+        stdin (str | None): Text passed to the standard input of the command.
 
     Returns:
         int: The exit code of the command.
@@ -196,16 +195,16 @@ def remove_output(output: Path) -> bool:
     return existed
 
 
-def git_output(args: List[str], cwd: Path) -> Optional[str]:
+def git_output(args: list[str], cwd: Path) -> str | None:
     # lobster-trace: SwRequirements.sw_req_trace_report
     """Run a git command and return its output.
 
     Args:
-        args (List[str]): git arguments.
+        args (list[str]): git arguments.
         cwd (Path): Working directory.
 
     Returns:
-        Optional[str]: The stripped output, or None if git failed.
+        str | None: The stripped output, or None if git failed.
     """
     result = None
     try:
@@ -217,7 +216,7 @@ def git_output(args: List[str], cwd: Path) -> Optional[str]:
     return result
 
 
-def git_root(path: Path) -> Optional[Path]:
+def git_root(path: Path) -> Path | None:
     # lobster-trace: SwRequirements.sw_req_trace_report
     # lobster-trace: SwRequirements.sw_req_markdown_links
     """Get the root folder of the git repository that contains a folder.
@@ -228,7 +227,7 @@ def git_root(path: Path) -> Optional[Path]:
         path (Path): A folder inside the repository, e.g. the project root.
 
     Returns:
-        Optional[Path]: The resolved repository root, or None if the folder is not in a git repository.
+        Path | None: The resolved repository root, or None if the folder is not in a git repository.
     """
     toplevel = git_output(["rev-parse", "--show-toplevel"], path)
     return Path(toplevel).resolve() if toplevel else None

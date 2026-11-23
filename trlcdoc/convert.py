@@ -20,7 +20,7 @@
 
 # Imports **********************************************************************
 
-from typing import Any, Dict, List
+from typing import Any
 
 from .config import TRLC_DOCUMENT_TYPES, Config
 from .util import TrlcdocError, clean_dir, find_tool, run
@@ -54,17 +54,17 @@ def convert_documents(cfg: Config, fmt: str) -> int:
     return converted
 
 
-def convert_document(cfg: Config, doc: Dict[str, Any], fmt: str) -> List[str]:
+def convert_document(cfg: Config, doc: dict[str, Any], fmt: str) -> list[str]:
     # lobster-trace: SwRequirements.sw_req_trlc_conversion
     """Convert one TRLC document.
 
     Args:
         cfg (Config): Project configuration.
-        doc (Dict[str, Any]): Document of type trlc or test_results.
+        doc (dict[str, Any]): Document of type trlc or test_results.
         fmt (str): Output format, rst or markdown.
 
     Returns:
-        List[str]: The executed command.
+        list[str]: The executed command.
 
     Raises:
         TrlcdocError: If the test results are missing or the conversion fails.
