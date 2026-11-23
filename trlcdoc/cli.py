@@ -146,31 +146,45 @@ def _run_step(step: str, cfg: Config, args: argparse.Namespace) -> bool:
     """
     ok = True
     print(f"\n===== trlcdoc {step} =====", flush=True)
-    if step == "clean":
-        print(f"Removing {cfg.output}" if remove_output(cfg.output) else f"Nothing to clean in {cfg.output}")
-    elif step == "check":
-        print(f"Configuration {cfg.config_file} is valid, output: {cfg.output}")
-        toctree_findings = check_toctrees(cfg)
-        if toctree_findings:
-            print("Table of contents of the project start page:")
-            print("".join(f"  {finding}\n" for finding in toctree_findings), end="")
-        ok = not toctree_findings
-    elif step == "plantuml":
-        provide_plantuml(cfg)
-    elif step == "tests":
-        if cfg.tests is None:
-            raise TrlcdocError("The configuration has no 'tests' section.")
-        ok = run_tests(cfg)
-    elif step == "convert":
-        convert_documents(cfg, args.format)
-    elif step == "trace":
-        if cfg.trace is None:
-            raise TrlcdocError("The configuration has no 'trace' section.")
-        ok = build_trace_report(cfg, args.online) == 0
-    elif step == "html":
-        build_html(cfg)
-    else:
-        show_html(cfg)
+
+    # _parse_args() accepts only the names in STEPS, so every step has a case.
+    match step:
+        case "clean":
+            if remove_output(cfg.output):
+                print(f"Removing {cfg.output}")
+            else:
+                print(f"Nothing to clean in {cfg.output}")
+
+        case "check":
+            print(f"Configuration {cfg.config_file} is valid, output: {cfg.output}")
+            toctree_findings = check_toctrees(cfg)
+            if toctree_findings:
+                print("Table of contents of the project start page:")
+                for finding in toctree_findings:
+                    print(f"  {finding}")
+            ok = not toctree_findings
+
+        case "plantuml":
+            provide_plantuml(cfg)
+
+        case "tests":
+            if cfg.tests is None:
+                raise TrlcdocError("The configuration has no 'tests' section.")
+            ok = run_tests(cfg)
+
+        case "convert":
+            convert_documents(cfg, args.format)
+
+        case "trace":
+            if cfg.trace is None:
+                raise TrlcdocError("The configuration has no 'trace' section.")
+            ok = build_trace_report(cfg, args.online) == 0
+
+        case "html":
+            build_html(cfg)
+
+        case "show":
+            show_html(cfg)
 
     return ok
 
