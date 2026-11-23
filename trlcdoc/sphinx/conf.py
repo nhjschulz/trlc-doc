@@ -14,7 +14,6 @@ trlcdoc writes next to this file from the project configuration.
 import json
 import os
 import shutil
-import subprocess
 from pathlib import Path
 from typing import Any
 from urllib.parse import urlparse
@@ -139,28 +138,11 @@ def _copy_dirs(app: Any) -> None:
         shutil.copytree(entry["source"], os.path.join(app.outdir, entry["destination"]), dirs_exist_ok=True)
 
 
-def _git_commit_info() -> str:
-    # lobster-trace: SwRequirements.sw_req_html_version_info
-    """Get the commit the documentation was built from.
-
-    Returns:
-        str: ' from commit <hash>', or an empty string outside of a git repository.
-    """
-    result = ""
-    try:
-        proc = subprocess.run(
-            ["git", "rev-parse", "HEAD"], cwd=_SETTINGS["project_root"], capture_output=True, text=True, check=False
-        )
-        if proc.returncode == 0:
-            result = f" from commit {proc.stdout.strip()}"
-    except OSError:
-        result = ""
-    return result
-
-
 # Main *************************************************************************
 
-html_last_updated_fmt += _git_commit_info()
+# The version control state, determined by trlcdoc. The footer text is a date format,
+# so a '%' in a tag or branch name is escaped.
+html_last_updated_fmt += _SETTINGS["build_info"].replace("%", "%%")
 
 # The project specific configuration file may change all values above and define its own setup().
 if _SETTINGS["conf"]:

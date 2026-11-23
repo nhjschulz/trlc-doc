@@ -19,6 +19,7 @@
 # Imports **********************************************************************
 
 import re
+import subprocess
 import sys
 import webbrowser
 from pathlib import Path
@@ -30,8 +31,8 @@ from conftest import base_config, git_init, make_project, write_config
 
 from trlcdoc import cli, html
 from trlcdoc.config import load_config
-from trlcdoc.html import _link_settings
-from trlcdoc.util import clean_dir
+from trlcdoc.html import _build_info, _link_settings
+from trlcdoc.util import clean_dir, git_output
 
 # Variables ********************************************************************
 
@@ -146,11 +147,21 @@ def fixture_site(tmp_path_factory: pytest.TempPathFactory, plantuml_jar: Path) -
     config_file = write_config(root, data)
     commit = git_init(root.parent)
 
+    # The repository has no tag, so git describe gives the short commit hash.
+    short_commit = git_output(["rev-parse", "--short", "HEAD"], root)
+    branch = git_output(["branch", "--show-current"], root)
+
     with pytest.MonkeyPatch.context() as monkeypatch:
         monkeypatch.setenv("PLANTUML", str(plantuml_jar))
         exit_code = cli.main(["-c", str(config_file), "all"])
 
-    return {"exit_code": exit_code, "root": root, "html": root / "build" / "trlcdoc" / "html", "commit": commit}
+    return {
+        "exit_code": exit_code,
+        "root": root,
+        "html": root / "build" / "trlcdoc" / "html",
+        "commit": commit,
+        "build_info": f"from {short_commit} on branch {branch}",
+    }
 
 
 def _sphinx_png() -> bytes:
@@ -390,13 +401,55 @@ def test_page_placeholders_site(tmp_path: Path, plantuml_jar: Path, monkeypatch:
 
 
 def test_html_version_info(site: dict[str, Any]) -> None:
-    """Every page shows the commit the documentation was built from.
+    """Every page shows the git describe output and the branch the documentation was built from.
 
     Args:
         site (dict[str, Any]): The built site.
     """
     for page in ["index.html", *PAGES]:
-        assert f"from commit {site['commit']}" in _page(site, page), page
+        assert site["build_info"] in _page(site, page), page
+
+
+def test_html_version_info_git_state(project: Path) -> None:
+    """The version control state of the page footer for a project outside of git, with a tag,
+    after a commit, with uncommitted changes and with a detached HEAD.
+
+    Args:
+        project (Path): Configuration file of the example project.
+    """
+    cfg = load_config(project)
+    root = cfg.root
+    assert _build_info(cfg) == ""
+
+    git_init(root)
+    branch = git_output(["branch", "--show-current"], root)
+    _git(root, "tag", "V1.0.0")
+    assert _build_info(cfg) == f" from V1.0.0 on branch {branch}"
+
+    (root / "LICENSE").write_text("Changed license text.\n", encoding="utf-8")
+    assert _build_info(cfg) == f" from V1.0.0-dirty on branch {branch}"
+
+    _git(root, "commit", "-q", "-a", "-m", "Change the license")
+    short_commit = git_output(["rev-parse", "--short", "HEAD"], root)
+    assert _build_info(cfg) == f" from V1.0.0-1-g{short_commit} on branch {branch}"
+
+    _git(root, "switch", "-q", "--detach", "V1.0.0")
+    assert _build_info(cfg) == " from V1.0.0"
+
+
+def _git(root: Path, *args: str) -> None:
+    """Run a git command in a test repository.
+
+    Args:
+        root (Path): Repository root.
+        *args (str): git arguments.
+    """
+    subprocess.run(
+        ["git", "-c", "user.name=test", "-c", "user.email=test@example.com", *args],
+        cwd=root,
+        check=True,
+        capture_output=True,
+    )
 
 
 def test_markdown_links(site: dict[str, Any]) -> None:
