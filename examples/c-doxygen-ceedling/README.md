@@ -44,7 +44,7 @@ Install trlcdoc and gcovr into a virtual environment, and Ceedling as Ruby gem:
 ```bash
 python -m venv .venv
 source .venv/bin/activate        # Windows: .venv\Scripts\activate
-pip install trlcdoc gcovr
+pip install "trlcdoc>=0.6.0" gcovr
 gem install ceedling -v 1.1.9
 ```
 

@@ -36,10 +36,12 @@ jobs:
           java-version: "21"
 
       # PlantUML needs Graphviz (dot) for all diagrams except sequence diagrams.
-      - name: Install Graphviz
+      # The C/C++ tracing test needs doxygen. Without it the test is skipped, its
+      # test case has no test result, and the trace step reports it as a finding.
+      - name: Install Graphviz and doxygen
         run: |
           sudo apt-get update
-          sudo apt-get install -y --no-install-recommends graphviz
+          sudo apt-get install -y --no-install-recommends graphviz doxygen
 
       - uses: actions/configure-pages@v5
         id: pages
