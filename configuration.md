@@ -1100,13 +1100,13 @@ undefined; `# pylint: skip-file` silences pylint.
 # doc/sphinx/sphinx_conf.py
 # pylint: skip-file
 
-autoapi_dirs = [str(PROJECT_ROOT / 'src')]
-html_static_path.append(str(PROJECT_ROOT / 'doc' / 'sphinx' / '_static'))
-html_css_files = ['custom.css']
+autoapi_dirs = [str(PROJECT_ROOT / "src")]
+html_static_path.append(str(PROJECT_ROOT / "doc" / "sphinx" / "_static"))
+html_css_files = ["custom.css"]
 
 
 def setup(app):
-    app.connect('builder-inited', lambda app: print("project hook"))
+    app.connect("builder-inited", lambda app: print("project hook"))
 ```
 
 - The file runs in the Sphinx folder `<output>/sphinx/`, so **build paths

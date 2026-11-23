@@ -1,6 +1,4 @@
-"""Shared fixtures of the trlcdoc tests: a minimal TRLC example project and the PlantUML jar.
-
-"""
+"""Shared fixtures of the trlcdoc tests: a minimal TRLC example project and the PlantUML jar."""
 
 # trlcdoc - A utility for producing project documentation from TRLC and LOBSTER contents.
 # Copyright (c) 2026 - 2026 Norbert Schulz github@schulznorbert.de
@@ -125,38 +123,98 @@ def base_config() -> dict[str, Any]:
         dict[str, Any]: The configuration data.
     """
     return {
-        "project": {"name": "example", "author": "Jane Doe", "copyright": "2026, Jane Doe",
-                    "repository": "https://github.com/example/example.git"},
+        "project": {
+            "name": "example",
+            "author": "Jane Doe",
+            "copyright": "2026, Jane Doe",
+            "repository": "https://github.com/example/example.git",
+        },
         "paths": {"trlc_model": "trlc/model", "output": "build/trlcdoc"},
         "documents": [
-            {"id": "sw_requirements", "title": "SW-Requirements", "type": "trlc", "source": "trlc/swe-req",
-             "pytrlcconverter": {"converter": {"rst": "builtin:req2rst.py", "markdown": "builtin:req2markdown.py"},
-                                 "translation": "builtin:translation.json"}},
-            {"id": "sw_architecture", "title": "SW-Architecture", "type": "trlc", "source": "trlc/swe-arch",
-             "include": ["sw_requirements"],
-             "pytrlcconverter": {"converter": {"rst": "builtin:req2rst.py", "markdown": "builtin:req2markdown.py"},
-                                 "translation": "builtin:translation.json"}},
-            {"id": "sw_test", "title": "SW-Tests", "type": "trlc", "source": "trlc/swe-test",
-             "include": ["sw_requirements"],
-             "pytrlcconverter": {"converter": {"rst": "builtin:tc2rst.py", "markdown": "builtin:tc2markdown.py"},
-                                 "translation": "builtin:translation.json"}},
-            {"id": "sw_test_results", "title": "SW-Test Results", "type": "test_results", "include": ["sw_test"],
-             "pytrlcconverter": {"converter": {"rst": "builtin:create_test_report_in_rst.py",
-                                               "markdown": "builtin:create_test_report_in_markdown.py"}}},
+            {
+                "id": "sw_requirements",
+                "title": "SW-Requirements",
+                "type": "trlc",
+                "source": "trlc/swe-req",
+                "pytrlcconverter": {
+                    "converter": {"rst": "builtin:req2rst.py", "markdown": "builtin:req2markdown.py"},
+                    "translation": "builtin:translation.json",
+                },
+            },
+            {
+                "id": "sw_architecture",
+                "title": "SW-Architecture",
+                "type": "trlc",
+                "source": "trlc/swe-arch",
+                "include": ["sw_requirements"],
+                "pytrlcconverter": {
+                    "converter": {"rst": "builtin:req2rst.py", "markdown": "builtin:req2markdown.py"},
+                    "translation": "builtin:translation.json",
+                },
+            },
+            {
+                "id": "sw_test",
+                "title": "SW-Tests",
+                "type": "trlc",
+                "source": "trlc/swe-test",
+                "include": ["sw_requirements"],
+                "pytrlcconverter": {
+                    "converter": {"rst": "builtin:tc2rst.py", "markdown": "builtin:tc2markdown.py"},
+                    "translation": "builtin:translation.json",
+                },
+            },
+            {
+                "id": "sw_test_results",
+                "title": "SW-Test Results",
+                "type": "test_results",
+                "include": ["sw_test"],
+                "pytrlcconverter": {
+                    "converter": {
+                        "rst": "builtin:create_test_report_in_rst.py",
+                        "markdown": "builtin:create_test_report_in_markdown.py",
+                    }
+                },
+            },
             {"id": "sw_tracing_report", "title": "Software Tracing Report", "type": "trace_report"},
         ],
-        "tests": {"runner": "pytest", "args": ["tests", "--cov=hello"],
-                  "link": {"from": "test_{name}", "to": "SwTests.tc_{name}"}},
-        "trace": {"levels": [
-            {"name": "SW Requirement", "document": "sw_requirements", "record_type": "SwRequirements.SwReq",
-             "requires": ["SW Architecture", "SW Test Case"]},
-            {"name": "SW Architecture", "document": "sw_architecture", "record_type": "SwArch.SwArchSpec",
-             "tags": ["satisfies"], "trace_to": ["SW Requirement"]},
-            {"name": "SW Test Case", "document": "sw_test", "record_type": "SwTests.SwTestCase",
-             "tags": ["verifies"], "trace_to": ["SW Requirement"], "requires": ["SW Test Result"]},
-            {"name": "SW Test Result", "document": "sw_test_results", "record_type": "SwTests.SwTestCaseResult",
-             "tags": ["relates"], "description_fields": ["name"], "trace_to": ["SW Test Case"]},
-        ]},
+        "tests": {
+            "runner": "pytest",
+            "args": ["tests", "--cov=hello"],
+            "link": {"from": "test_{name}", "to": "SwTests.tc_{name}"},
+        },
+        "trace": {
+            "levels": [
+                {
+                    "name": "SW Requirement",
+                    "document": "sw_requirements",
+                    "record_type": "SwRequirements.SwReq",
+                    "requires": ["SW Architecture", "SW Test Case"],
+                },
+                {
+                    "name": "SW Architecture",
+                    "document": "sw_architecture",
+                    "record_type": "SwArch.SwArchSpec",
+                    "tags": ["satisfies"],
+                    "trace_to": ["SW Requirement"],
+                },
+                {
+                    "name": "SW Test Case",
+                    "document": "sw_test",
+                    "record_type": "SwTests.SwTestCase",
+                    "tags": ["verifies"],
+                    "trace_to": ["SW Requirement"],
+                    "requires": ["SW Test Result"],
+                },
+                {
+                    "name": "SW Test Result",
+                    "document": "sw_test_results",
+                    "record_type": "SwTests.SwTestCaseResult",
+                    "tags": ["relates"],
+                    "description_fields": ["name"],
+                    "trace_to": ["SW Test Case"],
+                },
+            ]
+        },
     }
 
 
@@ -219,9 +277,15 @@ def git_init(root: Path) -> str:
     Returns:
         str: The commit id.
     """
+
     def git(*args: str) -> str:
-        proc = subprocess.run(["git", "-c", "user.name=test", "-c", "user.email=test@example.com", *args],
-                              cwd=root, check=True, capture_output=True, text=True)
+        proc = subprocess.run(
+            ["git", "-c", "user.name=test", "-c", "user.email=test@example.com", *args],
+            cwd=root,
+            check=True,
+            capture_output=True,
+            text=True,
+        )
         return proc.stdout.strip()
 
     git("init", "-q")
@@ -264,5 +328,6 @@ def fixture_plantuml_jar(request: pytest.FixtureRequest) -> Path:
         if not jar.is_file():
             _download(DOWNLOAD_URL.format(version=DEFAULT_VERSION), jar)
     return jar
+
 
 # Main *************************************************************************

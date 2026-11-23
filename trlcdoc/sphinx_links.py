@@ -1,17 +1,17 @@
 """Sphinx extension resolving the relative links and images of Markdown pages against the project.
 
-    A Markdown document is copied into the Sphinx source folder, so its relative
-    links and images would point into that folder instead of the project. This
-    extension resolves them against the location of the Markdown file in the project:
+A Markdown document is copied into the Sphinx source folder, so its relative
+links and images would point into that folder instead of the project. This
+extension resolves them against the location of the Markdown file in the project:
 
-    - an image is taken from the project, Sphinx copies it into the site
-    - a link to a file of a site page links to that page
-    - a link to any other project file or folder links to the repository at the built commit
-    - without a repository, such a link is shown as text with a warning
+- an image is taken from the project, Sphinx copies it into the site
+- a link to a file of a site page links to that page
+- a link to any other project file or folder links to the repository at the built commit
+- without a repository, such a link is shown as text with a warning
 
-    Links to targets which do not exist in the project are left to MyST, which reports them.
+Links to targets which do not exist in the project are left to MyST, which reports them.
 
-    The settings are provided by trlcdoc in the configuration value 'trlcdoc_links'.
+The settings are provided by trlcdoc in the configuration value 'trlcdoc_links'.
 
 """
 
@@ -126,12 +126,17 @@ class MarkdownLinks(SphinxPostTransform):
                 fragment = f"#{anchor}" if anchor else ""
                 repository_path = posixpath.normpath(posixpath.join(settings.get("repository_path", "."), path))
                 uri = f"{settings['repository']}/{kind}/{settings['commit']}/{quote(repository_path)}{fragment}"
-                xref.replace_self(nodes.reference("", "", *_link_content(xref, target), internal=False,
-                                                  refuri=uri))
+                xref.replace_self(nodes.reference("", "", *_link_content(xref, target), internal=False, refuri=uri))
             else:
-                LOGGER.warning("Link to project file '%s' shown as text, no repository for the link.", path,
-                               location=xref, type="trlcdoc", subtype="link")
+                LOGGER.warning(
+                    "Link to project file '%s' shown as text, no repository for the link.",
+                    path,
+                    location=xref,
+                    type="trlcdoc",
+                    subtype="link",
+                )
                 xref.replace_self(nodes.inline("", "", *_link_content(xref, target)))
+
 
 # Functions ********************************************************************
 
@@ -193,5 +198,6 @@ def setup(app: Sphinx) -> dict[str, Any]:
     app.add_transform(MarkdownImages)
     app.add_post_transform(MarkdownLinks)
     return {"parallel_read_safe": True, "parallel_write_safe": True}
+
 
 # Main *************************************************************************

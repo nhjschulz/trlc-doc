@@ -1,6 +1,4 @@
-"""Create the LOBSTER tracing report from the configured trace levels.
-
-"""
+"""Create the LOBSTER tracing report from the configured trace levels."""
 
 # trlcdoc - A utility for producing project documentation from TRLC and LOBSTER contents.
 # Copyright (c) 2026 - 2026 Norbert Schulz github@schulznorbert.de
@@ -108,8 +106,17 @@ def _write_rst_report(cfg: Config, report_file: Path) -> Path:
 
     # The pages end up in a folder per document: <html>/<id>/<level>.html
     source_root = Path(os.path.relpath(cfg.root, cfg.html_dir / "document")).as_posix()
-    run([find_tool("lobster-rst-report"), "--out-dir", str(cfg.trace_report_rst),
-         "--source-root", source_root, str(rst_input)], cfg.root)
+    run(
+        [
+            find_tool("lobster-rst-report"),
+            "--out-dir",
+            str(cfg.trace_report_rst),
+            "--source-root",
+            source_root,
+            str(rst_input),
+        ],
+        cfg.root,
+    )
     return cfg.trace_report_rst
 
 
@@ -194,8 +201,10 @@ def _extract_doxygen(cfg: Config, level: dict[str, Any], out_file: Path) -> Path
     Returns:
         Path: The LOBSTER output file.
     """
-    doxygen = find_tool("doxygen", f"It is needed by the lobster-doxygen extractor of trace level "
-                                   f"'{level['name']}', see https://www.doxygen.nl.")
+    doxygen = find_tool(
+        "doxygen",
+        f"It is needed by the lobster-doxygen extractor of trace level '{level['name']}', see https://www.doxygen.nl.",
+    )
     doxyfile = cfg.path(level["doxyfile"])
     doxygen_dir = out_file.with_name(f"{out_file.stem}-doxygen")
     settings = [
@@ -254,8 +263,10 @@ def _write_policy(cfg: Config, sources: dict[str, Path], policy_file: Path) -> P
     """
     blocks: list[str] = []
     for level in cfg.trace["levels"]:
-        lines = [f'{level.get("kind", "requirements")} "{level["name"]}" {{',
-                 f'    source: "{sources[level["name"]].as_posix()}";']
+        lines = [
+            f'{level.get("kind", "requirements")} "{level["name"]}" {{',
+            f'    source: "{sources[level["name"]].as_posix()}";',
+        ]
         lines.extend(f'    trace to: "{target}";' for target in level.get("trace_to", []))
         lines.extend(f'    requires: "{target}";' for target in level.get("requires", []))
         lines.append("}")
@@ -285,8 +296,15 @@ def _make_online(cfg: Config, report_file: Path) -> Path:
 
     online_cfg = report_file.with_name("online_report_config.yaml")
     with open(online_cfg, "w", encoding="utf-8") as file:
-        yaml.safe_dump({"report": str(report_file), "commit_id": commit_id,
-                        "repo_root": str(repo_root), "base_url": repository_url(cfg.repository, cfg.root)}, file)
+        yaml.safe_dump(
+            {
+                "report": str(report_file),
+                "commit_id": commit_id,
+                "repo_root": str(repo_root),
+                "base_url": repository_url(cfg.repository, cfg.root),
+            },
+            file,
+        )
 
     online_report = report_file.with_suffix(".online")
     run([find_tool("lobster-online-report"), "--config", str(online_cfg), "--out", str(online_report)], cfg.root)
@@ -323,5 +341,6 @@ def _print_summary(report_file: Path) -> int:
         for tag in missing:
             print(f"    {tag}")
     return total
+
 
 # Main *************************************************************************

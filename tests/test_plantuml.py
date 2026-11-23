@@ -1,6 +1,4 @@
-"""Tests of the PlantUML provider.
-
-"""
+"""Tests of the PlantUML provider."""
 
 # trlcdoc - A utility for producing project documentation from TRLC and LOBSTER contents.
 # Copyright (c) 2026 - 2026 Norbert Schulz github@schulznorbert.de
@@ -96,5 +94,6 @@ def test_plantuml(project: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     data["plantuml"] = {"jar": "missing.jar"}
     with pytest.raises(TrlcdocError, match="not found"):
         provide_plantuml(load_config(write_config(root, data)))
+
 
 # Main *************************************************************************

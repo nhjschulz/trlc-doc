@@ -37,6 +37,7 @@ from datetime import datetime
 
 # Functions ********************************************************************
 
+
 def _get_hour_of_day() -> int:
     # lobster-trace: SwRequirements.sw_func_daytime_greeting_selection
     """
@@ -47,7 +48,8 @@ def _get_hour_of_day() -> int:
     """
     return datetime.now().hour
 
-def greet(name : str | None) -> str:
+
+def greet(name: str | None) -> str:
     """
     Greet the given user dependent on the current time.
 

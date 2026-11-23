@@ -1,6 +1,4 @@
-"""Generate the Sphinx sources from the configured documents and build the HTML site.
-
-"""
+"""Generate the Sphinx sources from the configured documents and build the HTML site."""
 
 # trlcdoc - A utility for producing project documentation from TRLC and LOBSTER contents.
 # Copyright (c) 2026 - 2026 Norbert Schulz github@schulznorbert.de
@@ -118,8 +116,10 @@ def show_html(cfg: Config) -> Path:
         except webbrowser.Error:
             opened = False
         if not opened:
-            raise TrlcdocError(f"No web browser found to open {index}. Set the BROWSER environment variable "
-                               "to the command of a web browser, or open the file manually.")
+            raise TrlcdocError(
+                f"No web browser found to open {index}. Set the BROWSER environment variable "
+                "to the command of a web browser, or open the file manually."
+            )
     return index
 
 
@@ -228,8 +228,12 @@ def _write_page(cfg: Config, doc: dict[str, Any], src_dir: Path, copy_dirs: list
         html_source = cfg.html_source(doc)
         _require(html_source / "index.html", "generate it first")
         copy_dirs.append({"source": str(html_source), "destination": doc["id"]})
-        _write_generated(cfg, page_file, doc, ".. raw:: html\n\n"
-                         f'    <iframe src="{doc["id"]}/index.html" width="100%" height="1024px"></iframe>\n')
+        _write_generated(
+            cfg,
+            page_file,
+            doc,
+            f'.. raw:: html\n\n    <iframe src="{doc["id"]}/index.html" width="100%" height="1024px"></iframe>\n',
+        )
     elif doc_type == "text":
         source = _require(cfg.path(doc["source"]), "check the source path")
         # Sphinx treats absolute include paths as relative to the source folder.
@@ -322,8 +326,7 @@ def _write_rst_trace_report(cfg: Config, doc: dict[str, Any], src_dir: Path) -> 
 
     for page_file in page_dir.glob("*.rst"):
         if page_file.name != "index.rst":
-            page_file.write_text(_page_header(cfg, page_file) + page_file.read_text(encoding="utf-8"),
-                                 encoding="utf-8")
+            page_file.write_text(_page_header(cfg, page_file) + page_file.read_text(encoding="utf-8"), encoding="utf-8")
 
     # The configured title replaces the LOBSTER title, a heading with over- and underline.
     start = (page_dir / "index.rst").read_text(encoding="utf-8")
@@ -455,8 +458,9 @@ def _write_sphinx_config(cfg: Config, src_dir: Path, copy_dirs: list[dict[str, s
         "project_root": str(cfg.root),
         "links": _link_settings(cfg),
         # Configured titles of project pages, which override the first heading of the file.
-        "page_titles": {doc["id"]: doc["title"] for doc in cfg.documents
-                        if doc["type"] in ("rst", "markdown") and "title" in doc},
+        "page_titles": {
+            doc["id"]: doc["title"] for doc in cfg.documents if doc["type"] in ("rst", "markdown") and "title" in doc
+        },
     }
     settings_file = src_dir / "trlcdoc_settings.json"
     settings_file.write_text(json.dumps(settings, indent=4), encoding="utf-8")
@@ -512,7 +516,14 @@ def _link_settings(cfg: Config) -> dict[str, Any]:
             repository = None
         # The project may be a subfolder of the repository.
         repository_path = Path(os.path.relpath(cfg.root, repo_root)).as_posix()
-    return {"root": str(cfg.root), "markdown_sources": markdown_sources, "pages": pages,
-            "repository": repository, "repository_path": repository_path, "commit": commit}
+    return {
+        "root": str(cfg.root),
+        "markdown_sources": markdown_sources,
+        "pages": pages,
+        "repository": repository,
+        "repository_path": repository_path,
+        "commit": commit,
+    }
+
 
 # Main *************************************************************************

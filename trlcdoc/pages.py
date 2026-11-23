@@ -231,8 +231,12 @@ def check_toctrees(cfg: Config) -> list[str]:
             listed.add(page)
             if finding is not None:
                 findings.append(finding)
-        findings.extend(f"html.index: document '{doc['id']}' (page '{page}') is not in any toctree. "
-                        f"Add {{page:{doc['id']}}} to a toctree." for page, doc in pages.items() if page not in listed)
+        findings.extend(
+            f"html.index: document '{doc['id']}' (page '{page}') is not in any toctree. "
+            f"Add {{page:{doc['id']}}} to a toctree."
+            for page, doc in pages.items()
+            if page not in listed
+        )
     return findings
 
 
@@ -255,9 +259,16 @@ def _toctree_entries_of_project_pages(cfg: Config, with_documents: bool = True) 
     project_pages = []
     if "index" in cfg.html:
         project_pages.append(("html.index", cfg.path(cfg.html["index"]), "index.rst", True))
-    project_pages.extend((f"documents[{doc['id']}]", cfg.path(doc["source"]),
-                          doc["id"] + (".md" if doc["type"] == "markdown" else ".rst"), doc.get("placeholders", True))
-                         for doc in cfg.documents if doc["type"] in ("rst", "markdown"))
+    project_pages.extend(
+        (
+            f"documents[{doc['id']}]",
+            cfg.path(doc["source"]),
+            doc["id"] + (".md" if doc["type"] == "markdown" else ".rst"),
+            doc.get("placeholders", True),
+        )
+        for doc in cfg.documents
+        if doc["type"] in ("rst", "markdown")
+    )
     result = []
     for where, source, name, placeholders in project_pages:
         if source.is_file():
@@ -270,8 +281,7 @@ def _toctree_entries_of_project_pages(cfg: Config, with_documents: bool = True) 
     return result
 
 
-def _check_entry(cfg: Config, pages: dict[str, dict[str, Any]], where: str,
-                 entry: str) -> tuple[str | None, str]:
+def _check_entry(cfg: Config, pages: dict[str, dict[str, Any]], where: str, entry: str) -> tuple[str | None, str]:
     # lobster-trace: SwRequirements.sw_req_toctree_check
     """Check one toctree entry against the page names of the documents.
 
@@ -295,8 +305,10 @@ def _check_entry(cfg: Config, pages: dict[str, dict[str, Any]], where: str,
     elif similar:
         page = similar[0]
         doc = pages[page]
-        finding = (f"{where}: toctree entry '{entry}' is no page. Document '{doc['id']}' is the page "
-                   f"'{similar[0]}' ({_page_reason(cfg, doc)}). Write {{page:{doc['id']}}} to use its page name.")
+        finding = (
+            f"{where}: toctree entry '{entry}' is no page. Document '{doc['id']}' is the page "
+            f"'{similar[0]}' ({_page_reason(cfg, doc)}). Write {{page:{doc['id']}}} to use its page name."
+        )
     elif "/" not in entry or (folder in documents and not _has_subpages(cfg, documents[folder])):
         finding = f"{where}: toctree entry '{entry}' is no page of a document."
     return finding, page
@@ -331,5 +343,6 @@ def _page_reason(cfg: Config, doc: dict[str, Any]) -> str:
     if doc["type"] == "trace_report":
         reason += f", trace.report: {cfg.trace_report_format}"
     return reason
+
 
 # Main *************************************************************************

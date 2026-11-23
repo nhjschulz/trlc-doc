@@ -1,6 +1,4 @@
-"""Loading, validation and path resolution of the trlcdoc project configuration.
-
-"""
+"""Loading, validation and path resolution of the trlcdoc project configuration."""
 
 # trlcdoc - A utility for producing project documentation from TRLC and LOBSTER contents.
 # Copyright (c) 2026 - 2026 Norbert Schulz github@schulznorbert.de
@@ -237,10 +235,14 @@ class Config:
         """
         result: list[tuple[str, ConfigPath, Path]] = [
             (f"html.{key}", ("html", key), self.path(self.html[key]))
-            for key in ("index", "page_header") if key in self.html]
-        result.extend((f"documents[{doc['id']}]", ("documents", index, "source"), self.path(doc["source"]))
-                      for index, doc in enumerate(self.documents)
-                      if doc["type"] in ("rst", "markdown") and doc.get("placeholders", True))
+            for key in ("index", "page_header")
+            if key in self.html
+        ]
+        result.extend(
+            (f"documents[{doc['id']}]", ("documents", index, "source"), self.path(doc["source"]))
+            for index, doc in enumerate(self.documents)
+            if doc["type"] in ("rst", "markdown") and doc.get("placeholders", True)
+        )
         return result
 
     def trlc_sources(self, doc: dict[str, Any]) -> list[Path]:
@@ -306,7 +308,7 @@ class Config:
         """
         result = self.path(value)
         if value.startswith(BUILTIN_PREFIX):
-            result = BUILTIN_DIR / value[len(BUILTIN_PREFIX):]
+            result = BUILTIN_DIR / value[len(BUILTIN_PREFIX) :]
         return result
 
     def html_source(self, doc: dict[str, Any]) -> Path:
@@ -334,6 +336,7 @@ class Config:
         # lobster-trace: SwRequirements.sw_req_trace_report
         """Configured repository URL or 'auto'."""
         return self.project.get("repository", "auto")
+
 
 # Functions ********************************************************************
 
@@ -399,13 +402,17 @@ def _check_page_placeholders(cfg: Config, doc_ids: list[str]) -> list[ConfigErro
     for where, entry, file in cfg.placeholder_files():
         if file.is_file():
             ids = PAGE_PLACEHOLDER.findall(file.read_text(encoding="utf-8"))
-            errors.extend((entry, f"{where}: placeholder '{{page:{doc_id}}}' names no document.")
-                          for doc_id in sorted(set(ids)) if doc_id not in doc_ids)
+            errors.extend(
+                (entry, f"{where}: placeholder '{{page:{doc_id}}}' names no document.")
+                for doc_id in sorted(set(ids))
+                if doc_id not in doc_ids
+            )
     return errors
 
 
-def _check_document(cfg: Config, entry: ConfigPath, doc: dict[str, Any],
-                    doc_types: dict[str, str]) -> list[ConfigError]:
+def _check_document(
+    cfg: Config, entry: ConfigPath, doc: dict[str, Any], doc_types: dict[str, str]
+) -> list[ConfigError]:
     # lobster-trace: SwRequirements.sw_req_config_validation
     """Check the references of one document.
 
@@ -423,16 +430,21 @@ def _check_document(cfg: Config, entry: ConfigPath, doc: dict[str, Any],
 
     for index, inc in enumerate(doc.get("include", [])):
         if doc_types.get(inc) not in TRLC_DOCUMENT_TYPES:
-            errors.append(((*entry, "include", index),
-                           f"{where}.include: '{inc}' is no document of type trlc or test_results."))
+            errors.append(
+                ((*entry, "include", index), f"{where}.include: '{inc}' is no document of type trlc or test_results.")
+            )
 
     options = doc.get("pytrlcconverter", {})
     files = {("converter", fmt): value for fmt, value in options.get("converter", {}).items()}
     files.update({(key,): options[key] for key in ("translation", "render_cfg") if key in options})
     for keys, value in files.items():
         if not cfg.file_reference(value).is_file():
-            errors.append(((*entry, "pytrlcconverter", *keys),
-                           f"{where}.pytrlcconverter.{'.'.join(keys)}: file '{value}' not found."))
+            errors.append(
+                (
+                    (*entry, "pytrlcconverter", *keys),
+                    f"{where}.pytrlcconverter.{'.'.join(keys)}: file '{value}' not found.",
+                )
+            )
 
     needs_tests = doc["type"] == "test_results" or doc.get("source") == TESTS_COVERAGE
     if needs_tests and cfg.tests is None:
@@ -468,8 +480,12 @@ def _check_levels(cfg: Config, levels: list[dict[str, Any]], doc_types: dict[str
         entry: ConfigPath = ("trace", "levels", index)
         where = f"trace.levels[{level['name']}]"
         if "document" in level and doc_types.get(level["document"]) not in TRLC_DOCUMENT_TYPES:
-            errors.append(((*entry, "document"),
-                           f"{where}.document: '{level['document']}' is no document of type trlc or test_results."))
+            errors.append(
+                (
+                    (*entry, "document"),
+                    f"{where}.document: '{level['document']}' is no document of type trlc or test_results.",
+                )
+            )
         if "doxyfile" in level and not cfg.path(level["doxyfile"]).is_file():
             errors.append(((*entry, "doxyfile"), f"{where}.doxyfile: file '{level['doxyfile']}' not found."))
         for key in ("trace_to", "requires"):
@@ -584,16 +600,19 @@ def load_config(config_file: Path) -> Config:
     validator = jsonschema.Draft202012Validator(schema)
     schema_errors: list[ConfigError] = [
         (_schema_error_path(err), f"{'/'.join(str(p) for p in err.absolute_path) or '<root>'}: {err.message}")
-        for err in sorted(validator.iter_errors(data), key=lambda err: list(err.absolute_path))]
+        for err in sorted(validator.iter_errors(data), key=lambda err: list(err.absolute_path))
+    ]
     if schema_errors:
-        raise TrlcdocError(f"{config_file} does not match the schema:\n  "
-                           + _format_errors(config_file, text, schema_errors))
+        raise TrlcdocError(
+            f"{config_file} does not match the schema:\n  " + _format_errors(config_file, text, schema_errors)
+        )
 
     cfg = Config(data, config_file)
     reference_errors = _check_references(cfg)
     if reference_errors:
-        raise TrlcdocError(f"{config_file} has invalid settings:\n  "
-                           + _format_errors(config_file, text, reference_errors))
+        raise TrlcdocError(
+            f"{config_file} has invalid settings:\n  " + _format_errors(config_file, text, reference_errors)
+        )
 
     return cfg
 
@@ -610,5 +629,6 @@ def find_config(start: Path) -> Path:
     """
     candidates = [folder / "trlcdoc.yaml" for folder in (start, *start.parents)]
     return next((file for file in candidates if file.is_file()), start / "trlcdoc.yaml")
+
 
 # Main *************************************************************************

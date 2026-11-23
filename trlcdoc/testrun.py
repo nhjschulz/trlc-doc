@@ -1,6 +1,4 @@
-"""Run the tests and convert the JUnit XML results into TRLC test result records.
-
-"""
+"""Run the tests and convert the JUnit XML results into TRLC test result records."""
 
 # trlcdoc - A utility for producing project documentation from TRLC and LOBSTER contents.
 # Copyright (c) 2026 - 2026 Norbert Schulz github@schulznorbert.de
@@ -71,8 +69,7 @@ def run_tests(cfg: Config) -> bool:
 
     if tests["runner"] == "pytest":
         args = list(tests.get("args", []))
-        cmd = [sys.executable, "-m", "pytest", *args,
-               "-o", "junit_family=xunit1", f"--junitxml={cfg.junit_file}"]
+        cmd = [sys.executable, "-m", "pytest", *args, "-o", "junit_family=xunit1", f"--junitxml={cfg.junit_file}"]
         if any(arg.startswith("--cov") for arg in args):
             cmd.extend(["--cov-report=term", f"--cov-report=html:{cfg.coverage_dir}"])
         # Keep the coverage data file in the output folder instead of the project root.
@@ -86,8 +83,9 @@ def run_tests(cfg: Config) -> bool:
         started = time.time()
         run_unchecked(tests["command"], cfg.root)
         coverage_index = cfg.coverage_dir / "index.html"
-        if "coverage" in tests and (not coverage_index.is_file()
-                                    or coverage_index.stat().st_mtime < started - MTIME_TOLERANCE):
+        if "coverage" in tests and (
+            not coverage_index.is_file() or coverage_index.stat().st_mtime < started - MTIME_TOLERANCE
+        ):
             raise TrlcdocError(f"Coverage report {coverage_index} was not created by the test command.")
 
     if not cfg.junit_file.is_file():
@@ -141,8 +139,7 @@ def read_junit(junit_file: Path, link: dict[str, Any]) -> list[tuple[str, bool, 
     if unlinked:
         raise TrlcdocError(f"Tests without test case link ({_link_methods(link)}): {', '.join(unlinked)}")
     if ambiguous:
-        raise TrlcdocError(
-            f"Tests linked to several test cases, which needs tests.link.array: {', '.join(ambiguous)}")
+        raise TrlcdocError(f"Tests linked to several test cases, which needs tests.link.array: {', '.join(ambiguous)}")
     return results
 
 
@@ -332,5 +329,6 @@ def write_results(results: list[tuple[str, bool, list[str]]], trlc_file: Path, l
             file.write("    }\n\n")
         file.write("}\n")
     return trlc_file
+
 
 # Main *************************************************************************

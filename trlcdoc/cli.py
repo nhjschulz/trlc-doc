@@ -1,6 +1,4 @@
-"""Command line interface of trlcdoc.
-
-"""
+"""Command line interface of trlcdoc."""
 
 # trlcdoc - A utility for producing project documentation from TRLC and LOBSTER contents.
 # Copyright (c) 2026 - 2026 Norbert Schulz github@schulznorbert.de
@@ -66,18 +64,30 @@ def _parse_args(argv: list[str] | None) -> argparse.Namespace:
         prog="trlcdoc",
         description=DESCRIPTION,
         epilog=f"Version {__version__} - {COPYRIGHT} - GPL-3.0-or-later - see {REPOSITORY} for further information.",
-        formatter_class=argparse.RawDescriptionHelpFormatter)
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
 
-    parser.add_argument("steps", nargs="*", metavar="step",
-                        help=f"steps to run: {', '.join(STEPS)} or all (default: all)")
-    parser.add_argument("-v", "--version", action="version", version=f"%(prog)s {__version__}",
-                        help="show the trlcdoc version and exit")
-    parser.add_argument("-c", "--config", type=Path,
-                        help="project configuration (default: trlcdoc.yaml in the current folder or a parent)")
-    parser.add_argument("--online", action="store_true",
-                        help="link the tracing report to the repository instead of local files")
-    parser.add_argument("--format", choices=["rst", "markdown"], default="rst",
-                        help="output format of the convert step (default: rst, needed for html)")
+    parser.add_argument(
+        "steps", nargs="*", metavar="step", help=f"steps to run: {', '.join(STEPS)} or all (default: all)"
+    )
+    parser.add_argument(
+        "-v", "--version", action="version", version=f"%(prog)s {__version__}", help="show the trlcdoc version and exit"
+    )
+    parser.add_argument(
+        "-c",
+        "--config",
+        type=Path,
+        help="project configuration (default: trlcdoc.yaml in the current folder or a parent)",
+    )
+    parser.add_argument(
+        "--online", action="store_true", help="link the tracing report to the repository instead of local files"
+    )
+    parser.add_argument(
+        "--format",
+        choices=["rst", "markdown"],
+        default="rst",
+        help="output format of the convert step (default: rst, needed for html)",
+    )
     args = parser.parse_args(argv)
 
     args.steps = args.steps or ["all"]
@@ -101,10 +111,13 @@ def _selected_steps(cfg: Config, requested: list[str]) -> list[str]:
     """
     selected = {step for step in STEPS if step in requested}
     if "all" in requested:
-        selected.update(step for step in STEPS
-                        if step not in ("clean", "show")
-                        and not (step == "tests" and cfg.tests is None)
-                        and not (step == "trace" and cfg.trace is None))
+        selected.update(
+            step
+            for step in STEPS
+            if step not in ("clean", "show")
+            and not (step == "tests" and cfg.tests is None)
+            and not (step == "trace" and cfg.trace is None)
+        )
     # Converting and rendering need the PlantUML jar.
     if selected & {"convert", "html"}:
         selected.add("plantuml")
@@ -192,5 +205,6 @@ def main(argv: list[str] | None = None) -> int:
         print(f"\ntrlcdoc error: {err}")
         exit_code = 2
     return exit_code
+
 
 # Main *************************************************************************

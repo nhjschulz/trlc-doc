@@ -45,6 +45,7 @@ PROG_COPYRIGHT = "Copyright (c) 2025 NewTec GmbH"
 
 # Functions ********************************************************************
 
+
 def _create_args_parser() -> argparse.ArgumentParser:
     """
     Create parser for command line arguments.
@@ -52,20 +53,15 @@ def _create_args_parser() -> argparse.ArgumentParser:
     Returns:
         argparse.ArgumentParser:  The parser object for command line arguments.
     """
-    parser = argparse.ArgumentParser(prog=PROG_NAME,
-                                     description=PROG_DESC,
-                                     epilog=PROG_COPYRIGHT)
+    parser = argparse.ArgumentParser(prog=PROG_NAME, description=PROG_DESC, epilog=PROG_COPYRIGHT)
 
     # lobster-trace: SwRequirements.sw_req_cli_user_name
     parser.add_argument(
-        "name",
-        type=str,
-        nargs='?',
-        default=None,
-        help="Specify a user name to greet, defaults to login name if unset."
+        "name", type=str, nargs="?", default=None, help="Specify a user name to greet, defaults to login name if unset."
     )
 
     return parser
+
 
 def main() -> int:
     # lobster-trace: SwRequirements.sw_req_cli
@@ -86,6 +82,7 @@ def main() -> int:
     print(greet(name))
 
     return 0
+
 
 # lobster-trace: SwRequirements.sw_req_cli
 if __name__ == "__main__":

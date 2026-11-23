@@ -1,6 +1,4 @@
-"""Entry point for 'python -m trlcdoc'.
-
-"""
+"""Entry point for 'python -m trlcdoc'."""
 
 # trlcdoc - A utility for producing project documentation from TRLC and LOBSTER contents.
 # Copyright (c) 2026 - 2026 Norbert Schulz github@schulznorbert.de

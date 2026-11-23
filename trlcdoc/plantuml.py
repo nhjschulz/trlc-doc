@@ -1,6 +1,4 @@
-"""Provide the PlantUML jar, replacing the get_plantuml.sh/.bat scripts.
-
-"""
+"""Provide the PlantUML jar, replacing the get_plantuml.sh/.bat scripts."""
 
 # trlcdoc - A utility for producing project documentation from TRLC and LOBSTER contents.
 # Copyright (c) 2026 - 2026 Norbert Schulz github@schulznorbert.de
@@ -102,5 +100,6 @@ def _download(url: str, target: Path) -> Path:
         partial.unlink(missing_ok=True)
         raise TrlcdocError(f"Download of {url} failed: {err}") from err
     return target
+
 
 # Main *************************************************************************

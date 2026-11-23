@@ -1,6 +1,4 @@
-"""Tests of the page placeholders and the check of the project start page's table of contents.
-
-"""
+"""Tests of the page placeholders and the check of the project start page's table of contents."""
 
 # trlcdoc - A utility for producing project documentation from TRLC and LOBSTER contents.
 # Copyright (c) 2026 - 2026 Norbert Schulz github@schulznorbert.de
@@ -117,10 +115,14 @@ def test_toctree_check(project: Path, capsys: pytest.CaptureFixture) -> None:
     config_file = write_config(root, _config(root, WRONG_INDEX))
     assert cli.main(["-c", str(config_file), "check"]) == 1
     out = capsys.readouterr().out
-    assert ("html.index: toctree entry 'sw_architecture' is no page. Document 'sw_architecture' is the page "
-            "'sw_architecture/index' (type trlc). Write {page:sw_architecture} to use its page name.") in out
-    assert ("html.index: toctree entry 'sw_tracing_report' is no page. Document 'sw_tracing_report' is the page "
-            "'sw_tracing_report/index' (type trace_report, trace.report: rst).") in out
+    assert (
+        "html.index: toctree entry 'sw_architecture' is no page. Document 'sw_architecture' is the page "
+        "'sw_architecture/index' (type trlc). Write {page:sw_architecture} to use its page name."
+    ) in out
+    assert (
+        "html.index: toctree entry 'sw_tracing_report' is no page. Document 'sw_tracing_report' is the page "
+        "'sw_tracing_report/index' (type trace_report, trace.report: rst)."
+    ) in out
     assert "html.index: toctree entry 'sw_tests_old' is no page of a document." in out
     # A document listed by a wrong entry is only reported once, with the fix.
     assert "document 'sw_architecture' (page 'sw_architecture/index') is not in any toctree" not in out
@@ -213,14 +215,24 @@ def test_page_placeholders(project: Path) -> None:
     data = _config(root, "")
     data["documents"].append({"id": "guide", "type": "rst", "source": "docs/index.rst"})
     cfg = load_config(write_config(root, data))
-    text = "{page:sw_requirements} {page:sw_tracing_report} {page:guide} {page:unknown} {project_root}\n" \
-           "   {documents}\r\n"
+    text = (
+        "{page:sw_requirements} {page:sw_tracing_report} {page:guide} {page:unknown} {project_root}\n   {documents}\r\n"
+    )
 
     # {documents} keeps the indentation and the CRLF line end of its line for every page.
     top = replace_placeholders(cfg, text, cfg.sphinx_dir / "index.rst").split("\n")
     assert top[0] == "sw_requirements/index sw_tracing_report/index guide {page:unknown} ../../.."
-    assert top[1:] == [f"   {page}\r" for page in ("sw_requirements/index", "sw_architecture/index", "sw_test/index",
-                                                    "sw_test_results/index", "sw_tracing_report/index", "guide")] + [""]
+    assert top[1:] == [
+        f"   {page}\r"
+        for page in (
+            "sw_requirements/index",
+            "sw_architecture/index",
+            "sw_test/index",
+            "sw_test_results/index",
+            "sw_tracing_report/index",
+            "guide",
+        )
+    ] + [""]
 
     # In a page of a document folder, e.g. with the page header, the names are relative to the folder.
     nested = replace_placeholders(cfg, text, cfg.sphinx_dir / "sw_test" / "index.rst").split("\n")
@@ -242,8 +254,10 @@ def test_documents_placeholder_unlisted(project: Path, capsys: pytest.CaptureFix
     root = project.parent
     # Like a license in a section of its own: the start page lists the test results by placeholder
     # and the tracing report by page name, a Markdown document lists the tests.
-    index = ("Example\n=======\n\n.. toctree::\n   :caption: Contents:\n\n   {documents}\n\n"
-             "License\n-------\n\n.. toctree::\n\n   {page:sw_test_results}\n   sw_tracing_report/index\n")
+    index = (
+        "Example\n=======\n\n.. toctree::\n   :caption: Contents:\n\n   {documents}\n\n"
+        "License\n-------\n\n.. toctree::\n\n   {page:sw_test_results}\n   sw_tracing_report/index\n"
+    )
     (root / "docs").mkdir(exist_ok=True)
     (root / "docs" / "notes.md").write_text(NOTES_MD, encoding="utf-8")
     data = _config(root, index)
@@ -251,8 +265,13 @@ def test_documents_placeholder_unlisted(project: Path, capsys: pytest.CaptureFix
     cfg = load_config(write_config(root, data))
 
     text = replace_placeholders(cfg, index, cfg.sphinx_dir / "index.rst")
-    assert toctree_entries(text) == ["sw_requirements/index", "sw_architecture/index", "notes",
-                                     "sw_test_results/index", "sw_tracing_report/index"]
+    assert toctree_entries(text) == [
+        "sw_requirements/index",
+        "sw_architecture/index",
+        "notes",
+        "sw_test_results/index",
+        "sw_tracing_report/index",
+    ]
 
     # In a page of a document folder, the remaining page names are relative to the folder.
     nested = replace_placeholders(cfg, "{documents}", cfg.sphinx_dir / "sw_test" / "index.rst")
@@ -261,5 +280,6 @@ def test_documents_placeholder_unlisted(project: Path, capsys: pytest.CaptureFix
     # Every document is in exactly one toctree, the check has no findings.
     assert cli.main(["-c", str(write_config(root, data)), "check"]) == 0
     assert "toctree" not in capsys.readouterr().out
+
 
 # Main *************************************************************************

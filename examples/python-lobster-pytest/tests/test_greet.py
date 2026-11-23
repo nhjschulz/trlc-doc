@@ -41,6 +41,7 @@ from greeter.greet import greet
 
 # Functions ********************************************************************
 
+
 def test_greet_nighttime_greeting(record_property):
     # lobster-trace: SwTests.tc_greet_night_time_greeting
     """
@@ -51,11 +52,12 @@ def test_greet_nighttime_greeting(record_property):
     """
     record_property("lobster-trace", "SwTests.tc_greet_night_time_greeting")
 
-    for mock_hour in range(19, 24+5):
+    for mock_hour in range(19, 24 + 5):
         for mock_minute in range(0, 60):
-            mocked_time = f"2025-01-01 {mock_hour % 24 :02}:{mock_minute:02}:00"
+            mocked_time = f"2025-01-01 {mock_hour % 24:02}:{mock_minute:02}:00"
             with freeze_time(mocked_time):
                 assert greet("Alice") == "Good night Alice!"
+
 
 def test_greet_morning_greeting(record_property):
     # lobster-trace: SwTests.tc_greet_morning_time_greeting
@@ -73,6 +75,7 @@ def test_greet_morning_greeting(record_property):
             with freeze_time(mocked_time):
                 assert greet("John") == "Good morning John!"
 
+
 def test_greet_midday_greeting(record_property):
     # lobster-trace: SwTests.tc_greet_midday_time_greeting
     """
@@ -89,6 +92,7 @@ def test_greet_midday_greeting(record_property):
             with freeze_time(mocked_time):
                 assert greet("Paula") == "Good midday Paula!"
 
+
 def test_greet_afternoon_greeting(record_property):
     # lobster-trace: SwTests.tc_greet_afternoon_time_greeting
     """
@@ -99,11 +103,12 @@ def test_greet_afternoon_greeting(record_property):
     """
     record_property("lobster-trace", "SwTests.tc_greet_afternoon_time_greeting")
 
-    for mock_hour in range(13,18):
+    for mock_hour in range(13, 18):
         for mock_minute in range(0, 60):
             mocked_time = f"2025-01-01 {mock_hour:02}:{mock_minute:02}:00"
             with freeze_time(mocked_time):
                 assert greet("Peter") == "Good afternoon Peter!"
+
 
 def test_greet_with_name(record_property):
     # lobster-trace: SwTests.tc_greet_user_name
@@ -116,6 +121,7 @@ def test_greet_with_name(record_property):
     record_property("lobster-trace", "SwTests.tc_greet_user_name")
 
     assert greet("John").endswith("John!")
+
 
 def test_greet_without_name(record_property):
     # lobster-trace: SwTests.tc_greet_default_name

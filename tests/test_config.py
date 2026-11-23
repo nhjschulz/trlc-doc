@@ -1,6 +1,4 @@
-"""Tests of the trlcdoc configuration: discovery, validation and project settings.
-
-"""
+"""Tests of the trlcdoc configuration: discovery, validation and project settings."""
 
 # trlcdoc - A utility for producing project documentation from TRLC and LOBSTER contents.
 # Copyright (c) 2026 - 2026 Norbert Schulz github@schulznorbert.de
@@ -73,8 +71,7 @@ def test_config_file(project: Path, monkeypatch: pytest.MonkeyPatch, capsys: pyt
     assert str(project) in capsys.readouterr().out
 
     other = root / "other.yaml"
-    other.write_text(project.read_text(encoding="utf-8").replace("name: example", "name: other"),
-                     encoding="utf-8")
+    other.write_text(project.read_text(encoding="utf-8").replace("name: example", "name: other"), encoding="utf-8")
     assert cli.main(["-c", str(other), "check"]) == 0
     assert str(other) in capsys.readouterr().out
     assert load_config(other).project["name"] == "other"
@@ -111,14 +108,14 @@ def test_config_validation(project: Path, capsys: pytest.CaptureFixture) -> None
     data["trace"]["levels"][1]["trace_to"] = ["Unknown Level"]
     data["html"] = {"index": "docs/index.rst", "page_header": "docs/header.rst", "conf": "docs/conf.py"}
     data["project"].update({"logo": "docs/logo.pngx", "favicon": "docs/favicon.ico"})
-    data["trace"]["levels"].append({"name": "SW Code", "kind": "implementation", "extractor": "lobster-doxygen",
-                                    "doxyfile": "tools/Doxyfile"})
+    data["trace"]["levels"].append(
+        {"name": "SW Code", "kind": "implementation", "extractor": "lobster-doxygen", "doxyfile": "tools/Doxyfile"}
+    )
     errors = _config_errors(root, data)
     assert "has invalid settings" in errors
     assert "documents[sw_architecture].include: 'unknown'" in errors
     assert "documents: id 'sw_requirements' is used more than once" in errors
-    assert ("documents[sw_requirements].pytrlcconverter.converter.rst: file 'converters/missing.py' not found"
-            in errors)
+    assert "documents[sw_requirements].pytrlcconverter.converter.rst: file 'converters/missing.py' not found" in errors
     assert "documents[sw_requirements].pytrlcconverter.render_cfg: file 'missing.json' not found" in errors
     assert "trace.levels[SW Architecture].trace_to: level 'Unknown Level' is not defined" in errors
     for key, value in data["html"].items():
@@ -133,6 +130,7 @@ def test_config_validation(project: Path, capsys: pytest.CaptureFixture) -> None
     assert not (root / "build").exists()
 
     # Errors start with file and line of their entry, a missing key with the line of its parent.
+    # fmt: off
     lines = ["project:",                                 # 1
              "  name: example",                          # 2
              "  author: Jane Doe",                       # 3
@@ -163,6 +161,7 @@ def test_config_validation(project: Path, capsys: pytest.CaptureFixture) -> None
              "    pytrlcconverter:",                     # 28
              "      converter:",                         # 29
              "        rst: builtin:req2rst.py"]          # 30
+    # fmt: on
     project.write_text("\n".join(lines) + "\n", encoding="utf-8")
     assert cli.main(["-c", str(project), "check"]) == 2
     out = capsys.readouterr().out.splitlines()
@@ -171,7 +170,8 @@ def test_config_validation(project: Path, capsys: pytest.CaptureFixture) -> None
         f"  {project}:20: documents[sw_architecture].include: 'unknown' is no document of type trlc or test_results.",
         f"  {project}:23: documents[sw_architecture].pytrlcconverter.converter.rst: "
         "file 'converters/missing.py' not found.",
-        f"  {project}:24: documents: id 'sw_requirements' is used more than once."]
+        f"  {project}:24: documents: id 'sw_requirements' is used more than once.",
+    ]
 
     lines[2] = "  authors: Jane Doe"
     lines[18] = "    sorce: trlc/swe-arch"
@@ -194,26 +194,30 @@ def test_config_validation(project: Path, capsys: pytest.CaptureFixture) -> None
 
     # tests.link needs the property, the output pattern, or the name pattern with 'from' and 'to'.
     data = base_config()
-    for link, valid in (({"property": "lobster-tracing"}, True),
-                        ({"output": "lobster-trace: {id}"}, True),
-                        ({"output": "lobster-trace: {id}", "from": "test_{name}", "to": "SwTests.tc_{name}"}, True),
-                        ({"from": "test_{name}", "to": "SwTests.tc_{name}"}, True),
-                        ({}, False),
-                        ({"output": "lobster-trace"}, False),
-                        ({"output": "lobster-trace: {id}", "from": "test_{name}"}, False),
-                        ({"to": "SwTests.tc_{name}"}, False)):
+    for link, valid in (
+        ({"property": "lobster-tracing"}, True),
+        ({"output": "lobster-trace: {id}"}, True),
+        ({"output": "lobster-trace: {id}", "from": "test_{name}", "to": "SwTests.tc_{name}"}, True),
+        ({"from": "test_{name}", "to": "SwTests.tc_{name}"}, True),
+        ({}, False),
+        ({"output": "lobster-trace"}, False),
+        ({"output": "lobster-trace: {id}", "from": "test_{name}"}, False),
+        ({"to": "SwTests.tc_{name}"}, False),
+    ):
         data["tests"]["link"] = link
         assert (_config_errors(root, data) == "") is valid, link
     assert "tests/link" in _config_errors(root, data)
 
     # lobster-python scans sources, lobster-doxygen takes the sources from a Doxyfile.
     (root / "Doxyfile").write_text("INPUT = src\n", encoding="utf-8")
-    for extractor, keys, valid in (("lobster-python", ("sources",), True),
-                                   ("lobster-python", ("doxyfile",), False),
-                                   ("lobster-python", ("sources", "doxyfile"), False),
-                                   ("lobster-doxygen", ("doxyfile",), True),
-                                   ("lobster-doxygen", ("sources",), False),
-                                   ("lobster-doxygen", ("sources", "doxyfile"), False)):
+    for extractor, keys, valid in (
+        ("lobster-python", ("sources",), True),
+        ("lobster-python", ("doxyfile",), False),
+        ("lobster-python", ("sources", "doxyfile"), False),
+        ("lobster-doxygen", ("doxyfile",), True),
+        ("lobster-doxygen", ("sources",), False),
+        ("lobster-doxygen", ("sources", "doxyfile"), False),
+    ):
         data = base_config()
         level = {"name": "SW Code", "kind": "implementation", "extractor": extractor}
         level.update({key: {"sources": ["src"], "doxyfile": "Doxyfile"}[key] for key in keys})
@@ -230,8 +234,15 @@ def test_project_settings(project: Path) -> None:
     root = project.parent
     (root / "logo.png").write_bytes(b"")
     data = base_config()
-    data["project"].update({"name": "Hello World", "version": "1.2.3", "author": "John Doe",
-                            "copyright": "2020, John Doe", "logo": "logo.png"})
+    data["project"].update(
+        {
+            "name": "Hello World",
+            "version": "1.2.3",
+            "author": "John Doe",
+            "copyright": "2020, John Doe",
+            "logo": "logo.png",
+        }
+    )
     cfg = load_config(write_config(root, data))
     assert cfg.repository == "https://github.com/example/example.git"
 
@@ -259,8 +270,16 @@ def test_output_folder(project: Path) -> None:
     del data["paths"]["output"]
     cfg = load_config(write_config(root, data))
     assert cfg.output == root / "build" / "trlcdoc"
-    for folder in (cfg.convert_dir("rst", "sw_requirements"), cfg.tests_dir, cfg.junit_file, cfg.trace_dir,
-                   cfg.trace_report_html, cfg.sphinx_dir, cfg.html_dir, cfg.plantuml_dir):
+    for folder in (
+        cfg.convert_dir("rst", "sw_requirements"),
+        cfg.tests_dir,
+        cfg.junit_file,
+        cfg.trace_dir,
+        cfg.trace_report_html,
+        cfg.sphinx_dir,
+        cfg.html_dir,
+        cfg.plantuml_dir,
+    ):
         assert folder.is_relative_to(cfg.output)
 
     for output in (".", "..", str(PACKAGE_DIR / "out")):
@@ -269,5 +288,6 @@ def test_output_folder(project: Path) -> None:
 
     data["paths"]["output"] = "out/docs"
     assert load_config(write_config(root, data)).output == root / "out" / "docs"
+
 
 # Main *************************************************************************
