@@ -1,6 +1,4 @@
-"""Tests of the output folder handling: creation, clean step and delete protection.
-
-"""
+"""Tests of the output folder handling: creation, clean step and delete protection."""
 
 # trlcdoc - A utility for producing project documentation from TRLC and LOBSTER contents.
 # Copyright (c) 2026 - 2026 Norbert Schulz github@schulznorbert.de
@@ -99,5 +97,6 @@ def test_delete_protection(project: Path, capsys: pytest.CaptureFixture) -> None
     with pytest.raises(TrlcdocError, match="is not inside the output folder"):
         clean_dir(output, output)
     assert (root / "trlc" / "model").is_dir()
+
 
 # Main *************************************************************************

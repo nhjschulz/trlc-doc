@@ -1,6 +1,4 @@
-"""Tests of the trlcdoc command line interface: steps, their order and the exit codes.
-
-"""
+"""Tests of the trlcdoc command line interface: steps, their order and the exit codes."""
 
 # trlcdoc - A utility for producing project documentation from TRLC and LOBSTER contents.
 # Copyright (c) 2026 - 2026 Norbert Schulz github@schulznorbert.de
@@ -23,7 +21,6 @@
 import subprocess
 import sys
 from pathlib import Path
-from typing import List
 
 import pytest
 from conftest import base_config, make_project, write_config
@@ -39,16 +36,16 @@ from trlcdoc.util import find_tool
 # Functions ********************************************************************
 
 
-def _record_steps(monkeypatch: pytest.MonkeyPatch) -> List[str]:
+def _record_steps(monkeypatch: pytest.MonkeyPatch) -> list[str]:
     """Replace the step execution by recording the executed step names.
 
     Args:
         monkeypatch (pytest.MonkeyPatch): pytest monkeypatch.
 
     Returns:
-        List[str]: The list the executed steps are appended to.
+        list[str]: The list the executed steps are appended to.
     """
-    executed: List[str] = []
+    executed: list[str] = []
     monkeypatch.setattr(cli, "_run_step", lambda step, cfg, args: executed.append(step) is None)
     return executed
 
@@ -82,7 +79,6 @@ def test_cli_help(option: str, capsys: pytest.CaptureFixture) -> None:
         assert step in out
     assert cli.COPYRIGHT in out
     assert cli.REPOSITORY in out
-
 
 
 @pytest.mark.parametrize("option", ["-v", "--version"])
@@ -144,8 +140,13 @@ def test_step_order(project: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     # The step selection is checked directly, as main() only shows its effect.
     cfg = load_config(project)
     # pylint: disable=protected-access
-    assert cli._selected_steps(cfg, ["html", "trace", "tests", "clean"]) == \
-        ["clean", "plantuml", "tests", "trace", "html"]
+    assert cli._selected_steps(cfg, ["html", "trace", "tests", "clean"]) == [
+        "clean",
+        "plantuml",
+        "tests",
+        "trace",
+        "html",
+    ]
     assert cli._selected_steps(cfg, ["convert"]) == ["plantuml", "convert"]
     assert cli._selected_steps(cfg, ["tests"]) == ["tests"]
     # pylint: enable=protected-access
@@ -168,5 +169,6 @@ def test_exit_code(tmp_path: Path) -> None:
     assert cli.main(["-c", str(failing), "tests"]) == 1
 
     assert cli.main(["-c", str(tmp_path / "missing.yaml"), "check"]) == 2
+
 
 # Main *************************************************************************

@@ -108,6 +108,10 @@ trlcdoc --help
 ```bash
 pip install -e ."[test,doc,lint]"
 trlcdoc --help
+
+pytest              # unit tests
+ruff check .        # lint
+ruff format .       # format the code, the Tests workflow checks it
 ```
 
 ### Execution Examples

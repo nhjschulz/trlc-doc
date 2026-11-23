@@ -1,6 +1,4 @@
-"""Tests of the TRLC document conversion with pyTRLCConverter.
-
-"""
+"""Tests of the TRLC document conversion with pyTRLCConverter."""
 
 # trlcdoc - A utility for producing project documentation from TRLC and LOBSTER contents.
 # Copyright (c) 2026 - 2026 Norbert Schulz github@schulznorbert.de
@@ -33,9 +31,16 @@ from trlcdoc.util import TrlcdocError
 
 # Variables ********************************************************************
 
-BUILTIN_CONVERTERS = ["req2rst.py", "req2markdown.py", "tc2rst.py", "tc2markdown.py",
-                      "create_test_report_in_rst.py", "create_test_report_in_markdown.py", "translation.json",
-                      "renderCfg.json"]
+BUILTIN_CONVERTERS = [
+    "req2rst.py",
+    "req2markdown.py",
+    "tc2rst.py",
+    "tc2markdown.py",
+    "create_test_report_in_rst.py",
+    "create_test_report_in_markdown.py",
+    "translation.json",
+    "renderCfg.json",
+]
 
 # Classes **********************************************************************
 
@@ -71,7 +76,9 @@ def test_trlc_conversion(project: Path, fmt: str, pattern: str) -> None:
     data = base_config()
     data["documents"][1]["pytrlcconverter"] = {
         "converter": {"rst": "converters/req2rst.py", "markdown": "converters/req2markdown.py"},
-        "translation": "converters/translation.json", "render_cfg": "render.yaml"}
+        "translation": "converters/translation.json",
+        "render_cfg": "render.yaml",
+    }
     cfg = load_config(write_config(root, data))
 
     cmd = convert_document(cfg, cfg.document("sw_architecture"), fmt)
@@ -124,5 +131,6 @@ def test_conversion_error(tmp_path: Path) -> None:
     cfg = load_config(write_config(cfg.root, data))
     assert convert_document(cfg, cfg.document("sw_requirements"), "rst")
     assert "sw_requirements" not in [path.name for path in (cfg.output / "convert").glob("markdown/*")]
+
 
 # Main *************************************************************************

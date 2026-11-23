@@ -1,7 +1,7 @@
 """Generic Sphinx configuration of trlcdoc.
 
-    All project specific values are read from trlcdoc_settings.json, which
-    trlcdoc writes next to this file from the project configuration.
+All project specific values are read from trlcdoc_settings.json, which
+trlcdoc writes next to this file from the project configuration.
 
 """
 
@@ -40,15 +40,15 @@ if _SETTINGS.get("version"):
     version = release = _SETTINGS["version"]
 
 extensions = [
-    'myst_parser',              # https://www.sphinx-doc.org/en/master/usage/markdown.html
-    'sphinxcontrib.plantuml',   # https://github.com/sphinx-contrib/plantuml
-    'trlcdoc.sphinx_links',     # relative links and images of Markdown pages
-    *_SETTINGS["extensions"]
+    "myst_parser",  # https://www.sphinx-doc.org/en/master/usage/markdown.html
+    "sphinxcontrib.plantuml",  # https://github.com/sphinx-contrib/plantuml
+    "trlcdoc.sphinx_links",  # relative links and images of Markdown pages
+    *_SETTINGS["extensions"],
 ]
 
-templates_path = ['_templates']
+templates_path = ["_templates"]
 exclude_patterns = []
-source_suffix = ['.rst', '.md']
+source_suffix = [".rst", ".md"]
 
 rst_prolog = """
 .. include:: <s5defs.txt>
@@ -61,24 +61,24 @@ myst_heading_anchors = 6
 trlcdoc_links = _SETTINGS["links"]
 
 html_theme = _SETTINGS["theme"]
-html_static_path = ['_static']
-if html_theme == 'haiku':
-    html_style = 'custom.css'
+html_static_path = ["_static"]
+if html_theme == "haiku":
+    html_style = "custom.css"
 if _SETTINGS["logo"]:
     html_logo = _SETTINGS["logo"]
 if _SETTINGS["favicon"]:
     html_favicon = _SETTINGS["favicon"]
-html_last_updated_fmt = '%b %d, %Y'
+html_last_updated_fmt = "%b %d, %Y"
 
 # PlantUML is provided by trlcdoc in the PLANTUML environment variable,
 # either as path to plantuml.jar or as server URL.
-_PLANTUML_ENV = os.getenv('PLANTUML')
+_PLANTUML_ENV = os.getenv("PLANTUML")
 if _PLANTUML_ENV is None:
     raise ConfigError("The environment variable PLANTUML is not defined.")
-if urlparse(_PLANTUML_ENV).scheme in ['http', 'https']:
+if urlparse(_PLANTUML_ENV).scheme in ["http", "https"]:
     plantuml = [_PLANTUML_ENV]
 elif os.path.isfile(_PLANTUML_ENV):
-    plantuml = ['java', '-jar', _PLANTUML_ENV]
+    plantuml = ["java", "-jar", _PLANTUML_ENV]
 else:
     raise ConfigError(f"The environment variable PLANTUML points to a not existing file {_PLANTUML_ENV}.")
 
@@ -97,9 +97,9 @@ def _trlcdoc_setup(app: Any) -> None:
     Args:
         app (Any): The Sphinx application.
     """
-    app.connect('builder-inited', _copy_dirs)
+    app.connect("builder-inited", _copy_dirs)
     # After the Sphinx title collector (priority 500), which takes the title from the first heading.
-    app.connect('doctree-read', _page_title, priority=600)
+    app.connect("doctree-read", _page_title, priority=600)
 
 
 def _page_title(app: Any, doctree: Any) -> None:
@@ -148,13 +148,15 @@ def _git_commit_info() -> str:
     """
     result = ""
     try:
-        proc = subprocess.run(['git', 'rev-parse', 'HEAD'], cwd=_SETTINGS["project_root"],
-                              capture_output=True, text=True, check=False)
+        proc = subprocess.run(
+            ["git", "rev-parse", "HEAD"], cwd=_SETTINGS["project_root"], capture_output=True, text=True, check=False
+        )
         if proc.returncode == 0:
             result = f" from commit {proc.stdout.strip()}"
     except OSError:
         result = ""
     return result
+
 
 # Main *************************************************************************
 
@@ -163,7 +165,7 @@ html_last_updated_fmt += _git_commit_info()
 # The project specific configuration file may change all values above and define its own setup().
 if _SETTINGS["conf"]:
     exec(compile(Path(_SETTINGS["conf"]).read_text(encoding="utf-8"), _SETTINGS["conf"], "exec"))
-_PROJECT_SETUP = globals().get('setup')
+_PROJECT_SETUP = globals().get("setup")
 
 
 def setup(app: Any) -> None:

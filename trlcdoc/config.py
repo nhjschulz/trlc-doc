@@ -1,6 +1,4 @@
-"""Loading, validation and path resolution of the trlcdoc project configuration.
-
-"""
+"""Loading, validation and path resolution of the trlcdoc project configuration."""
 
 # trlcdoc - A utility for producing project documentation from TRLC and LOBSTER contents.
 # Copyright (c) 2026 - 2026 Norbert Schulz github@schulznorbert.de
@@ -23,7 +21,7 @@
 import json
 import re
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any
 
 import jsonschema
 import yaml
@@ -46,10 +44,10 @@ TRLC_DOCUMENT_TYPES = ("trlc", "test_results")
 PAGE_PLACEHOLDER = re.compile(r"\{page:([^}]*)\}")
 
 # Path of an entry in the configuration, e.g. ("documents", 1, "include").
-ConfigPath = Tuple[Union[str, int], ...]
+ConfigPath = tuple[str | int, ...]
 
 # Configuration error: path of the entry and message.
-ConfigError = Tuple[ConfigPath, str]
+ConfigError = tuple[ConfigPath, str]
 
 # Classes **********************************************************************
 
@@ -57,24 +55,24 @@ ConfigError = Tuple[ConfigPath, str]
 class Config:
     """Validated project configuration with resolved paths."""
 
-    def __init__(self, data: Dict[str, Any], config_file: Path) -> None:
+    def __init__(self, data: dict[str, Any], config_file: Path) -> None:
         # lobster-trace: SwRequirements.sw_req_project_settings
         # lobster-trace: SwRequirements.sw_req_documents
         """Construct the configuration.
 
         Args:
-            data (Dict[str, Any]): Schema validated configuration data.
+            data (dict[str, Any]): Schema validated configuration data.
             config_file (Path): The configuration file. Its folder is the project root.
         """
         self.data = data
         self.config_file = config_file.resolve()
         self.root = self.config_file.parent
-        self.documents: List[Dict[str, Any]] = data["documents"]
-        self.tests: Optional[Dict[str, Any]] = data.get("tests")
-        self.trace: Optional[Dict[str, Any]] = data.get("trace")
-        self.project: Dict[str, Any] = data["project"]
-        self.html: Dict[str, Any] = data.get("html", {})
-        self.plantuml: Dict[str, Any] = data.get("plantuml", {})
+        self.documents: list[dict[str, Any]] = data["documents"]
+        self.tests: dict[str, Any] | None = data.get("tests")
+        self.trace: dict[str, Any] | None = data.get("trace")
+        self.project: dict[str, Any] = data["project"]
+        self.html: dict[str, Any] = data.get("html", {})
+        self.plantuml: dict[str, Any] = data.get("plantuml", {})
 
     # Paths ********************************************************************
 
@@ -195,7 +193,7 @@ class Config:
 
     # Documents ****************************************************************
 
-    def document(self, doc_id: str) -> Dict[str, Any]:
+    def document(self, doc_id: str) -> dict[str, Any]:
         # lobster-trace: SwRequirements.sw_req_documents
         """Get a document by its id.
 
@@ -203,11 +201,11 @@ class Config:
             doc_id (str): Document id.
 
         Returns:
-            Dict[str, Any]: The document configuration.
+            dict[str, Any]: The document configuration.
         """
         return next(doc for doc in self.documents if doc["id"] == doc_id)
 
-    def page_name(self, doc: Dict[str, Any]) -> str:
+    def page_name(self, doc: dict[str, Any]) -> str:
         # lobster-trace: SwRequirements.sw_req_documents
         # lobster-trace: SwRequirements.sw_req_page_placeholders
         """Get the Sphinx page name of a document, the name used in a table of contents.
@@ -216,7 +214,7 @@ class Config:
         reStructuredText tracing report. All other documents are a single page.
 
         Args:
-            doc (Dict[str, Any]): Document configuration.
+            doc (dict[str, Any]): Document configuration.
 
         Returns:
             str: '<id>/index' for a folder of pages, otherwise '<id>'.
@@ -226,49 +224,53 @@ class Config:
             result = f"{doc['id']}/index"
         return result
 
-    def placeholder_files(self) -> List[Tuple[str, ConfigPath, Path]]:
+    def placeholder_files(self) -> list[tuple[str, ConfigPath, Path]]:
         # lobster-trace: SwRequirements.sw_req_html_customization
         # lobster-trace: SwRequirements.sw_req_page_placeholders
         """Get the project owned files whose placeholders are replaced.
 
         Returns:
-            List[Tuple[str, ConfigPath, Path]]: Configuration location, its entry path and the path of html.index,
+            list[tuple[str, ConfigPath, Path]]: Configuration location, its entry path and the path of html.index,
             html.page_header and the rst and markdown documents, except documents with 'placeholders: false'.
         """
-        result: List[Tuple[str, ConfigPath, Path]] = [
+        result: list[tuple[str, ConfigPath, Path]] = [
             (f"html.{key}", ("html", key), self.path(self.html[key]))
-            for key in ("index", "page_header") if key in self.html]
-        result.extend((f"documents[{doc['id']}]", ("documents", index, "source"), self.path(doc["source"]))
-                      for index, doc in enumerate(self.documents)
-                      if doc["type"] in ("rst", "markdown") and doc.get("placeholders", True))
+            for key in ("index", "page_header")
+            if key in self.html
+        ]
+        result.extend(
+            (f"documents[{doc['id']}]", ("documents", index, "source"), self.path(doc["source"]))
+            for index, doc in enumerate(self.documents)
+            if doc["type"] in ("rst", "markdown") and doc.get("placeholders", True)
+        )
         return result
 
-    def trlc_sources(self, doc: Dict[str, Any]) -> List[Path]:
+    def trlc_sources(self, doc: dict[str, Any]) -> list[Path]:
         # lobster-trace: SwRequirements.sw_req_trlc_conversion
         """Get the TRLC source folders of a TRLC document.
 
         Args:
-            doc (Dict[str, Any]): Document of type trlc or test_results.
+            doc (dict[str, Any]): Document of type trlc or test_results.
 
         Returns:
-            List[Path]: The source folders.
+            list[Path]: The source folders.
         """
         result = [self.test_results_dir]
         if doc["type"] == "trlc":
             result = [self.path(doc["source"])]
         return result
 
-    def included_documents(self, doc: Dict[str, Any]) -> List[Dict[str, Any]]:
+    def included_documents(self, doc: dict[str, Any]) -> list[dict[str, Any]]:
         # lobster-trace: SwRequirements.sw_req_trlc_conversion
         """Get all documents included by a document, transitively.
 
         Args:
-            doc (Dict[str, Any]): The including document.
+            doc (dict[str, Any]): The including document.
 
         Returns:
-            List[Dict[str, Any]]: Included documents, without the document itself.
+            list[dict[str, Any]]: Included documents, without the document itself.
         """
-        result: List[Dict[str, Any]] = []
+        result: list[dict[str, Any]] = []
         pending = list(doc.get("include", []))
         while pending:
             doc_id = pending.pop(0)
@@ -278,17 +280,17 @@ class Config:
                 pending.extend(included.get("include", []))
         return result
 
-    def included_sources(self, doc: Dict[str, Any]) -> List[Path]:
+    def included_sources(self, doc: dict[str, Any]) -> list[Path]:
         # lobster-trace: SwRequirements.sw_req_trlc_conversion
         """Get the TRLC source folders of all documents included by a document.
 
         Args:
-            doc (Dict[str, Any]): The including document.
+            doc (dict[str, Any]): The including document.
 
         Returns:
-            List[Path]: The source folders.
+            list[Path]: The source folders.
         """
-        result: List[Path] = []
+        result: list[Path] = []
         for included in self.included_documents(doc):
             result.extend(self.trlc_sources(included))
         return result
@@ -306,15 +308,15 @@ class Config:
         """
         result = self.path(value)
         if value.startswith(BUILTIN_PREFIX):
-            result = BUILTIN_DIR / value[len(BUILTIN_PREFIX):]
+            result = BUILTIN_DIR / value[len(BUILTIN_PREFIX) :]
         return result
 
-    def html_source(self, doc: Dict[str, Any]) -> Path:
+    def html_source(self, doc: dict[str, Any]) -> Path:
         # lobster-trace: SwRequirements.sw_req_document_types
         """Resolve the HTML folder of a document of type html or command.
 
         Args:
-            doc (Dict[str, Any]): Document of type html or command.
+            doc (dict[str, Any]): Document of type html or command.
 
         Returns:
             Path: The HTML folder.
@@ -335,10 +337,11 @@ class Config:
         """Configured repository URL or 'auto'."""
         return self.project.get("repository", "auto")
 
+
 # Functions ********************************************************************
 
 
-def _check_references(cfg: Config) -> List[ConfigError]:
+def _check_references(cfg: Config) -> list[ConfigError]:
     # lobster-trace: SwRequirements.sw_req_config_validation
     # lobster-trace: SwRequirements.sw_req_output_folder
     """Check the cross references, which the JSON schema cannot express.
@@ -347,9 +350,9 @@ def _check_references(cfg: Config) -> List[ConfigError]:
         cfg (Config): Schema validated configuration.
 
     Returns:
-        List[ConfigError]: Errors, empty if all references are valid.
+        list[ConfigError]: Errors, empty if all references are valid.
     """
-    errors: List[ConfigError] = []
+    errors: list[ConfigError] = []
     doc_ids = [doc["id"] for doc in cfg.documents]
     doc_types = {doc["id"]: doc["type"] for doc in cfg.documents}
 
@@ -383,56 +386,65 @@ def _check_references(cfg: Config) -> List[ConfigError]:
     return errors
 
 
-def _check_page_placeholders(cfg: Config, doc_ids: List[str]) -> List[ConfigError]:
+def _check_page_placeholders(cfg: Config, doc_ids: list[str]) -> list[ConfigError]:
     # lobster-trace: SwRequirements.sw_req_config_validation
     # lobster-trace: SwRequirements.sw_req_page_placeholders
     """Check that the {page:<id>} placeholders of the project owned files name configured documents.
 
     Args:
         cfg (Config): Schema validated configuration.
-        doc_ids (List[str]): Ids of the configured documents.
+        doc_ids (list[str]): Ids of the configured documents.
 
     Returns:
-        List[ConfigError]: Errors, empty if all placeholders name a document.
+        list[ConfigError]: Errors, empty if all placeholders name a document.
     """
-    errors: List[ConfigError] = []
+    errors: list[ConfigError] = []
     for where, entry, file in cfg.placeholder_files():
         if file.is_file():
             ids = PAGE_PLACEHOLDER.findall(file.read_text(encoding="utf-8"))
-            errors.extend((entry, f"{where}: placeholder '{{page:{doc_id}}}' names no document.")
-                          for doc_id in sorted(set(ids)) if doc_id not in doc_ids)
+            errors.extend(
+                (entry, f"{where}: placeholder '{{page:{doc_id}}}' names no document.")
+                for doc_id in sorted(set(ids))
+                if doc_id not in doc_ids
+            )
     return errors
 
 
-def _check_document(cfg: Config, entry: ConfigPath, doc: Dict[str, Any],
-                    doc_types: Dict[str, str]) -> List[ConfigError]:
+def _check_document(
+    cfg: Config, entry: ConfigPath, doc: dict[str, Any], doc_types: dict[str, str]
+) -> list[ConfigError]:
     # lobster-trace: SwRequirements.sw_req_config_validation
     """Check the references of one document.
 
     Args:
         cfg (Config): Schema validated configuration.
         entry (ConfigPath): Path of the document in the configuration.
-        doc (Dict[str, Any]): The document.
-        doc_types (Dict[str, str]): Document type per document id.
+        doc (dict[str, Any]): The document.
+        doc_types (dict[str, str]): Document type per document id.
 
     Returns:
-        List[ConfigError]: Errors, empty if all references are valid.
+        list[ConfigError]: Errors, empty if all references are valid.
     """
-    errors: List[ConfigError] = []
+    errors: list[ConfigError] = []
     where = f"documents[{doc['id']}]"
 
     for index, inc in enumerate(doc.get("include", [])):
         if doc_types.get(inc) not in TRLC_DOCUMENT_TYPES:
-            errors.append(((*entry, "include", index),
-                           f"{where}.include: '{inc}' is no document of type trlc or test_results."))
+            errors.append(
+                ((*entry, "include", index), f"{where}.include: '{inc}' is no document of type trlc or test_results.")
+            )
 
     options = doc.get("pytrlcconverter", {})
     files = {("converter", fmt): value for fmt, value in options.get("converter", {}).items()}
     files.update({(key,): options[key] for key in ("translation", "render_cfg") if key in options})
     for keys, value in files.items():
         if not cfg.file_reference(value).is_file():
-            errors.append(((*entry, "pytrlcconverter", *keys),
-                           f"{where}.pytrlcconverter.{'.'.join(keys)}: file '{value}' not found."))
+            errors.append(
+                (
+                    (*entry, "pytrlcconverter", *keys),
+                    f"{where}.pytrlcconverter.{'.'.join(keys)}: file '{value}' not found.",
+                )
+            )
 
     needs_tests = doc["type"] == "test_results" or doc.get("source") == TESTS_COVERAGE
     if needs_tests and cfg.tests is None:
@@ -442,7 +454,7 @@ def _check_document(cfg: Config, entry: ConfigPath, doc: Dict[str, Any],
     return errors
 
 
-def _check_levels(cfg: Config, levels: List[Dict[str, Any]], doc_types: Dict[str, str]) -> List[ConfigError]:
+def _check_levels(cfg: Config, levels: list[dict[str, Any]], doc_types: dict[str, str]) -> list[ConfigError]:
     # lobster-trace: SwRequirements.sw_req_config_validation
     # lobster-trace: SwRequirements.sw_req_trace_levels
     # lobster-trace: SwRequirements.sw_req_trace_doxygen
@@ -450,13 +462,13 @@ def _check_levels(cfg: Config, levels: List[Dict[str, Any]], doc_types: Dict[str
 
     Args:
         cfg (Config): Schema validated configuration.
-        levels (List[Dict[str, Any]]): Configured trace levels.
-        doc_types (Dict[str, str]): Document type per document id.
+        levels (list[dict[str, Any]]): Configured trace levels.
+        doc_types (dict[str, str]): Document type per document id.
 
     Returns:
-        List[ConfigError]: Errors, empty if all references are valid.
+        list[ConfigError]: Errors, empty if all references are valid.
     """
-    errors: List[ConfigError] = []
+    errors: list[ConfigError] = []
     names = [level["name"] for level in levels]
 
     # A repeated name is reported at its second occurrence.
@@ -468,8 +480,12 @@ def _check_levels(cfg: Config, levels: List[Dict[str, Any]], doc_types: Dict[str
         entry: ConfigPath = ("trace", "levels", index)
         where = f"trace.levels[{level['name']}]"
         if "document" in level and doc_types.get(level["document"]) not in TRLC_DOCUMENT_TYPES:
-            errors.append(((*entry, "document"),
-                           f"{where}.document: '{level['document']}' is no document of type trlc or test_results."))
+            errors.append(
+                (
+                    (*entry, "document"),
+                    f"{where}.document: '{level['document']}' is no document of type trlc or test_results.",
+                )
+            )
         if "doxyfile" in level and not cfg.path(level["doxyfile"]).is_file():
             errors.append(((*entry, "doxyfile"), f"{where}.doxyfile: file '{level['doxyfile']}' not found."))
         for key in ("trace_to", "requires"):
@@ -479,7 +495,7 @@ def _check_levels(cfg: Config, levels: List[Dict[str, Any]], doc_types: Dict[str
     return errors
 
 
-def _line_map(text: str) -> Dict[ConfigPath, int]:
+def _line_map(text: str) -> dict[ConfigPath, int]:
     # lobster-trace: SwRequirements.sw_req_config_validation
     """Map the path of every configuration entry to its line in the file.
 
@@ -487,17 +503,17 @@ def _line_map(text: str) -> Dict[ConfigPath, int]:
         text (str): Content of the configuration file, valid YAML.
 
     Returns:
-        Dict[ConfigPath, int]: Line number, starting at 1, per entry path. A mapping key gives the line of the
+        dict[ConfigPath, int]: Line number, starting at 1, per entry path. A mapping key gives the line of the
         key, a list item the line of the item. The root is line 1.
     """
-    lines: Dict[ConfigPath, int] = {(): 1}
+    lines: dict[ConfigPath, int] = {(): 1}
 
-    def walk(node: yaml.Node, path: ConfigPath, parents: Tuple[int, ...]) -> None:
+    def walk(node: yaml.Node, path: ConfigPath, parents: tuple[int, ...]) -> None:
         # Aliases may refer to an enclosing node, which would recurse forever.
         if id(node) in parents:
             return
         parents = (*parents, id(node))
-        children: List[Tuple[Union[str, int], yaml.Node, yaml.Node]] = []
+        children: list[tuple[str | int, yaml.Node, yaml.Node]] = []
         if isinstance(node, yaml.MappingNode):
             children = [(key.value, key, value) for key, value in node.value if isinstance(key, yaml.ScalarNode)]
         elif isinstance(node, yaml.SequenceNode):
@@ -531,14 +547,14 @@ def _schema_error_path(err: jsonschema.ValidationError) -> ConfigPath:
     return path
 
 
-def _format_errors(config_file: Path, text: str, errors: List[ConfigError]) -> str:
+def _format_errors(config_file: Path, text: str, errors: list[ConfigError]) -> str:
     # lobster-trace: SwRequirements.sw_req_config_validation
     """Format configuration errors with file and line of their entry, ordered by line.
 
     Args:
         config_file (Path): The configuration file.
         text (str): Content of the configuration file, valid YAML.
-        errors (List[ConfigError]): The errors.
+        errors (list[ConfigError]): The errors.
 
     Returns:
         str: One line '<file>:<line>: <message>' per error. An entry that is not in the file, e.g. a
@@ -582,18 +598,21 @@ def load_config(config_file: Path) -> Config:
         schema = json.load(file)
 
     validator = jsonschema.Draft202012Validator(schema)
-    schema_errors: List[ConfigError] = [
+    schema_errors: list[ConfigError] = [
         (_schema_error_path(err), f"{'/'.join(str(p) for p in err.absolute_path) or '<root>'}: {err.message}")
-        for err in sorted(validator.iter_errors(data), key=lambda err: list(err.absolute_path))]
+        for err in sorted(validator.iter_errors(data), key=lambda err: list(err.absolute_path))
+    ]
     if schema_errors:
-        raise TrlcdocError(f"{config_file} does not match the schema:\n  "
-                           + _format_errors(config_file, text, schema_errors))
+        raise TrlcdocError(
+            f"{config_file} does not match the schema:\n  " + _format_errors(config_file, text, schema_errors)
+        )
 
     cfg = Config(data, config_file)
     reference_errors = _check_references(cfg)
     if reference_errors:
-        raise TrlcdocError(f"{config_file} has invalid settings:\n  "
-                           + _format_errors(config_file, text, reference_errors))
+        raise TrlcdocError(
+            f"{config_file} has invalid settings:\n  " + _format_errors(config_file, text, reference_errors)
+        )
 
     return cfg
 
@@ -610,5 +629,6 @@ def find_config(start: Path) -> Path:
     """
     candidates = [folder / "trlcdoc.yaml" for folder in (start, *start.parents)]
     return next((file for file in candidates if file.is_file()), start / "trlcdoc.yaml")
+
 
 # Main *************************************************************************

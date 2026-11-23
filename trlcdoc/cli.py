@@ -1,6 +1,4 @@
-"""Command line interface of trlcdoc.
-
-"""
+"""Command line interface of trlcdoc."""
 
 # trlcdoc - A utility for producing project documentation from TRLC and LOBSTER contents.
 # Copyright (c) 2026 - 2026 Norbert Schulz github@schulznorbert.de
@@ -22,7 +20,6 @@
 
 import argparse
 from pathlib import Path
-from typing import List, Optional
 
 from . import __version__
 from .config import Config, find_config, load_config
@@ -49,7 +46,7 @@ tests, test results, tracing report and HTML site."""
 # Functions ********************************************************************
 
 
-def _parse_args(argv: Optional[List[str]]) -> argparse.Namespace:
+def _parse_args(argv: list[str] | None) -> argparse.Namespace:
     # lobster-trace: SwRequirements.sw_req_cli
     # lobster-trace: SwRequirements.sw_req_cli_help
     # lobster-trace: SwRequirements.sw_req_cli_version
@@ -58,7 +55,7 @@ def _parse_args(argv: Optional[List[str]]) -> argparse.Namespace:
     """Parse the command line arguments.
 
     Args:
-        argv (Optional[List[str]]): Arguments, defaults to sys.argv[1:].
+        argv (list[str] | None): Arguments, defaults to sys.argv[1:].
 
     Returns:
         argparse.Namespace: The parsed arguments.
@@ -67,18 +64,30 @@ def _parse_args(argv: Optional[List[str]]) -> argparse.Namespace:
         prog="trlcdoc",
         description=DESCRIPTION,
         epilog=f"Version {__version__} - {COPYRIGHT} - GPL-3.0-or-later - see {REPOSITORY} for further information.",
-        formatter_class=argparse.RawDescriptionHelpFormatter)
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
 
-    parser.add_argument("steps", nargs="*", metavar="step",
-                        help=f"steps to run: {', '.join(STEPS)} or all (default: all)")
-    parser.add_argument("-v", "--version", action="version", version=f"%(prog)s {__version__}",
-                        help="show the trlcdoc version and exit")
-    parser.add_argument("-c", "--config", type=Path,
-                        help="project configuration (default: trlcdoc.yaml in the current folder or a parent)")
-    parser.add_argument("--online", action="store_true",
-                        help="link the tracing report to the repository instead of local files")
-    parser.add_argument("--format", choices=["rst", "markdown"], default="rst",
-                        help="output format of the convert step (default: rst, needed for html)")
+    parser.add_argument(
+        "steps", nargs="*", metavar="step", help=f"steps to run: {', '.join(STEPS)} or all (default: all)"
+    )
+    parser.add_argument(
+        "-v", "--version", action="version", version=f"%(prog)s {__version__}", help="show the trlcdoc version and exit"
+    )
+    parser.add_argument(
+        "-c",
+        "--config",
+        type=Path,
+        help="project configuration (default: trlcdoc.yaml in the current folder or a parent)",
+    )
+    parser.add_argument(
+        "--online", action="store_true", help="link the tracing report to the repository instead of local files"
+    )
+    parser.add_argument(
+        "--format",
+        choices=["rst", "markdown"],
+        default="rst",
+        help="output format of the convert step (default: rst, needed for html)",
+    )
     args = parser.parse_args(argv)
 
     args.steps = args.steps or ["all"]
@@ -88,24 +97,27 @@ def _parse_args(argv: Optional[List[str]]) -> argparse.Namespace:
     return args
 
 
-def _selected_steps(cfg: Config, requested: List[str]) -> List[str]:
+def _selected_steps(cfg: Config, requested: list[str]) -> list[str]:
     # lobster-trace: SwRequirements.sw_req_steps
     # lobster-trace: SwRequirements.sw_req_step_order
     """Determine the steps to run, in execution order.
 
     Args:
         cfg (Config): Project configuration.
-        requested (List[str]): Steps from the command line.
+        requested (list[str]): Steps from the command line.
 
     Returns:
-        List[str]: The steps to run.
+        list[str]: The steps to run.
     """
     selected = {step for step in STEPS if step in requested}
     if "all" in requested:
-        selected.update(step for step in STEPS
-                        if step not in ("clean", "show")
-                        and not (step == "tests" and cfg.tests is None)
-                        and not (step == "trace" and cfg.trace is None))
+        selected.update(
+            step
+            for step in STEPS
+            if step not in ("clean", "show")
+            and not (step == "tests" and cfg.tests is None)
+            and not (step == "trace" and cfg.trace is None)
+        )
     # Converting and rendering need the PlantUML jar.
     if selected & {"convert", "html"}:
         selected.add("plantuml")
@@ -163,14 +175,14 @@ def _run_step(step: str, cfg: Config, args: argparse.Namespace) -> bool:
     return ok
 
 
-def main(argv: Optional[List[str]] = None) -> int:
+def main(argv: list[str] | None = None) -> int:
     # lobster-trace: SwRequirements.sw_req_cli
     # lobster-trace: SwRequirements.sw_req_config_validation
     # lobster-trace: SwRequirements.sw_req_exit_code
     """Run the requested trlcdoc steps.
 
     Args:
-        argv (Optional[List[str]]): Arguments, defaults to sys.argv[1:].
+        argv (list[str] | None): Arguments, defaults to sys.argv[1:].
 
     Returns:
         int: 0 if all steps succeeded and the content has no findings,
@@ -180,7 +192,7 @@ def main(argv: Optional[List[str]] = None) -> int:
     exit_code = 0
     try:
         cfg = load_config(args.config if args.config is not None else find_config(Path.cwd()))
-        findings: List[str] = []
+        findings: list[str] = []
         for step in _selected_steps(cfg, args.steps):
             if not _run_step(step, cfg, args):
                 findings.append(step)
@@ -193,5 +205,6 @@ def main(argv: Optional[List[str]] = None) -> int:
         print(f"\ntrlcdoc error: {err}")
         exit_code = 2
     return exit_code
+
 
 # Main *************************************************************************

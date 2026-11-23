@@ -1,6 +1,4 @@
-"""Tests of the LOBSTER tracing report.
-
-"""
+"""Tests of the LOBSTER tracing report."""
 
 # trlcdoc - A utility for producing project documentation from TRLC and LOBSTER contents.
 # Copyright (c) 2026 - 2026 Norbert Schulz github@schulznorbert.de
@@ -103,8 +101,12 @@ def test_trace_levels(project: Path) -> None:
     assert str(cfg.root / "trlc" / "swe-req") in extract["inputs"]
 
     items = _report_items(project)
-    assert set(items) == {"req SwRequirements.sw_req_hello", "req SwArch.sw_arch_hello",
-                          "req SwTests.tc_hello", "req SwTests.test_hello_result"}
+    assert set(items) == {
+        "req SwRequirements.sw_req_hello",
+        "req SwArch.sw_arch_hello",
+        "req SwTests.tc_hello",
+        "req SwTests.test_hello_result",
+    }
     assert items["req SwArch.sw_arch_hello"]["ref_up"] == ["req SwRequirements.sw_req_hello"]
     assert items["req SwTests.test_hello_result"]["text"] == "test_hello"
 
@@ -148,7 +150,6 @@ def test_trace_report(tmp_path: Path) -> None:
     assert link in cfg.trace_report_html.read_text(encoding="utf-8")
 
 
-
 def test_trace_markdown(tmp_path: Path) -> None:
     """The descriptions of the tracing report are rendered as Markdown with "markdown: true".
 
@@ -157,11 +158,14 @@ def test_trace_markdown(tmp_path: Path) -> None:
     """
     project = make_project(tmp_path / "project")
     req_file = project.parent / "trlc" / "swe-req" / "swe-req.trlc"
-    req_file.write_text(req_file.read_text(encoding="utf-8").replace(
-        'description = "The software shall greet."',
-        "description =\n            '''\n            The software shall **greet** with\n"
-        "            `hello()`.\n            '''"),
-        encoding="utf-8")
+    req_file.write_text(
+        req_file.read_text(encoding="utf-8").replace(
+            'description = "The software shall greet."',
+            "description =\n            '''\n            The software shall **greet** with\n"
+            "            `hello()`.\n            '''",
+        ),
+        encoding="utf-8",
+    )
     cfg = load_config(project)
     run_tests(cfg)
 
@@ -211,18 +215,25 @@ def test_trace_justified(tmp_path: Path, capsys: pytest.CaptureFixture) -> None:
     project = make_project(tmp_path / "project")
     (project.parent / "src").mkdir()
     (project.parent / "src" / "code.py").write_text(
-        'def greet():\n'
-        '    # lobster-trace: SwRequirements.sw_req_hello\n'
+        "def greet():\n"
+        "    # lobster-trace: SwRequirements.sw_req_hello\n"
         '    return "Hello"\n'
-        '\n\n'
-        'def helper():\n'
-        '    # lobster-exclude: Utility for other functions.\n'
-        '    return 1\n',
-        encoding="utf-8")
+        "\n\n"
+        "def helper():\n"
+        "    # lobster-exclude: Utility for other functions.\n"
+        "    return 1\n",
+        encoding="utf-8",
+    )
     data = base_config()
-    data["trace"]["levels"].append({"name": "SW Code", "kind": "implementation",
-                                    "extractor": "lobster-python", "sources": ["src"],
-                                    "trace_to": ["SW Requirement"]})
+    data["trace"]["levels"].append(
+        {
+            "name": "SW Code",
+            "kind": "implementation",
+            "extractor": "lobster-python",
+            "sources": ["src"],
+            "trace_to": ["SW Requirement"],
+        }
+    )
     cfg = load_config(write_config(project.parent, data))
     run_tests(cfg)
     capsys.readouterr()
@@ -254,8 +265,15 @@ def test_trace_doxygen(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
 
     data = base_config()
     data["trace"]["levels"][0]["requires"].append("SW Code")
-    data["trace"]["levels"].append({"name": "SW Code", "kind": "implementation", "extractor": "lobster-doxygen",
-                                    "doxyfile": "tools/doxygen/Doxyfile", "trace_to": ["SW Requirement"]})
+    data["trace"]["levels"].append(
+        {
+            "name": "SW Code",
+            "kind": "implementation",
+            "extractor": "lobster-doxygen",
+            "doxyfile": "tools/doxygen/Doxyfile",
+            "trace_to": ["SW Requirement"],
+        }
+    )
     cfg = load_config(write_config(root, data))
     run_tests(cfg)
 
@@ -284,11 +302,15 @@ def test_trace_doxygen(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("PATH", os.pathsep.join([str(Path(sys.executable).parent), os.environ.get("PATH", "")]))
     monkeypatch.setattr(sys, "executable", str(tmp_path / "python"))
     which = shutil.which
-    monkeypatch.setattr(shutil, "which", lambda name, *args, **kwargs:
-                        None if Path(name).stem == "doxygen" else which(name, *args, **kwargs))
+    monkeypatch.setattr(
+        shutil,
+        "which",
+        lambda name, *args, **kwargs: None if Path(name).stem == "doxygen" else which(name, *args, **kwargs),
+    )
     with pytest.raises(TrlcdocError, match=r"Tool 'doxygen' not found\..*trace level 'SW Code'"):
         build_trace_report(cfg, online=False)
     cfg = load_config(write_config(root, base_config()))
     assert build_trace_report(cfg, online=False) == 0
+
 
 # Main *************************************************************************
