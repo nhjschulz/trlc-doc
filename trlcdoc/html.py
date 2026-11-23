@@ -463,6 +463,7 @@ def _write_sphinx_config(cfg: Config, src_dir: Path, copy_dirs: list[dict[str, s
         "conf": str(cfg.path(conf)) if conf else None,
         "copy_dirs": copy_dirs,
         "project_root": str(cfg.root),
+        "build_info": _build_info(cfg),
         "links": _link_settings(cfg),
         # Configured titles of project pages, which override the first heading of the file.
         "page_titles": {
@@ -488,6 +489,30 @@ def _extensions(cfg: Config) -> list[str]:
     if cfg.trace_report_format == "rst" and any(doc["type"] == "trace_report" for doc in cfg.documents):
         extensions += [ext for ext in RST_TRACE_REPORT_EXTENSIONS if ext not in extensions]
     return extensions
+
+
+def _build_info(cfg: Config) -> str:
+    # lobster-trace: SwRequirements.sw_req_html_version_info
+    """Describe the version control state the site is built from, for the page footer.
+
+    Args:
+        cfg (Config): Project configuration.
+
+    Returns:
+        str: ' from <git describe output>', followed by ' on branch <name>' if HEAD is on a branch,
+            e.g. ' from V1.0.0-3-g1a2b3c4-dirty on branch develop'. Empty outside of a git repository.
+    """
+    info = ""
+    # --always falls back to the short commit hash if there is no tag,
+    # --dirty marks uncommitted changes of tracked files.
+    describe = git_output(["describe", "--tags", "--always", "--dirty"], cfg.root)
+    if describe:
+        info = f" from {describe}"
+        # Empty for a detached HEAD, e.g. a tag checkout or a pull request merge commit in CI.
+        branch = git_output(["branch", "--show-current"], cfg.root)
+        if branch:
+            info += f" on branch {branch}"
+    return info
 
 
 def _link_settings(cfg: Config) -> dict[str, Any]:

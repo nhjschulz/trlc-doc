@@ -222,8 +222,13 @@ project:
 | `logo`       | no       | none    | Image file shown by the theme as site logo (Sphinx `html_logo`). |
 | `favicon`    | no       | none    | Browser tab icon (Sphinx `html_favicon`). |
 
-Each page footer also shows the date of the build and the git commit it was
-built from, if the project is a git repository. This needs no configuration.
+Each page footer also shows the date of the build and, if the project is a git
+repository, the output of `git describe --tags --always --dirty` and the branch,
+e.g. `Last updated on Nov 23, 2026 from V0.6.0-13-g6e9ca73-dirty on branch develop`:
+the nearest tag, the number of commits since it, the short commit hash and `-dirty`
+for uncommitted changes of tracked files. Without a tag it shows the short commit
+hash, with a detached HEAD (e.g. a tag checkout in CI) no branch. This needs no
+configuration.
 
 ## 3. paths
 

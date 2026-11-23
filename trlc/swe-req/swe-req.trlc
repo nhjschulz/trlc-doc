@@ -465,11 +465,14 @@ section "trlcdoc" {
             SwReq sw_req_html_version_info {
                 description =
                     '''
-                    The software shall show the version control state the documentation was built from on every page.
+                    The software shall show the version control state the documentation was built from on every page:
+                    the output of `git describe --tags --always --dirty` and the branch, if HEAD is on a branch.
                     '''
                 verification_criteria =
                     '''
-                    Build the site in a git working copy and check the commit information on the pages.
+                    Build the site in a git working copy and check the version control state on the pages.
+                    Check it outside of git, with a tag, after a commit, with uncommitted changes
+                    and with a detached HEAD.
                     '''
                 valid_status = AbstractRequirements.VALID_STATUS.valid
             }

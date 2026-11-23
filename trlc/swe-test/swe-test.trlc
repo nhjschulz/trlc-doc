@@ -580,7 +580,24 @@ section "SW-Tests" {
         SwTestCase tc_html_version_info {
             description =
                 '''
-                Check that every page shows the commit the site was built from (`tests/test_html.py`).
+                Check that every page shows the git describe output and the branch the site was built from
+                (`tests/test_html.py`).
+                '''
+            verifies = [SwRequirements.sw_req_html_version_info]
+        }
+
+        SwTestCase tc_html_version_info_git_state {
+            description =
+                '''
+                **Version control state** (`tests/test_html.py`)
+
+                Check the version control state of the page footer
+
+                - outside of a git repository: empty
+                - on a tag: the tag and the branch
+                - with uncommitted changes of a tracked file: the `-dirty` suffix
+                - after a commit: the distance to the tag and the short commit hash
+                - with a detached HEAD: no branch
                 '''
             verifies = [SwRequirements.sw_req_html_version_info]
         }

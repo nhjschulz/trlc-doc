@@ -385,7 +385,7 @@ section "trlcdoc SW Architecture" {
 
                         - reads the project settings
                         - copies embedded HTML sites into the site
-                        - adds the git commit to the page footer
+                        - adds the version control state from `html.py` (git describe and branch) to the page footer
                         - executes the project specific Sphinx configuration
 
                         The Sphinx extension `sphinx_links.py` resolves the relative links and images of Markdown pages
