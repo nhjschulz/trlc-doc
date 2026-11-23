@@ -30,7 +30,7 @@ from typing import Any
 
 from sphinx.cmd.build import build_main
 
-from .config import PACKAGE_DIR, TRLC_DOCUMENT_TYPES, Config
+from .config import PACKAGE_DIR, Config
 from .pages import replace_placeholders
 from .util import TrlcdocError, clean_dir, git_output, git_root, repository_url, run
 
@@ -215,34 +215,41 @@ def _write_page(cfg: Config, doc: dict[str, Any], src_dir: Path, copy_dirs: list
     doc_type = doc["type"]
     page_file = src_dir / f"{doc['id']}.rst"
 
-    if doc_type in TRLC_DOCUMENT_TYPES:
-        _write_converted_page(cfg, doc, src_dir)
-    elif doc_type == "trace_report" and cfg.trace_report_format == "rst":
-        _write_rst_trace_report(cfg, doc, src_dir)
-    elif doc_type == "trace_report":
-        _require(cfg.trace_report_html, "run the trace step first")
-        _write_generated(cfg, page_file, doc, f".. raw:: html\n   :file: {cfg.trace_report_html.as_posix()}\n")
-    elif doc_type in ("html", "command"):
-        if doc_type == "command":
-            run(doc["command"], cfg.root)
-        html_source = cfg.html_source(doc)
-        _require(html_source / "index.html", "generate it first")
-        copy_dirs.append({"source": str(html_source), "destination": doc["id"]})
-        _write_generated(
-            cfg,
-            page_file,
-            doc,
-            f'.. raw:: html\n\n    <iframe src="{doc["id"]}/index.html" width="100%" height="1024px"></iframe>\n',
-        )
-    elif doc_type == "text":
-        source = _require(cfg.path(doc["source"]), "check the source path")
-        # Sphinx treats absolute include paths as relative to the source folder.
-        relative = Path(os.path.relpath(source, src_dir)).as_posix()
-        _write_generated(cfg, page_file, doc, f".. literalinclude:: {relative}\n   :language: none\n")
-    else:
-        source = _require(cfg.path(doc["source"]), "check the source path")
-        page_file = page_file.with_suffix(".md" if doc_type == "markdown" else ".rst")
-        _write_project_page(cfg, source, page_file, doc.get("placeholders", True))
+    # The schema allows only these document types, so every type has a case.
+    match doc_type:
+        case "trlc" | "test_results":
+            _write_converted_page(cfg, doc, src_dir)
+
+        case "trace_report" if cfg.trace_report_format == "rst":
+            _write_rst_trace_report(cfg, doc, src_dir)
+
+        case "trace_report":
+            _require(cfg.trace_report_html, "run the trace step first")
+            _write_generated(cfg, page_file, doc, f".. raw:: html\n   :file: {cfg.trace_report_html.as_posix()}\n")
+
+        case "html" | "command":
+            if doc_type == "command":
+                run(doc["command"], cfg.root)
+            html_source = cfg.html_source(doc)
+            _require(html_source / "index.html", "generate it first")
+            copy_dirs.append({"source": str(html_source), "destination": doc["id"]})
+            _write_generated(
+                cfg,
+                page_file,
+                doc,
+                f'.. raw:: html\n\n    <iframe src="{doc["id"]}/index.html" width="100%" height="1024px"></iframe>\n',
+            )
+
+        case "text":
+            source = _require(cfg.path(doc["source"]), "check the source path")
+            # Sphinx treats absolute include paths as relative to the source folder.
+            relative = Path(os.path.relpath(source, src_dir)).as_posix()
+            _write_generated(cfg, page_file, doc, f".. literalinclude:: {relative}\n   :language: none\n")
+
+        case "rst" | "markdown":
+            source = _require(cfg.path(doc["source"]), "check the source path")
+            page_file = page_file.with_suffix(".md" if doc_type == "markdown" else ".rst")
+            _write_project_page(cfg, source, page_file, doc.get("placeholders", True))
 
     return cfg.page_name(doc)
 

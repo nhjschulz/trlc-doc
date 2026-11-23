@@ -67,26 +67,28 @@ def run_tests(cfg: Config) -> bool:
     tests = cfg.tests
     clean_dir(cfg.tests_dir, cfg.output)
 
-    if tests["runner"] == "pytest":
-        args = list(tests.get("args", []))
-        cmd = [sys.executable, "-m", "pytest", *args, "-o", "junit_family=xunit1", f"--junitxml={cfg.junit_file}"]
-        if any(arg.startswith("--cov") for arg in args):
-            cmd.extend(["--cov-report=term", f"--cov-report=html:{cfg.coverage_dir}"])
-        # Keep the coverage data file in the output folder instead of the project root.
-        returncode = run_unchecked(cmd, cfg.root, {"COVERAGE_FILE": str(cfg.tests_dir / ".coverage")})
-        if returncode not in PYTEST_OK_CODES:
-            raise TrlcdocError(f"pytest could not run the tests (exit code {returncode}).")
-    else:
-        # The exit code of a test command is ignored, so a command that fails must not leave the
-        # results of a previous run behind: they would be reported as the current ones.
-        cfg.junit_file.unlink(missing_ok=True)
-        started = time.time()
-        run_unchecked(tests["command"], cfg.root)
-        coverage_index = cfg.coverage_dir / "index.html"
-        if "coverage" in tests and (
-            not coverage_index.is_file() or coverage_index.stat().st_mtime < started - MTIME_TOLERANCE
-        ):
-            raise TrlcdocError(f"Coverage report {coverage_index} was not created by the test command.")
+    match tests["runner"]:
+        case "pytest":
+            args = list(tests.get("args", []))
+            cmd = [sys.executable, "-m", "pytest", *args, "-o", "junit_family=xunit1", f"--junitxml={cfg.junit_file}"]
+            if any(arg.startswith("--cov") for arg in args):
+                cmd.extend(["--cov-report=term", f"--cov-report=html:{cfg.coverage_dir}"])
+            # Keep the coverage data file in the output folder instead of the project root.
+            returncode = run_unchecked(cmd, cfg.root, {"COVERAGE_FILE": str(cfg.tests_dir / ".coverage")})
+            if returncode not in PYTEST_OK_CODES:
+                raise TrlcdocError(f"pytest could not run the tests (exit code {returncode}).")
+
+        case "command":
+            # The exit code of a test command is ignored, so a command that fails must not leave the
+            # results of a previous run behind: they would be reported as the current ones.
+            cfg.junit_file.unlink(missing_ok=True)
+            started = time.time()
+            run_unchecked(tests["command"], cfg.root)
+            coverage_index = cfg.coverage_dir / "index.html"
+            if "coverage" in tests and (
+                not coverage_index.is_file() or coverage_index.stat().st_mtime < started - MTIME_TOLERANCE
+            ):
+                raise TrlcdocError(f"Coverage report {coverage_index} was not created by the test command.")
 
     if not cfg.junit_file.is_file():
         raise TrlcdocError(f"Test result file {cfg.junit_file} was not created.")

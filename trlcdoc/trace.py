@@ -57,10 +57,11 @@ def build_trace_report(cfg: Config, online: bool) -> int:
 
     for level in cfg.trace["levels"]:
         out_file = trace_dir / f"{_slug(level['name'])}.lobster"
-        if level.get("kind", "requirements") == "requirements":
-            _extract_trlc(cfg, level, out_file)
-        else:
-            _extract_code(cfg, level, out_file)
+        match level.get("kind", "requirements"):
+            case "requirements":
+                _extract_trlc(cfg, level, out_file)
+            case "implementation":
+                _extract_code(cfg, level, out_file)
         sources[level["name"]] = out_file
 
     policy_file = _write_policy(cfg, sources, trace_dir / "lobster-report.conf")
