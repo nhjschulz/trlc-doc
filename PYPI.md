@@ -13,7 +13,10 @@ requirements, test results and [LOBSTER](https://github.com/bmw-software-enginee
 trace reports into a static project documentation web site. A `trlcdoc.yaml`
 configuration file in the project root defines what to process.
 
-![Overview](https://raw.githubusercontent.com/nhjschulz/trlc-doc/main/overview.svg)
+The following 6 minute video gives you a quick overview of what trlcdoc offers:
+
+![trlcdoc overview video](https://raw.githubusercontent.com/nhjschulz/trlc-doc/main/trlcdoc-video.webp)
+▶ [Watch the overview video on YouTube](https://www.youtube.com/watch?v=_ZVOgigi_ws) (6 min, AI generated)
 
 Status: alpha. The configuration may change incompatibly before 1.0.0.
 

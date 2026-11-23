@@ -13,15 +13,16 @@ test results and LOBSTER trace reports into a static project report
 website. It is driven by a configuration YAML file that defines
 the project specific content to process.
 
-![Overview](./overview.svg)
-
-**NOTE**:
-trlcdoc is not a standalone solution, but a component extending the
+ trlcdoc is not a standalone solution, but a component extending the
 [trlc](https://github.com/bmw-software-engineering/trlc)
 and
 [BMW LOBSTER tooling](https://github.com/bmw-software-engineering/lobster)
 with automated documentation generation.
-An understanding of their purpose and usage is required to benefit from trlcdoc.
+An understanding of their purpose and usage is required to benefit from it.
+The following 6 minute video gives you a quick overview of what trlcdoc offers:
+
+![trlcdoc overview video](./trlcdoc-video.webp)
+▶ [Watch the overview video on YouTube](https://www.youtube.com/watch?v=_ZVOgigi_ws) (6 min, AI generated)
 
 **Status**: alpha. The configuration may change incompatibly before 1.0.0.
 
