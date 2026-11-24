@@ -24,7 +24,7 @@ from pathlib import Path
 from urllib.parse import urlparse
 
 from .config import Config
-from .util import TrlcdocError, prepare_output
+from .util import TrlcdocError, find_graphviz, find_tool, prepare_output
 
 # Variables ********************************************************************
 
@@ -38,10 +38,12 @@ DOWNLOAD_URL = "https://github.com/plantuml/plantuml/releases/download/v{version
 
 def provide_plantuml(cfg: Config) -> Path | str:
     # lobster-trace: SwRequirements.sw_req_plantuml
+    # lobster-trace: SwRequirements.sw_req_external_tools
     """Locate or download plantuml.jar and export it in the PLANTUML environment variable.
 
     The PLANTUML environment variable, a jar or a PlantUML server URL, has precedence
     over the configured jar, which has precedence over a download of the configured version.
+    A jar needs Java and Graphviz, which are checked before anything is downloaded.
 
     Args:
         cfg (Config): Project configuration.
@@ -50,13 +52,18 @@ def provide_plantuml(cfg: Config) -> Path | str:
         Path | str: The plantuml.jar file, or the PlantUML server URL.
 
     Raises:
-        TrlcdocError: If the jar is missing and cannot be downloaded.
+        TrlcdocError: If the jar is missing and cannot be downloaded, or Java or Graphviz is missing.
     """
     env_jar = os.environ.get("PLANTUML", "")
     cfg_jar = cfg.plantuml.get("jar")
     version = cfg.plantuml.get("version", DEFAULT_VERSION)
 
-    if urlparse(env_jar).scheme in ("http", "https"):
+    server = urlparse(env_jar).scheme in ("http", "https")
+    if not server:
+        find_tool("java", "A Java runtime is needed to run the PlantUML jar, or set PLANTUML to a PlantUML server URL.")
+        find_graphviz("by PlantUML for all diagrams except sequence diagrams")
+
+    if server:
         jar = env_jar
     elif env_jar and Path(env_jar).is_file():
         jar = Path(env_jar).resolve()

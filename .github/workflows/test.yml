@@ -72,15 +72,17 @@ jobs:
           key: plantuml-${{ hashFiles('trlcdoc/plantuml.py') }}
 
       # doxygen is needed by the C/C++ tracing test (lobster-doxygen extractor).
-      - name: Install doxygen (Linux)
+      # Graphviz is needed by the plantuml, trace and html steps, which stop without it.
+      - name: Install doxygen and Graphviz (Linux)
         if: runner.os == 'Linux'
-        run: sudo apt-get update && sudo apt-get install -y doxygen
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends doxygen graphviz
 
-      - name: Install doxygen (Windows)
+      - name: Install doxygen and Graphviz (Windows)
         if: runner.os == 'Windows'
         run: |
-          choco install doxygen.install -y --no-progress
+          choco install doxygen.install graphviz -y --no-progress
           echo "C:\Program Files\doxygen\bin" >> $env:GITHUB_PATH
+          echo "C:\Program Files\Graphviz\bin" >> $env:GITHUB_PATH
 
       - name: Install trlcdoc with test dependencies
         run: |

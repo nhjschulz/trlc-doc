@@ -119,6 +119,27 @@ section "trlcdoc" {
                     '''
                 valid_status = AbstractRequirements.VALID_STATUS.valid
             }
+
+            SwReq sw_req_external_tools {
+                description =
+                    '''
+                    **External tools**
+
+                    Before a step uses an external tool that is not installed with the software, the software shall
+                    check that the tool is available. If it is missing, the software shall stop with a build error that
+                    names the tool and what needs it. The checked tools are:
+
+                    - Java and Graphviz in the plantuml step, unless PlantUML is a server
+                    - Graphviz in the trace step, for the tracing policy diagram
+                    - Graphviz in the html step, if the site uses the Sphinx graphviz extension
+                    '''
+                verification_criteria =
+                    '''
+                    Run the plantuml, trace and html steps without Java and Graphviz, and the plantuml step with a
+                    PlantUML server. Check the exit codes and the error messages.
+                    '''
+                valid_status = AbstractRequirements.VALID_STATUS.valid
+            }
         }
 
         section "Configuration" {

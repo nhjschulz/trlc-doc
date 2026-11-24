@@ -90,6 +90,22 @@ section "SW-Tests" {
                 '''
             verifies = [SwRequirements.sw_req_exit_code]
         }
+
+        SwTestCase tc_external_tools {
+            description =
+                '''
+                **External tools** (`tests/test_cli.py`)
+
+                Run without Java and Graphviz on the `PATH`
+
+                - the plantuml step with a PlantUML jar and with a PlantUML server
+                - the trace step
+                - the html step with the reStructuredText tracing report
+
+                Check the exit codes and the missing tool named in the error message.
+                '''
+            verifies = [SwRequirements.sw_req_external_tools]
+        }
     }
 
     section "Configuration" {

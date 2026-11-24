@@ -171,4 +171,41 @@ def test_exit_code(tmp_path: Path) -> None:
     assert cli.main(["-c", str(tmp_path / "missing.yaml"), "check"]) == 2
 
 
+def test_external_tools(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture) -> None:
+    """A step stops with a build error if Java or Graphviz is missing.
+
+    Args:
+        tmp_path (Path): pytest temporary folder.
+        monkeypatch (pytest.MonkeyPatch): pytest monkeypatch.
+        capsys (pytest.CaptureFixture): pytest output capture.
+    """
+    root = tmp_path / "project"
+    project = make_project(root)
+    empty_dir = tmp_path / "empty"
+    empty_dir.mkdir()
+    monkeypatch.setenv("PATH", str(empty_dir))
+
+    # A PlantUML jar needs Java, checked before Graphviz.
+    jar = tmp_path / "plantuml.jar"
+    jar.write_bytes(b"jar")
+    monkeypatch.setenv("PLANTUML", str(jar))
+    assert cli.main(["-c", str(project), "plantuml"]) == 2
+    assert "Tool 'java' not found" in capsys.readouterr().out
+
+    # A PlantUML server needs neither Java nor Graphviz.
+    monkeypatch.setenv("PLANTUML", "https://plantuml.example.com/plantuml")
+    assert cli.main(["-c", str(project), "plantuml"]) == 0
+    capsys.readouterr()
+
+    # The tracing policy diagram needs Graphviz.
+    assert cli.main(["-c", str(project), "trace"]) == 2
+    assert "Tool 'dot' not found. Graphviz is needed for the tracing policy diagram" in capsys.readouterr().out
+
+    # The reStructuredText tracing report adds sphinx.ext.graphviz to the site.
+    data = base_config()
+    data["trace"]["report"] = "rst"
+    assert cli.main(["-c", str(write_config(root, data)), "html"]) == 2
+    assert "Graphviz is needed by the Sphinx extension sphinx.ext.graphviz" in capsys.readouterr().out
+
+
 # Main *************************************************************************

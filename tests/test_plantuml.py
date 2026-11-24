@@ -25,6 +25,7 @@ from pathlib import Path
 import pytest
 from conftest import base_config, write_config
 
+from trlcdoc import plantuml
 from trlcdoc.config import load_config
 from trlcdoc.plantuml import DEFAULT_VERSION, provide_plantuml
 from trlcdoc.util import MARKER_FILE, TrlcdocError
@@ -51,6 +52,9 @@ def test_plantuml(project: Path, monkeypatch: pytest.MonkeyPatch) -> None:
         Path(target).write_bytes(b"jar")
 
     monkeypatch.setattr(urllib.request, "urlretrieve", fake_download)
+    # Java and Graphviz are checked by test_external_tools, here any host may run the test.
+    monkeypatch.setattr(plantuml, "find_tool", lambda name, hint: name)
+    monkeypatch.setattr(plantuml, "find_graphviz", lambda purpose: "dot")
 
     # Download of the configured version into the output folder.
     monkeypatch.delenv("PLANTUML", raising=False)

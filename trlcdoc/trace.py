@@ -27,7 +27,7 @@ from typing import Any
 import yaml
 
 from .config import Config
-from .util import TrlcdocError, clean_dir, find_tool, git_output, git_root, repository_url, run
+from .util import TrlcdocError, clean_dir, find_graphviz, find_tool, git_output, git_root, repository_url, run
 
 # Variables ********************************************************************
 
@@ -43,6 +43,7 @@ TRACED_STATUS = ("OK", "JUSTIFIED")
 def build_trace_report(cfg: Config, online: bool) -> int:
     # lobster-trace: SwRequirements.sw_req_trace_report
     # lobster-trace: SwRequirements.sw_req_trace_findings
+    # lobster-trace: SwRequirements.sw_req_external_tools
     """Extract the trace data of all levels and create the HTML tracing report.
 
     Args:
@@ -51,7 +52,12 @@ def build_trace_report(cfg: Config, online: bool) -> int:
 
     Returns:
         int: Number of items that are not traced as required.
+
+    Raises:
+        TrlcdocError: If Graphviz is missing, which the LOBSTER reports need for the tracing policy diagram.
     """
+    # Without dot, the LOBSTER reports only warn and leave out the tracing policy diagram.
+    find_graphviz("for the tracing policy diagram of the tracing report")
     trace_dir = clean_dir(cfg.trace_dir, cfg.output)
     sources: dict[str, Path] = {}
 

@@ -32,7 +32,7 @@ from sphinx.cmd.build import build_main
 
 from .config import PACKAGE_DIR, Config
 from .pages import replace_placeholders
-from .util import TrlcdocError, clean_dir, git_output, git_root, repository_url, run
+from .util import TrlcdocError, clean_dir, find_graphviz, git_output, git_root, repository_url, run
 
 # Variables ********************************************************************
 
@@ -56,6 +56,7 @@ PAGE_TITLE_CHAR = "-"
 
 def build_html(cfg: Config) -> Path:
     # lobster-trace: SwRequirements.sw_req_html_site
+    # lobster-trace: SwRequirements.sw_req_external_tools
     """Generate the Sphinx source folder and build the HTML site.
 
     Args:
@@ -65,8 +66,10 @@ def build_html(cfg: Config) -> Path:
         Path: The HTML output folder.
 
     Raises:
-        TrlcdocError: If an input is missing or Sphinx reports an error.
+        TrlcdocError: If an input or Graphviz is missing, or Sphinx reports an error.
     """
+    if "sphinx.ext.graphviz" in _extensions(cfg):
+        find_graphviz("by the Sphinx extension sphinx.ext.graphviz")
     src_dir = clean_dir(cfg.sphinx_dir, cfg.output)
     shutil.copy(SPHINX_TEMPLATE_DIR / "conf.py", src_dir / "conf.py")
     shutil.copytree(SPHINX_TEMPLATE_DIR / "_static", src_dir / "_static")
