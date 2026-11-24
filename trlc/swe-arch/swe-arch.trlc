@@ -192,6 +192,7 @@ section "trlcdoc SW Architecture" {
                         Provides services shared by all steps:
 
                         - locating the toolchain executables of the running Python environment
+                        - locating the external tools on the `PATH`, e.g. Java and Graphviz, before a step needs them
                         - running external commands
                         - querying git
                         - managing the output folder
@@ -209,7 +210,8 @@ section "trlcdoc SW Architecture" {
                         SwRequirements.sw_req_output_folder,
                         SwRequirements.sw_req_clean,
                         SwRequirements.sw_req_delete_protection,
-                        SwRequirements.sw_req_exit_code
+                        SwRequirements.sw_req_exit_code,
+                        SwRequirements.sw_req_external_tools
                     ]
                 }
 

@@ -45,7 +45,10 @@ def find_tool(name: str, hint: str = "Install the trlcdoc package dependencies."
     # lobster-trace: SwRequirements.sw_req_trlc_conversion
     # lobster-trace: SwRequirements.sw_req_test_run
     # lobster-trace: SwRequirements.sw_req_trace_report
+    # lobster-trace: SwRequirements.sw_req_external_tools
     """Find a console script, preferring the one of the running Python environment.
+
+    Tools that are not installed with trlcdoc, e.g. Java, are searched on the PATH.
 
     Args:
         name (str): Name of the console script, e.g. 'lobster-trlc'.
@@ -63,6 +66,22 @@ def find_tool(name: str, hint: str = "Install the trlcdoc package dependencies."
     if tool is None:
         raise TrlcdocError(f"Tool '{name}' not found. {hint}")
     return tool
+
+
+def find_graphviz(purpose: str) -> str:
+    # lobster-trace: SwRequirements.sw_req_external_tools
+    """Find the Graphviz dot program, so a missing Graphviz stops the build instead of leaving out diagrams.
+
+    Args:
+        purpose (str): What needs Graphviz, added to the error message, e.g. 'for the tracing policy diagram'.
+
+    Returns:
+        str: Path of the dot executable.
+
+    Raises:
+        TrlcdocError: If dot is not on the PATH.
+    """
+    return find_tool("dot", f"Graphviz is needed {purpose}, see https://graphviz.org.")
 
 
 def run(cmd: list[str], cwd: Path, env: dict[str, str] | None = None, stdin: str | None = None) -> int:

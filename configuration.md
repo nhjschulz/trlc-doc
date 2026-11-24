@@ -1008,8 +1008,9 @@ projects: the links contain the path of the project in the repository.
 ## 7. plantuml
 
 PlantUML renders the diagrams in TRLC records (during `convert`) and in
-`.. uml::` directives of the site (during `html`). Java is required unless you
-use a PlantUML server.
+`.. uml::` directives of the site (during `html`). Java and Graphviz are
+required unless you use a PlantUML server. The plantuml step checks that both
+are on the `PATH` and stops otherwise.
 
 ```yaml
 plantuml:
@@ -1292,6 +1293,8 @@ Configuration errors are listed without the leading `<file>:<line>:`.
 | `trace.levels[A].requires: level 'B' is not defined.` | The level name must match exactly, including spaces and case. |
 | `trace.levels[A].doxyfile: file '...' not found.` | The Doxyfile path is relative to the project root. |
 | `Tool 'doxygen' not found. It is needed by the lobster-doxygen extractor of trace level 'A'` | Install doxygen and put it on the `PATH`. |
+| `Tool 'java' not found. A Java runtime is needed to run the PlantUML jar` | Install Java and put it on the `PATH`, or set `PLANTUML` to a PlantUML server URL, see [7](#7-plantuml). |
+| `Tool 'dot' not found. Graphviz is needed ...` | Install [Graphviz](https://graphviz.org) and put its `bin` folder on the `PATH`. The plantuml step, the trace step (tracing policy diagram) and, with `trace.report: rst`, the html step need it. |
 | lobster-doxygen: `... has requirements or justifications on file level.` | An `@implements` tag in the `@file` comment. Move it to a function, struct or class. |
 | `Tests without test case link (property ..., output ..., name pattern ...)` | Tests without test case link, see [5.3](#53-link-from-test-results-to-test-cases). |
 | `Tests linked to several test cases, which needs tests.link.array` | Set `array: true` and make `relates` an array in the model. |
