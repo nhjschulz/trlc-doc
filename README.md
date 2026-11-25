@@ -85,6 +85,9 @@ for the tracing policy diagram of the tracing report. Tracing C/C++ code needs
 [doxygen](https://www.doxygen.nl). All of them must be on the `PATH`; trlcdoc
 stops with an error if a step needs a missing tool.
 
+trlcdoc runs on Linux, Windows and macOS. On macOS, Homebrew provides the tools:
+`brew install --cask temurin` for Java and `brew install graphviz doxygen`.
+
 **From PyPI:**
 
 ```bash

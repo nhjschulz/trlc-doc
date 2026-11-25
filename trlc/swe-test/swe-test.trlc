@@ -285,6 +285,21 @@ section "SW-Tests" {
             verifies = [SwRequirements.sw_req_plantuml]
         }
 
+        SwTestCase tc_plantuml_headless {
+            description =
+                '''
+                **Headless PlantUML** (`tests/test_plantuml.py`)
+
+                Check that the PlantUML jar runs headless:
+
+                - the Sphinx configuration of the html step passes `-Djava.awt.headless=true` to Java
+                - the convert step adds it to `JAVA_TOOL_OPTIONS` on (simulated) macOS, keeping the options of the user
+                - the convert step adds it only once
+                - the convert step adds nothing on (simulated) Linux and Windows
+                '''
+            verifies = [SwRequirements.sw_req_plantuml]
+        }
+
         SwTestCase tc_trlc_conversion {
             description =
                 '''

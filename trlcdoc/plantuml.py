@@ -19,6 +19,7 @@
 # Imports **********************************************************************
 
 import os
+import sys
 import urllib.request
 from pathlib import Path
 from urllib.parse import urlparse
@@ -30,6 +31,9 @@ from .util import TrlcdocError, find_graphviz, find_tool, prepare_output
 
 DEFAULT_VERSION = "1.2024.8"
 DOWNLOAD_URL = "https://github.com/plantuml/plantuml/releases/download/v{version}/plantuml-{version}.jar"
+
+# Java option that keeps PlantUML from starting the graphical user interface support of the system.
+JAVA_HEADLESS = "-Djava.awt.headless=true"
 
 # Classes **********************************************************************
 
@@ -81,6 +85,27 @@ def provide_plantuml(cfg: Config) -> Path | str:
     os.environ["PLANTUML"] = str(jar)
     print(f"PlantUML: {jar}")
     return jar
+
+
+def java_headless_env() -> dict[str, str]:
+    # lobster-trace: SwRequirements.sw_req_plantuml
+    """Get the environment that makes Java run PlantUML headless in the converters.
+
+    pyTRLCConverter starts PlantUML with the headless option only on Linux. Windows needs none,
+    but on macOS each diagram would start the graphical user interface support of Java (Dock icon).
+    Java reads additional options from JAVA_TOOL_OPTIONS. It reports them on stderr, which
+    pyTRLCConverter logs as error, so they are only set on macOS.
+
+    see also: https://github.com/NewTec-GmbH/pyTRLCConverter/issues/180
+
+    Returns:
+        dict[str, str]: Additional environment variables for the converters, empty except on macOS.
+    """
+    env: dict[str, str] = {}
+    options = os.environ.get("JAVA_TOOL_OPTIONS", "")
+    if sys.platform == "darwin" and JAVA_HEADLESS not in options.split():
+        env["JAVA_TOOL_OPTIONS"] = f"{options} {JAVA_HEADLESS}".strip()
+    return env
 
 
 def _download(url: str, target: Path) -> Path:

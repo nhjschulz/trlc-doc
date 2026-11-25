@@ -312,6 +312,8 @@ section "trlcdoc" {
                     1. a jar or a PlantUML server given by the environment,
                     2. otherwise a jar given by the configuration,
                     3. otherwise a download of the configured PlantUML version.
+
+                    A PlantUML jar shall run headless, without the graphical user interface support of the system.
                     '''
                 verification_criteria =
                     '''
@@ -322,6 +324,7 @@ section "trlcdoc" {
                     - without both
 
                     Check the used jar or server.
+                    Check that the convert and html steps run the PlantUML jar headless on every system.
                     '''
                 valid_status = AbstractRequirements.VALID_STATUS.valid
             }
@@ -680,6 +683,14 @@ section "trlcdoc" {
             description =
                 '''
                 The software shall support the Linux operating system.
+                '''
+            valid_status = AbstractRequirements.VALID_STATUS.valid
+        }
+
+        SwConstraint sw_constraint_os_macos {
+            description =
+                '''
+                The software shall support the macOS operating system.
                 '''
             valid_status = AbstractRequirements.VALID_STATUS.valid
         }

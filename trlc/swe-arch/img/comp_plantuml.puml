@@ -4,6 +4,7 @@ package "PlantUML Provider" {
     class "plantuml" as plantuml <<module>> {
         + DEFAULT_VERSION
         + provide_plantuml(cfg): Path
+        + java_headless_env(): Dict[str, str]
         - _download(url, target): Path
     }
 }
