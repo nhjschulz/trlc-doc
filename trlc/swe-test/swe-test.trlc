@@ -208,6 +208,22 @@ section "SW-Tests" {
                 '''
             verifies = [SwRequirements.sw_req_output_folder]
         }
+
+        SwTestCase tc_output_option {
+            description =
+                '''
+                **Output folder option** (`tests/test_cli.py`)
+
+                Run steps with `-o` and `--output`. Check
+
+                - that a relative folder is relative to the current folder and an absolute one is used as given
+                - that the tests step writes into the given folder and the configured one is not created
+                - that the clean step removes the given folder and keeps the configured one
+                - the errors for the project root, its parent and the trlcdoc package folder as option
+                - that a forbidden configured output folder is ignored with the option
+                '''
+            verifies = [SwRequirements.sw_req_output_option]
+        }
     }
 
     section "Output Folder" {

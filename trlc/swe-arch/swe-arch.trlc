@@ -98,7 +98,7 @@ section "trlcdoc SW Architecture" {
                         The CLI provides the application entry point. It
 
                         - parses the command line with argparse
-                        - locates and loads the configuration
+                        - locates and loads the configuration, with the output folder of the `--output` option
                         - determines the steps to run in their fixed order, including the steps they depend on
                         - runs them
 
@@ -126,7 +126,8 @@ section "trlcdoc SW Architecture" {
                         SwRequirements.sw_req_exit_code,
                         SwRequirements.sw_req_clean,
                         SwRequirements.sw_req_show,
-                        SwRequirements.sw_req_toctree_check
+                        SwRequirements.sw_req_toctree_check,
+                        SwRequirements.sw_req_output_option
                     ]
                 }
 
@@ -152,6 +153,7 @@ section "trlcdoc SW Architecture" {
                         It provides the validated settings as a `Config` object, which resolves all paths:
 
                         - the configured inputs relative to the project root
+                        - the output folder of the `--output` option, if given, relative to the current folder
                         - the generated files in fixed subfolders of the output folder
 
                         It defines the page name of each document (`page_name()`), the single place of this rule.
@@ -172,6 +174,7 @@ section "trlcdoc SW Architecture" {
                         SwRequirements.sw_req_project_settings,
                         SwRequirements.sw_req_documents,
                         SwRequirements.sw_req_output_folder,
+                        SwRequirements.sw_req_output_option,
                         SwRequirements.sw_req_page_placeholders
                     ]
                 }
