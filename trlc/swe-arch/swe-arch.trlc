@@ -49,6 +49,7 @@ section "trlcdoc SW Architecture" {
                 SwRequirements.sw_constraint_python,
                 SwRequirements.sw_constraint_os_win,
                 SwRequirements.sw_constraint_os_linux,
+                SwRequirements.sw_constraint_os_macos,
                 SwRequirements.sw_constraint_project_independent,
                 SwRequirements.sw_constraint_toolchain
             ]
@@ -238,11 +239,20 @@ section "trlcdoc SW Architecture" {
                         - a download of the configured version into the output folder
 
                         It exports the selection in the `PLANTUML` environment variable for the converters and Sphinx.
+
+                        A PlantUML jar runs with the Java option `-Djava.awt.headless=true`:
+
+                        - the generic Sphinx configuration `conf.py` passes it on every system
+                        - pyTRLCConverter passes it on Linux, on macOS `java_headless_env()` sets `JAVA_TOOL_OPTIONS`
+
+                        Java on Linux without a display and on Windows needs no option, on macOS every diagram would
+                        otherwise start the graphical user interface support of Java.
                         '''
                     verification_criteria =
                         '''
                         Run the plantuml step with the environment variable set, with a configured jar and without both.
                         Check the exported jar path.
+                        Check the Java command of Sphinx and the environment of pyTRLCConverter on each system.
                         '''
                     satisfies = [SwRequirements.sw_req_plantuml]
                 }

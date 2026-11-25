@@ -43,9 +43,16 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
+      # Python compatibility doesn't depend on the OS: every supported version runs on Linux,
+      # the slower Windows and macOS runners test the newest version only.
       matrix:
-        os: [ubuntu-latest, windows-latest]
+        os: [ubuntu-latest]
         python-version: ["3.10", "3.11", "3.12", "3.13", "3.14"]
+        include:
+          - os: windows-latest
+            python-version: "3.14"
+          - os: macos-latest
+            python-version: "3.14"
 
     steps:
       - name: Checkout
@@ -83,6 +90,10 @@ jobs:
           choco install doxygen.install graphviz -y --no-progress
           echo "C:\Program Files\doxygen\bin" >> $env:GITHUB_PATH
           echo "C:\Program Files\Graphviz\bin" >> $env:GITHUB_PATH
+
+      - name: Install doxygen and Graphviz (macOS)
+        if: runner.os == 'macOS'
+        run: brew install doxygen graphviz
 
       - name: Install trlcdoc with test dependencies
         run: |

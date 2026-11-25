@@ -19,15 +19,19 @@
 # Imports **********************************************************************
 
 import os
+import runpy
+import shutil
+import sys
 import urllib.request
 from pathlib import Path
 
 import pytest
 from conftest import base_config, write_config
 
-from trlcdoc import plantuml
+from trlcdoc import convert, plantuml
 from trlcdoc.config import load_config
-from trlcdoc.plantuml import DEFAULT_VERSION, provide_plantuml
+from trlcdoc.html import SPHINX_TEMPLATE_DIR, _write_sphinx_config
+from trlcdoc.plantuml import DEFAULT_VERSION, JAVA_HEADLESS, provide_plantuml
 from trlcdoc.util import MARKER_FILE, TrlcdocError
 
 # Variables ********************************************************************
@@ -98,6 +102,51 @@ def test_plantuml(project: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     data["plantuml"] = {"jar": "missing.jar"}
     with pytest.raises(TrlcdocError, match="not found"):
         provide_plantuml(load_config(write_config(root, data)))
+
+
+def test_plantuml_headless(project: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """PlantUML runs headless: the Sphinx configuration of the html step passes the Java option on every system,
+    the convert step passes it to pyTRLCConverter in JAVA_TOOL_OPTIONS on macOS, keeping options set by the user.
+
+    Args:
+        project (Path): Configuration file of the example project.
+        monkeypatch (pytest.MonkeyPatch): pytest monkeypatch.
+    """
+    cfg = load_config(project)
+    jar = cfg.root / "plantuml.jar"
+    jar.write_bytes(b"jar")
+    monkeypatch.setenv("PLANTUML", str(jar))
+
+    # html step: the generated Sphinx configuration defines the PlantUML command.
+    src_dir = cfg.root / "sphinx"
+    src_dir.mkdir()
+    shutil.copy(SPHINX_TEMPLATE_DIR / "conf.py", src_dir / "conf.py")
+    _write_sphinx_config(cfg, src_dir, [])
+    sphinx_conf = runpy.run_path(str(src_dir / "conf.py"))
+    assert sphinx_conf["plantuml"] == ["java", JAVA_HEADLESS, "-jar", str(jar)]
+
+    # convert step: the additional environment of the pyTRLCConverter call. The tool lookup is
+    # skipped, as shutil.which doesn't work with a simulated platform.
+    envs: list[dict[str, str] | None] = []
+    monkeypatch.setattr(convert, "run", lambda cmd, cwd, env=None: envs.append(env) or 0)
+    monkeypatch.setattr(convert, "find_tool", lambda name: name)
+    doc = next(doc for doc in cfg.documents if doc["type"] == "trlc")
+    monkeypatch.setenv("JAVA_TOOL_OPTIONS", "-Xmx1g")
+
+    monkeypatch.setattr(sys, "platform", "darwin")
+    convert.convert_document(cfg, doc, "rst")
+    assert envs[-1] == {"JAVA_TOOL_OPTIONS": f"-Xmx1g {JAVA_HEADLESS}"}
+
+    # The option is not added twice.
+    monkeypatch.setenv("JAVA_TOOL_OPTIONS", JAVA_HEADLESS)
+    convert.convert_document(cfg, doc, "rst")
+    assert envs[-1] == {}
+
+    # Linux gets the option from pyTRLCConverter, Windows needs none.
+    for platform in ("linux", "win32"):
+        monkeypatch.setattr(sys, "platform", platform)
+        convert.convert_document(cfg, doc, "rst")
+        assert envs[-1] == {}
 
 
 # Main *************************************************************************

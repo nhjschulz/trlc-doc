@@ -77,7 +77,8 @@ if _PLANTUML_ENV is None:
 if urlparse(_PLANTUML_ENV).scheme in ["http", "https"]:
     plantuml = [_PLANTUML_ENV]
 elif os.path.isfile(_PLANTUML_ENV):
-    plantuml = ["java", "-jar", _PLANTUML_ENV]
+    # Headless: on macOS, Java would otherwise start its graphical user interface support (Dock icon).
+    plantuml = ["java", "-Djava.awt.headless=true", "-jar", _PLANTUML_ENV]
 else:
     raise ConfigError(f"The environment variable PLANTUML points to a not existing file {_PLANTUML_ENV}.")
 
