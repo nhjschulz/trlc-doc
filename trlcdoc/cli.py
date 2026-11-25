@@ -52,6 +52,7 @@ def _parse_args(argv: list[str] | None) -> argparse.Namespace:
     # lobster-trace: SwRequirements.sw_req_cli_version
     # lobster-trace: SwRequirements.sw_req_steps
     # lobster-trace: SwRequirements.sw_req_config_file
+    # lobster-trace: SwRequirements.sw_req_output_option
     """Parse the command line arguments.
 
     Args:
@@ -78,6 +79,12 @@ def _parse_args(argv: list[str] | None) -> argparse.Namespace:
         "--config",
         type=Path,
         help="project configuration (default: trlcdoc.yaml in the current folder or a parent)",
+    )
+    parser.add_argument(
+        "-o",
+        "--output",
+        type=Path,
+        help="output folder, overrides paths.output of the configuration (relative to the current folder)",
     )
     parser.add_argument(
         "--online", action="store_true", help="link the tracing report to the repository instead of local files"
@@ -193,6 +200,7 @@ def main(argv: list[str] | None = None) -> int:
     # lobster-trace: SwRequirements.sw_req_cli
     # lobster-trace: SwRequirements.sw_req_config_validation
     # lobster-trace: SwRequirements.sw_req_exit_code
+    # lobster-trace: SwRequirements.sw_req_output_option
     """Run the requested trlcdoc steps.
 
     Args:
@@ -205,7 +213,8 @@ def main(argv: list[str] | None = None) -> int:
     args = _parse_args(argv)
     exit_code = 0
     try:
-        cfg = load_config(args.config if args.config is not None else find_config(Path.cwd()))
+        config_file = args.config if args.config is not None else find_config(Path.cwd())
+        cfg = load_config(config_file, args.output)
         findings: list[str] = []
         for step in _selected_steps(cfg, args.steps):
             if not _run_step(step, cfg, args):

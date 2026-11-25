@@ -55,17 +55,21 @@ ConfigError = tuple[ConfigPath, str]
 class Config:
     """Validated project configuration with resolved paths."""
 
-    def __init__(self, data: dict[str, Any], config_file: Path) -> None:
+    def __init__(self, data: dict[str, Any], config_file: Path, output: Path | None = None) -> None:
         # lobster-trace: SwRequirements.sw_req_project_settings
         # lobster-trace: SwRequirements.sw_req_documents
+        # lobster-trace: SwRequirements.sw_req_output_option
         """Construct the configuration.
 
         Args:
             data (dict[str, Any]): Schema validated configuration data.
             config_file (Path): The configuration file. Its folder is the project root.
+            output (Path | None): Output folder from the command line, replaces paths.output. A relative
+                path is relative to the current folder.
         """
         self.data = data
         self.config_file = config_file.resolve()
+        self.output_option = output.resolve() if output is not None else None
         self.root = self.config_file.parent
         self.documents: list[dict[str, Any]] = data["documents"]
         self.tests: dict[str, Any] | None = data.get("tests")
@@ -91,8 +95,12 @@ class Config:
     @property
     def output(self) -> Path:
         # lobster-trace: SwRequirements.sw_req_output_folder
-        """Folder for all generated files."""
-        return self.path(self.data["paths"].get("output", "build/trlcdoc"))
+        # lobster-trace: SwRequirements.sw_req_output_option
+        """Folder for all generated files: the --output option, else paths.output."""
+        result = self.output_option
+        if result is None:
+            result = self.path(self.data["paths"].get("output", "build/trlcdoc"))
+        return result
 
     @property
     def trlc_model(self) -> Path:
@@ -377,12 +385,31 @@ def _check_references(cfg: Config) -> list[ConfigError]:
 
     errors.extend(_check_page_placeholders(cfg, doc_ids))
 
+    # With the --output option, paths.output is not used. load_config() checks the option instead.
+    if cfg.output_option is None:
+        for message in _check_output(cfg):
+            errors.append((("paths", "output"), f"paths.output: {message}"))
+
+    return errors
+
+
+def _check_output(cfg: Config) -> list[str]:
+    # lobster-trace: SwRequirements.sw_req_output_folder
+    # lobster-trace: SwRequirements.sw_req_output_option
+    """Check that the output folder is at a safe location.
+
+    Args:
+        cfg (Config): Schema validated configuration.
+
+    Returns:
+        list[str]: Errors without the name of the setting, empty if the location is safe.
+    """
+    errors: list[str] = []
     if cfg.output.is_relative_to(PACKAGE_DIR):
-        errors.append((("paths", "output"), "paths.output: must not be inside the trlcdoc package folder."))
+        errors.append("must not be inside the trlcdoc package folder.")
     # The clean step removes the output folder, so it must never contain the project.
     if cfg.root.is_relative_to(cfg.output):
-        errors.append((("paths", "output"), "paths.output: must not be the project root or one of its parents."))
-
+        errors.append("must not be the project root or one of its parents.")
     return errors
 
 
@@ -571,13 +598,16 @@ def _format_errors(config_file: Path, text: str, errors: list[ConfigError]) -> s
     return "\n  ".join(f"{config_file}:{number}: {message}" for number, message in numbered)
 
 
-def load_config(config_file: Path) -> Config:
+def load_config(config_file: Path, output: Path | None = None) -> Config:
     # lobster-trace: SwRequirements.sw_req_config_file
     # lobster-trace: SwRequirements.sw_req_config_validation
+    # lobster-trace: SwRequirements.sw_req_output_option
     """Load and validate the project configuration.
 
     Args:
         config_file (Path): The trlcdoc YAML configuration file.
+        output (Path | None): Output folder from the command line, replaces paths.output. A relative
+            path is relative to the current folder.
 
     Returns:
         Config: The validated configuration.
@@ -607,12 +637,17 @@ def load_config(config_file: Path) -> Config:
             f"{config_file} does not match the schema:\n  " + _format_errors(config_file, text, schema_errors)
         )
 
-    cfg = Config(data, config_file)
+    cfg = Config(data, config_file, output)
     reference_errors = _check_references(cfg)
     if reference_errors:
         raise TrlcdocError(
             f"{config_file} has invalid settings:\n  " + _format_errors(config_file, text, reference_errors)
         )
+
+    if cfg.output_option is not None:
+        output_errors = _check_output(cfg)
+        if output_errors:
+            raise TrlcdocError(f"--output {cfg.output_option}: " + " ".join(output_errors))
 
     return cfg
 

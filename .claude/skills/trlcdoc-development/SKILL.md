@@ -117,7 +117,9 @@ User-visible changes update the documentation in the same branch:
 
 - `configuration.md`: the configuration reference (every key, behavior, typical
   errors in chapter 10). Keep its chapter numbers and anchors stable.
-- `README.md` (GitHub) and `PYPI.md` (PyPI page).
+- `README.md` (GitHub).
+- `PYPI.md` (PyPI page) only if its brief overview changes: it is a short front page
+  that points to the full documentation, not a feature reference.
 - The examples in `examples/` if they use the changed feature.
 
 Write for the reader: short sentences, concrete examples, no marketing words.

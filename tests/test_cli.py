@@ -26,8 +26,8 @@ import pytest
 from conftest import base_config, make_project, write_config
 
 from trlcdoc import __version__, cli
-from trlcdoc.config import load_config
-from trlcdoc.util import find_tool
+from trlcdoc.config import PACKAGE_DIR, load_config
+from trlcdoc.util import clean_dir, find_tool
 
 # Variables ********************************************************************
 
@@ -206,6 +206,54 @@ def test_external_tools(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys:
     data["trace"]["report"] = "rst"
     assert cli.main(["-c", str(write_config(root, data)), "html"]) == 2
     assert "Graphviz is needed by the Sphinx extension sphinx.ext.graphviz" in capsys.readouterr().out
+
+
+def test_output_option(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture) -> None:
+    """The --output option replaces paths.output and is checked like it.
+
+    Args:
+        tmp_path (Path): pytest temporary folder.
+        monkeypatch (pytest.MonkeyPatch): pytest monkeypatch.
+        capsys (pytest.CaptureFixture): pytest output capture.
+    """
+    root = tmp_path / "project"
+    project = make_project(root)
+    configured = root / "build" / "trlcdoc"
+    work_dir = tmp_path / "work"
+    work_dir.mkdir()
+    monkeypatch.chdir(work_dir)
+
+    # A relative folder is relative to the current folder, not to the project root.
+    for option in ("-o", "--output"):
+        assert cli.main(["-c", str(project), option, "out", "check"]) == 0
+        assert f"output: {work_dir / 'out'}" in capsys.readouterr().out
+    assert load_config(project, tmp_path / "abs").output == tmp_path / "abs"
+
+    # The generated files go to the given folder, the configured one is not created.
+    assert cli.main(["-c", str(project), "--output", "out", "tests"]) == 0
+    assert load_config(project, Path("out")).junit_file.is_file()
+    assert not configured.exists()
+
+    # The clean step removes the given folder only.
+    clean_dir(configured / "html", configured)
+    assert cli.main(["-c", str(project), "--output", "out", "clean"]) == 0
+    assert not (work_dir / "out").exists()
+    assert (configured / "html").is_dir()
+
+    # Forbidden locations are errors, a forbidden paths.output is ignored.
+    for output, error in (
+        (root, "must not be the project root or one of its parents"),
+        (tmp_path, "must not be the project root or one of its parents"),
+        (PACKAGE_DIR / "out", "must not be inside the trlcdoc package folder"),
+    ):
+        assert cli.main(["-c", str(project), "--output", str(output), "check"]) == 2
+        assert f"--output {output.resolve()}: {error}" in capsys.readouterr().out
+
+    data = base_config()
+    data["paths"]["output"] = "."
+    assert cli.main(["-c", str(write_config(root, data)), "--output", "out", "check"]) == 0
+    assert cli.main(["-c", str(project), "check"]) == 2
+    assert "paths.output: must not be the project root" in capsys.readouterr().out
 
 
 # Main *************************************************************************

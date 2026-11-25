@@ -598,6 +598,23 @@ section "trlcdoc" {
                 valid_status = AbstractRequirements.VALID_STATUS.valid
             }
 
+            SwReq sw_req_output_option {
+                description =
+                    '''
+                    **Output folder option**
+
+                    The software shall accept an output folder on the command line, which replaces the configured
+                    output folder for this run. A relative folder shall be relative to the current folder. The same
+                    location rules as for the configured output folder shall apply.
+                    '''
+                verification_criteria =
+                    '''
+                    Run steps with a relative and an absolute output folder on the command line. Check the used folder,
+                    that the configured folder is not used, and the errors for forbidden folders.
+                    '''
+                valid_status = AbstractRequirements.VALID_STATUS.valid
+            }
+
             SwReq sw_req_clean {
                 description =
                     '''

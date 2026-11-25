@@ -248,6 +248,24 @@ including the downloaded PlantUML jar. Therefore it must not be the project
 root or one of its parents, and it must not be inside the trlcdoc package.
 Add it to `.gitignore`. Chapter [9](#9-generated-files) shows its content.
 
+**Command line option `-o`/`--output`:** replaces `paths.output` for one run,
+without changing the configuration, e.g. for several builds from one checkout
+or a CI job that writes outside the repository:
+
+```bash
+trlcdoc --output build/markdown convert --format markdown
+trlcdoc --output "$RUNNER_TEMP/site"
+```
+
+- A relative folder is relative to the **current folder**, not to the project
+  root like the paths in the configuration file.
+- The same location rules apply, a `paths.output` in the configuration is not
+  used and not checked in this run.
+- Everything listed in chapter [9](#9-generated-files) moves along, including
+  the downloaded PlantUML jar. A CI cache of the jar must use the new folder.
+- Files your own test or document commands write (`type: command` documents,
+  test result files of `runner: command`) stay where their commands put them.
+
 ## 4. documents
 
 `documents` is a list of the pages of the HTML site. **The list order is the
@@ -1252,7 +1270,7 @@ The placeholders are not replaced in the `conf` file; use `PROJECT_ROOT` there.
 
 ## 9. Generated files
 
-Everything goes to `paths.output`:
+Everything goes to `paths.output`, or to the folder of the `--output` option:
 
 ```text
 build/trlcdoc/
@@ -1290,6 +1308,7 @@ Configuration errors are listed without the leading `<file>:<line>:`.
 | `documents[x].include: 'y' is no document of type trlc or test_results.` | `include` names a missing id or a page type without TRLC records. |
 | `documents[x].pytrlcconverter.converter.rst: file '...' not found.` | Wrong path, or `builtin:` prefix missing for a built-in file. |
 | `documents/0: 'converter' is not one of ['id', 'title', ...]` | A pyTRLCConverter option on document level. Move it into the `pytrlcconverter` block. |
+| `--output ...: must not be the project root or one of its parents.` | The `--output` folder would contain the project, which the clean step deletes. A relative folder is relative to the current folder, see [3](#3-paths). |
 | `trace.levels[A].requires: level 'B' is not defined.` | The level name must match exactly, including spaces and case. |
 | `trace.levels[A].doxyfile: file '...' not found.` | The Doxyfile path is relative to the project root. |
 | `Tool 'doxygen' not found. It is needed by the lobster-doxygen extractor of trace level 'A'` | Install doxygen and put it on the `PATH`. |

@@ -128,6 +128,7 @@ trlcdoc all show                    # full build, then open the site in the brow
 trlcdoc convert --format markdown   # Markdown export of the TRLC documents
 trlcdoc trace --online              # tracing report linked to the repository
 trlcdoc -c other.yaml check         # validate a configuration
+trlcdoc --output /tmp/site          # build into another folder, overrides paths.output
 ```
 
 ## Configuration
