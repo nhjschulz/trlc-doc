@@ -247,14 +247,28 @@ section "trlcdoc SW Architecture" {
 
                         Java on Linux without a display and on Windows needs no option, on macOS every diagram would
                         otherwise start the graphical user interface support of Java.
+
+                        With `plantuml.picoweb` (default), `start_picoweb()` starts a selected jar once as picoweb
+                        server on a free port of `127.0.0.1` and exports its URL instead of the jar:
+
+                        - pyTRLCConverter renders through the server URL itself
+                        - Sphinx runs `plantuml_client.py` per diagram, the `plantuml -pipe` of the server
+                        - `NO_PROXY` gets `127.0.0.1`, so requests to the server don't go through a proxy
+
+                        The server is ready when it renders a probe diagram. If it doesn't within 30 seconds, it is
+                        stopped and the jar stays exported, with a warning. `stop_picoweb()` stops the server and
+                        restores the environment. The CLI calls it at the end of every run, `atexit` when Python exits.
+                        While the server runs, SIGTERM ends trlcdoc like `sys.exit()`, so both run then too.
                         '''
                     verification_criteria =
                         '''
                         Run the plantuml step with the environment variable set, with a configured jar and without both.
                         Check the exported jar path.
                         Check the Java command of Sphinx and the environment of pyTRLCConverter on each system.
+                        Run the plantuml step with picoweb, check the exported URL, a rendered diagram and the stopped
+                        server. Check the fallback to the jar.
                         '''
-                    satisfies = [SwRequirements.sw_req_plantuml]
+                    satisfies = [SwRequirements.sw_req_plantuml, SwRequirements.sw_req_plantuml_picoweb]
                 }
 
                 Generic.PlantUML sw_arch_comp_plantuml_diagram {

@@ -328,6 +328,32 @@ section "trlcdoc" {
                     '''
                 valid_status = AbstractRequirements.VALID_STATUS.valid
             }
+
+            SwReq sw_req_plantuml_picoweb {
+                description =
+                    '''
+                    **Local PlantUML server**
+
+                    Starting Java takes seconds, rendering a diagram milliseconds. If PlantUML is a jar and the
+                    configuration doesn't disable it, the software shall start the jar once as local PlantUML server
+                    (picoweb) and render all diagrams of the run with it.
+
+                    - The server shall only be reachable from the local computer, on a free port.
+                    - The server shall stop when the software ends, also after an error, an interrupt or a termination.
+
+                    If the server doesn't render a diagram within a time limit, the software shall stop it, print a
+                    warning and render each diagram with the jar.
+                    '''
+                verification_criteria =
+                    '''
+                    Run the plantuml step with a jar, with the server disabled and with a server URL in the `PLANTUML`
+                    environment variable. Render a diagram with the exported server URL in the html step.
+                    Stop the server at the end of a run, after a build error and on an interrupt.
+                    Run the plantuml step with a jar that cannot start a server and with a server that doesn't answer
+                    in time. Check the exported URL or jar, the warning and that no server process is left.
+                    '''
+                valid_status = AbstractRequirements.VALID_STATUS.valid
+            }
         }
 
         section "Tests" {

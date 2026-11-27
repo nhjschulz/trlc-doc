@@ -300,6 +300,53 @@ section "SW-Tests" {
             verifies = [SwRequirements.sw_req_plantuml]
         }
 
+        SwTestCase tc_plantuml_picoweb {
+            description =
+                '''
+                **Local PlantUML server** (`tests/test_plantuml.py`)
+
+                Provide PlantUML with a jar and check that
+
+                - a picoweb server runs on a port of `127.0.0.1`, its URL is exported, `NO_PROXY` gets `127.0.0.1`
+                - the Sphinx configuration runs the PlantUML client with the URL, which renders an SVG diagram
+                - the client renders PNG by default, and returns the error image and exit code 1 on a syntax error
+                - SIGTERM ends the run with exit code 143
+                - stopping ends the process and restores `PLANTUML`, `NO_PROXY` and the SIGTERM handler
+                - no server is started with `plantuml.picoweb: false` or a server URL in `PLANTUML`
+                '''
+            verifies = [SwRequirements.sw_req_plantuml_picoweb, SwRequirements.sw_req_plantuml]
+        }
+
+        SwTestCase tc_plantuml_picoweb_stop {
+            description =
+                '''
+                **Stopping the local PlantUML server** (`tests/test_plantuml.py`)
+
+                Run trlcdoc with a PlantUML jar and check that the picoweb server process has ended
+
+                - after a successful run
+                - after a build error in the step after the plantuml step
+                - after an interrupt (Ctrl+C) in the step after the plantuml step
+                '''
+            verifies = [SwRequirements.sw_req_plantuml_picoweb]
+        }
+
+        SwTestCase tc_plantuml_picoweb_fallback {
+            description =
+                '''
+                **Fallback to the PlantUML jar** (`tests/test_plantuml.py`)
+
+                Provide PlantUML with
+
+                - a jar that Java cannot run
+                - a server that doesn't answer in time
+                - a Java that cannot be started
+
+                Check the warning, the exported jar and that no server process is left.
+                '''
+            verifies = [SwRequirements.sw_req_plantuml_picoweb]
+        }
+
         SwTestCase tc_trlc_conversion {
             description =
                 '''
