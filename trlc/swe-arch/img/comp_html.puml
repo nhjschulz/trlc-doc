@@ -8,6 +8,7 @@ package "HTML Builder" {
         - _write_converted_page(cfg, doc, src_dir): str
         - _write_index(cfg, src_dir, pages): Path
         - _write_sphinx_config(cfg, src_dir, copy_dirs): Path
+        - _build_info(cfg): str
     }
 
     class "pages" as pages <<module>> {
@@ -19,7 +20,6 @@ package "HTML Builder" {
     class "conf.py" as conf <<module>> {
         + setup(app)
         - _copy_dirs(app)
-        - _git_commit_info(): str
     }
 
 }
@@ -39,7 +39,7 @@ class "html" as site <<folder>>
 class "webbrowser" as browser
 
 html .> cfg : documents,\nproject,\nhtml settings
-html ..> util : run(),\nclean_dir()
+html ..> util : run(),\nclean_dir(),\ngit_output()
 html .> pages : replace_placeholders()
 pages ..> cfg : page_name()
 html --> settings : writes

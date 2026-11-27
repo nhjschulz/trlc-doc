@@ -4,7 +4,15 @@ package "PlantUML Provider" {
     class "plantuml" as plantuml <<module>> {
         + DEFAULT_VERSION
         + provide_plantuml(cfg): Path
+        + java_headless_env(): Dict[str, str]
+        + start_picoweb(cfg, jar): str | None
+        + stop_picoweb()
         - _download(url, target): Path
+        - _wait_for_picoweb(process, url): bool
+    }
+    class "plantuml_client" as client <<module>> {
+        + encode_diagram(text): str
+        + main(argv): int
     }
 }
 
@@ -13,9 +21,15 @@ class "util" as util <<module>>
 class "urllib.request" as urllib <<module>>
 
 class "plantuml.jar" as jar <<file>>
+class "picoweb server" as picoweb <<process>>
+class "sphinxcontrib-plantuml" as sphinx <<module>>
 
 plantuml ..> cfg : plantuml settings
 plantuml ..> util : prepare_output()
 plantuml ..> urllib : download
 plantuml --> jar : locates or downloads
+plantuml --> picoweb : starts and stops jar as
+plantuml ..> client : encode_diagram()
+sphinx --> client : runs per diagram
+client ..> picoweb : HTTP GET
 @enduml

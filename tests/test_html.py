@@ -1,6 +1,4 @@
-"""Tests of the HTML site, built once from an example project with every document type.
-
-"""
+"""Tests of the HTML site, built once from an example project with every document type."""
 
 # trlcdoc - A utility for producing project documentation from TRLC and LOBSTER contents.
 # Copyright (c) 2026 - 2026 Norbert Schulz github@schulznorbert.de
@@ -21,10 +19,11 @@
 # Imports **********************************************************************
 
 import re
+import subprocess
 import sys
 import webbrowser
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any
 
 import pytest
 import sphinx
@@ -32,36 +31,62 @@ from conftest import base_config, git_init, make_project, write_config
 
 from trlcdoc import cli, html
 from trlcdoc.config import load_config
-from trlcdoc.html import _link_settings
-from trlcdoc.util import clean_dir
+from trlcdoc.html import _build_info, _link_settings
+from trlcdoc.util import clean_dir, git_output
 
 # Variables ********************************************************************
 
-API_COMMAND = ("import pathlib; p = pathlib.Path('apidoc'); p.mkdir(exist_ok=True); "
-               "(p / 'index.html').write_text('<p>API reference</p>')")
+API_COMMAND = (
+    "import pathlib; p = pathlib.Path('apidoc'); p.mkdir(exist_ok=True); "
+    "(p / 'index.html').write_text('<p>API reference</p>')"
+)
 
 # Documents in addition to the TRLC levels and the tracing report, one per remaining type.
-EXTRA_DOCUMENTS: List[Dict[str, Any]] = [
+EXTRA_DOCUMENTS: list[dict[str, Any]] = [
     {"id": "coverage_report", "title": "Coverage Report", "type": "html", "source": "tests:coverage"},
     {"id": "manual", "type": "rst", "source": "docs/manual.rst"},
     # A configured title replaces the first heading 'Release Notes' as page title.
     {"id": "notes", "title": "Changes", "type": "markdown", "source": "docs/notes.md"},
     {"id": "license", "title": "License information", "type": "text", "source": "LICENSE"},
-    {"id": "api", "title": "API Reference", "type": "command", "command": [sys.executable, "-c", API_COMMAND],
-     "output": "apidoc"},
+    {
+        "id": "api",
+        "title": "API Reference",
+        "type": "command",
+        "command": [sys.executable, "-c", API_COMMAND],
+        "output": "apidoc",
+    },
 ]
 
 # Expected page titles in table of contents order.
-TITLES = ["User Manual", "SW-Requirements", "SW-Architecture", "SW-Tests", "SW-Test Results",
-          "Software Tracing Report", "Coverage Report", "Changes", "License information", "API Reference"]
+TITLES = [
+    "User Manual",
+    "SW-Requirements",
+    "SW-Architecture",
+    "SW-Tests",
+    "SW-Test Results",
+    "Software Tracing Report",
+    "Coverage Report",
+    "Changes",
+    "License information",
+    "API Reference",
+]
 
 # Page headings, the Markdown page keeps its own heading.
 HEADINGS = [*TITLES[:7], "Release Notes", *TITLES[8:]]
 
 # Generated pages of the documents in table of contents order.
-PAGES = ["manual.html", "sw_requirements/index.html", "sw_architecture/index.html", "sw_test/index.html",
-         "sw_test_results/index.html", "sw_tracing_report.html", "coverage_report.html", "notes.html",
-         "license.html", "api.html"]
+PAGES = [
+    "manual.html",
+    "sw_requirements/index.html",
+    "sw_architecture/index.html",
+    "sw_test/index.html",
+    "sw_test_results/index.html",
+    "sw_tracing_report.html",
+    "coverage_report.html",
+    "notes.html",
+    "license.html",
+    "api.html",
+]
 
 # Markdown page in the docs folder, with relative links and an image of the project.
 NOTES_MD = """# Release Notes
@@ -76,15 +101,19 @@ the [module](../hello.py), the [tests](../tests/) and the [web site](https://exa
 
 # Project owned files of the customized site, placed in the docs folder.
 CUSTOM_FILES = {
-    "index.rst": ("Welcome\n=======\n\n.. image:: {project_root}/docs/logo.png\n\n"
-                  ".. toctree::\n   :caption: Chapters:\n\n"
-                  "   guide\n   placeholder\n   sw_requirements/index\n   license\n"),
+    "index.rst": (
+        "Welcome\n=======\n\n.. image:: {project_root}/docs/logo.png\n\n"
+        ".. toctree::\n   :caption: Chapters:\n\n"
+        "   guide\n   placeholder\n   sw_requirements/index\n   license\n"
+    ),
     "header.rst": ".. image:: {project_root}/docs/logo.png\n   :alt: Project Logo\n",
     "guide.rst": "Guide\n=====\n\n.. literalinclude:: {project_root}/LICENSE\n   :language: none\n",
     "placeholder.md": "# Placeholder\n\nWrite `{project_root}/docs/logo.png` for the logo.\n",
-    "conf.py": ("html_title = 'Custom Title'\n\n\n"
-                "def setup(app):\n"
-                "    app.connect('builder-inited', lambda app: (PROJECT_ROOT / 'setup.txt').write_text('done'))\n"),
+    "conf.py": (
+        "html_title = 'Custom Title'\n\n\n"
+        "def setup(app):\n"
+        "    app.connect('builder-inited', lambda app: (PROJECT_ROOT / 'setup.txt').write_text('done'))\n"
+    ),
     "logo.png": "",
 }
 
@@ -94,7 +123,7 @@ CUSTOM_FILES = {
 
 
 @pytest.fixture(name="site", scope="module")
-def fixture_site(tmp_path_factory: pytest.TempPathFactory, plantuml_jar: Path) -> Dict[str, Any]:
+def fixture_site(tmp_path_factory: pytest.TempPathFactory, plantuml_jar: Path) -> dict[str, Any]:
     """Build the HTML site of the example project with 'trlcdoc all'. The project is a subfolder of its repository.
 
     Args:
@@ -102,7 +131,7 @@ def fixture_site(tmp_path_factory: pytest.TempPathFactory, plantuml_jar: Path) -
         plantuml_jar (Path): The PlantUML jar.
 
     Returns:
-        Dict[str, Any]: Exit code, project root, HTML folder and commit id.
+        dict[str, Any]: Exit code, project root, HTML folder and commit id.
     """
     root = tmp_path_factory.mktemp("site") / "project"
     make_project(root, diagram=True)
@@ -118,11 +147,21 @@ def fixture_site(tmp_path_factory: pytest.TempPathFactory, plantuml_jar: Path) -
     config_file = write_config(root, data)
     commit = git_init(root.parent)
 
+    # The repository has no tag, so git describe gives the short commit hash.
+    short_commit = git_output(["rev-parse", "--short", "HEAD"], root)
+    branch = git_output(["branch", "--show-current"], root)
+
     with pytest.MonkeyPatch.context() as monkeypatch:
         monkeypatch.setenv("PLANTUML", str(plantuml_jar))
         exit_code = cli.main(["-c", str(config_file), "all"])
 
-    return {"exit_code": exit_code, "root": root, "html": root / "build" / "trlcdoc" / "html", "commit": commit}
+    return {
+        "exit_code": exit_code,
+        "root": root,
+        "html": root / "build" / "trlcdoc" / "html",
+        "commit": commit,
+        "build_info": f"from {short_commit} on branch {branch}",
+    }
 
 
 def _sphinx_png() -> bytes:
@@ -134,11 +173,11 @@ def _sphinx_png() -> bytes:
     return next(Path(sphinx.__file__).parent.rglob("*.png")).read_bytes()
 
 
-def _page(site: Dict[str, Any], name: str) -> str:
+def _page(site: dict[str, Any], name: str) -> str:
     """Read a page of the site.
 
     Args:
-        site (Dict[str, Any]): The built site.
+        site (dict[str, Any]): The built site.
         name (str): Page path relative to the HTML folder.
 
     Returns:
@@ -147,11 +186,11 @@ def _page(site: Dict[str, Any], name: str) -> str:
     return (site["html"] / name).read_text(encoding="utf-8")
 
 
-def test_html_site(site: Dict[str, Any]) -> None:
+def test_html_site(site: dict[str, Any]) -> None:
     """The site has a start page with the table of contents and one page per document.
 
     Args:
-        site (Dict[str, Any]): The built site.
+        site (dict[str, Any]): The built site.
     """
     assert site["exit_code"] == 0
     index = _page(site, "index.html")
@@ -166,11 +205,11 @@ def test_html_site(site: Dict[str, Any]) -> None:
         assert (site["html"] / href).is_file()
 
 
-def test_documents(site: Dict[str, Any]) -> None:
+def test_documents(site: dict[str, Any]) -> None:
     """The documents appear in the configured order, with their configured titles.
 
     Args:
-        site (Dict[str, Any]): The built site.
+        site (dict[str, Any]): The built site.
     """
     for page, heading in zip(PAGES, HEADINGS, strict=True):
         assert f"<h1>{heading}" in _page(site, page)
@@ -185,11 +224,11 @@ def test_documents(site: Dict[str, Any]) -> None:
     assert '<link rel="next" title="SW-Requirements" href="sw_requirements/index.html" />' in _page(site, "manual.html")
 
 
-def test_document_types(site: Dict[str, Any]) -> None:
+def test_document_types(site: dict[str, Any]) -> None:
     """Every document type is rendered into the site.
 
     Args:
-        site (Dict[str, Any]): The built site.
+        site (dict[str, Any]): The built site.
     """
     assert "The software shall greet." in _page(site, "sw_requirements/index.html")
     architecture = _page(site, "sw_architecture/index.html")
@@ -228,11 +267,12 @@ def test_html_customization(tmp_path: Path, plantuml_jar: Path, monkeypatch: pyt
     data = base_config()
     del data["tests"], data["trace"]
     sw_requirements = {key: value for key, value in data["documents"][0].items() if key != "title"}
-    data["documents"] = [{"id": "guide", "type": "rst", "source": "docs/guide.rst"},
-                         {"id": "placeholder", "type": "markdown", "source": "docs/placeholder.md",
-                          "placeholders": False},
-                         sw_requirements,
-                         {"id": "license", "title": "License information", "type": "text", "source": "LICENSE"}]
+    data["documents"] = [
+        {"id": "guide", "type": "rst", "source": "docs/guide.rst"},
+        {"id": "placeholder", "type": "markdown", "source": "docs/placeholder.md", "placeholders": False},
+        sw_requirements,
+        {"id": "license", "title": "License information", "type": "text", "source": "LICENSE"},
+    ]
     data["html"] = {"index": "docs/index.rst", "page_header": "docs/header.rst", "conf": "docs/conf.py"}
     monkeypatch.setenv("PLANTUML", str(plantuml_jar))
     assert cli.main(["-c", str(write_config(root, data)), "all"]) == 0
@@ -240,9 +280,12 @@ def test_html_customization(tmp_path: Path, plantuml_jar: Path, monkeypatch: pyt
     html = root / "build" / "trlcdoc" / "html"
     index = (html / "index.html").read_text(encoding="utf-8")
     toc = re.findall(r'<li class="toctree-l1"><a class="reference internal" href="([^"]+)">([^<]+)</a>', index)
-    assert toc == [("guide.html", "Guide"), ("placeholder.html", "Placeholder"),
-                   ("sw_requirements/index.html", "Example Requirements"),
-                   ("license.html", "License information")]
+    assert toc == [
+        ("guide.html", "Guide"),
+        ("placeholder.html", "Placeholder"),
+        ("sw_requirements/index.html", "Example Requirements"),
+        ("license.html", "License information"),
+    ]
     assert '<img alt="_images/logo.png" src="_images/logo.png" />' in index
 
     # The page header is on the generated pages, with the path to the project root of each page.
@@ -262,7 +305,6 @@ def test_html_customization(tmp_path: Path, plantuml_jar: Path, monkeypatch: pyt
     assert "<title>Guide &#8212; Custom Title</title>" in guide
     assert (root / "setup.txt").read_text(encoding="utf-8") == "done"
     assert not (html / ".doctrees").exists()
-
 
 
 def test_trace_report_rst(tmp_path: Path, plantuml_jar: Path, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -320,13 +362,15 @@ def test_page_placeholders_site(tmp_path: Path, plantuml_jar: Path, monkeypatch:
     root = tmp_path / "project"
     make_project(root)
     (root / "docs").mkdir()
-    (root / "docs" / "index.rst").write_text("Example\n=======\n\n.. toctree::\n   :caption: Contents:\n\n"
-                                             "   {documents}\n", encoding="utf-8")
-    (root / "docs" / "header.rst").write_text("Back to :doc:`the requirements <{page:sw_requirements}>`.\n",
-                                              encoding="utf-8")
-    (root / "docs" / "guide.rst").write_text("Guide\n=====\n\n"
-                                             "See :doc:`the tracing report <{page:sw_tracing_report}>`.\n",
-                                             encoding="utf-8")
+    (root / "docs" / "index.rst").write_text(
+        "Example\n=======\n\n.. toctree::\n   :caption: Contents:\n\n   {documents}\n", encoding="utf-8"
+    )
+    (root / "docs" / "header.rst").write_text(
+        "Back to :doc:`the requirements <{page:sw_requirements}>`.\n", encoding="utf-8"
+    )
+    (root / "docs" / "guide.rst").write_text(
+        "Guide\n=====\n\nSee :doc:`the tracing report <{page:sw_tracing_report}>`.\n", encoding="utf-8"
+    )
     data = base_config()
     data["documents"].append({"id": "guide", "type": "rst", "source": "docs/guide.rst"})
     data["html"] = {"index": "docs/index.rst", "page_header": "docs/header.rst"}
@@ -340,8 +384,14 @@ def test_page_placeholders_site(tmp_path: Path, plantuml_jar: Path, monkeypatch:
         # {documents} lists every document in configuration order, with the page name of its format.
         index = (html_dir / "index.html").read_text(encoding="utf-8")
         toc = re.findall(r'<li class="toctree-l1"><a class="reference internal" href="([^"]+)">', index)
-        assert toc == ["sw_requirements/index.html", "sw_architecture/index.html", "sw_test/index.html",
-                       "sw_test_results/index.html", tracing_page, "guide.html"], report
+        assert toc == [
+            "sw_requirements/index.html",
+            "sw_architecture/index.html",
+            "sw_test/index.html",
+            "sw_test_results/index.html",
+            tracing_page,
+            "guide.html",
+        ], report
 
         # {page:<id>} links from pages at different depths.
         guide = (html_dir / "guide.html").read_text(encoding="utf-8")
@@ -350,36 +400,84 @@ def test_page_placeholders_site(tmp_path: Path, plantuml_jar: Path, monkeypatch:
         assert 'href="../sw_requirements/index.html"' in tests, report
 
 
-def test_html_version_info(site: Dict[str, Any]) -> None:
-    """Every page shows the commit the documentation was built from.
+def test_html_version_info(site: dict[str, Any]) -> None:
+    """Every page shows the git describe output and the branch the documentation was built from.
 
     Args:
-        site (Dict[str, Any]): The built site.
+        site (dict[str, Any]): The built site.
     """
     for page in ["index.html", *PAGES]:
-        assert f"from commit {site['commit']}" in _page(site, page), page
+        assert site["build_info"] in _page(site, page), page
 
 
-def test_markdown_links(site: Dict[str, Any]) -> None:
+def test_html_version_info_git_state(project: Path) -> None:
+    """The version control state of the page footer for a project outside of git, with a tag,
+    after a commit, with uncommitted changes and with a detached HEAD.
+
+    Args:
+        project (Path): Configuration file of the example project.
+    """
+    cfg = load_config(project)
+    root = cfg.root
+    assert _build_info(cfg) == ""
+
+    git_init(root)
+    branch = git_output(["branch", "--show-current"], root)
+    _git(root, "tag", "V1.0.0")
+    assert _build_info(cfg) == f" from V1.0.0 on branch {branch}"
+
+    (root / "LICENSE").write_text("Changed license text.\n", encoding="utf-8")
+    assert _build_info(cfg) == f" from V1.0.0-dirty on branch {branch}"
+
+    _git(root, "commit", "-q", "-a", "-m", "Change the license")
+    short_commit = git_output(["rev-parse", "--short", "HEAD"], root)
+    assert _build_info(cfg) == f" from V1.0.0-1-g{short_commit} on branch {branch}"
+
+    _git(root, "switch", "-q", "--detach", "V1.0.0")
+    assert _build_info(cfg) == " from V1.0.0"
+
+
+def _git(root: Path, *args: str) -> None:
+    """Run a git command in a test repository.
+
+    Args:
+        root (Path): Repository root.
+        *args (str): git arguments.
+    """
+    subprocess.run(
+        ["git", "-c", "user.name=test", "-c", "user.email=test@example.com", *args],
+        cwd=root,
+        check=True,
+        capture_output=True,
+    )
+
+
+def test_markdown_links(site: dict[str, Any]) -> None:
     """The relative links and images of a Markdown page are resolved against its location in the project.
     Links to the repository contain the path of the project in the repository.
 
     Args:
-        site (Dict[str, Any]): The built site.
+        site (dict[str, Any]): The built site.
     """
     notes = _page(site, "notes.html")
     blob = f"https://github.com/example/example/blob/{site['commit']}/project"
     tree = f"https://github.com/example/example/tree/{site['commit']}/project"
     links = re.findall(r'<a class="reference (internal|external)" href="([^"]+)">', notes)
-    assert links == [("internal", "manual.html#user-manual"), ("internal", "license.html"),
-                     ("internal", "sw_requirements/index.html"), ("external", f"{blob}/hello.py"),
-                     ("external", f"{tree}/tests"), ("external", "https://example.com")]
+    assert links == [
+        ("internal", "manual.html#user-manual"),
+        ("internal", "license.html"),
+        ("internal", "sw_requirements/index.html"),
+        ("external", f"{blob}/hello.py"),
+        ("external", f"{tree}/tests"),
+        ("external", "https://example.com"),
+    ]
     assert '<img alt="Logo" src="_images/logo.png" />' in notes
     assert (site["html"] / "_images" / "logo.png").is_file()
 
 
-def test_markdown_links_as_text(tmp_path: Path, plantuml_jar: Path, monkeypatch: pytest.MonkeyPatch,
-                                capfd: pytest.CaptureFixture[str]) -> None:
+def test_markdown_links_as_text(
+    tmp_path: Path, plantuml_jar: Path, monkeypatch: pytest.MonkeyPatch, capfd: pytest.CaptureFixture[str]
+) -> None:
     """Without repository, a link to a project file of a Markdown page is shown as text with a warning.
 
     Args:
@@ -413,7 +511,7 @@ class _Browser:  # pylint: disable=too-few-public-methods
     """Web browser stub, which records the opened URLs."""
 
     def __init__(self) -> None:
-        self.urls: List[str] = []
+        self.urls: list[str] = []
 
     def open(self, url: str) -> bool:
         """Record the URL.
@@ -467,9 +565,9 @@ def test_show(project: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.Cap
     assert "No web browser found" in capsys.readouterr().out
 
     # WSL: explorer.exe opens the Windows path of the page, also if it returns 1.
-    commands: List[List[str]] = []
+    commands: list[list[str]] = []
 
-    def run(cmd: List[str], **_: Any) -> Any:
+    def run(cmd: list[str], **_: Any) -> Any:
         commands.append(cmd)
         stdout = "\\\\wsl.localhost\\distro\\index.html\n" if cmd[0] == "wslpath" else ""
         return type("Proc", (), {"returncode": 0 if cmd[0] == "wslpath" else 1, "stdout": stdout})
@@ -491,5 +589,6 @@ def test_show(project: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.Cap
     monkeypatch.setattr(html.shutil, "which", lambda name: None)
     assert cli.main(["-c", str(project), "show"]) == 2
     assert not commands
+
 
 # Main *************************************************************************

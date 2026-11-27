@@ -1,6 +1,4 @@
-"""Convert the TRLC documents with pyTRLCConverter.
-
-"""
+"""Convert the TRLC documents with pyTRLCConverter."""
 
 # trlcdoc - A utility for producing project documentation from TRLC and LOBSTER contents.
 # Copyright (c) 2026 - 2026 Norbert Schulz github@schulznorbert.de
@@ -20,9 +18,10 @@
 
 # Imports **********************************************************************
 
-from typing import Any, Dict, List
+from typing import Any
 
 from .config import TRLC_DOCUMENT_TYPES, Config
+from .plantuml import java_headless_env
 from .util import TrlcdocError, clean_dir, find_tool, run
 
 # Variables ********************************************************************
@@ -54,17 +53,18 @@ def convert_documents(cfg: Config, fmt: str) -> int:
     return converted
 
 
-def convert_document(cfg: Config, doc: Dict[str, Any], fmt: str) -> List[str]:
+def convert_document(cfg: Config, doc: dict[str, Any], fmt: str) -> list[str]:
     # lobster-trace: SwRequirements.sw_req_trlc_conversion
+    # lobster-trace: SwRequirements.sw_req_plantuml
     """Convert one TRLC document.
 
     Args:
         cfg (Config): Project configuration.
-        doc (Dict[str, Any]): Document of type trlc or test_results.
+        doc (dict[str, Any]): Document of type trlc or test_results.
         fmt (str): Output format, rst or markdown.
 
     Returns:
-        List[str]: The executed command.
+        list[str]: The executed command.
 
     Raises:
         TrlcdocError: If the test results are missing or the conversion fails.
@@ -89,7 +89,8 @@ def convert_document(cfg: Config, doc: Dict[str, Any], fmt: str) -> List[str]:
         cmd.append(f"--renderCfg={cfg.file_reference(options['render_cfg'])}")
     cmd.append(fmt)
 
-    run(cmd, cfg.root)
+    run(cmd, cfg.root, env=java_headless_env())
     return cmd
+
 
 # Main *************************************************************************

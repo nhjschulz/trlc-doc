@@ -1,6 +1,4 @@
-"""Run the tests and convert the JUnit XML results into TRLC test result records.
-
-"""
+"""Run the tests and convert the JUnit XML results into TRLC test result records."""
 
 # trlcdoc - A utility for producing project documentation from TRLC and LOBSTER contents.
 # Copyright (c) 2026 - 2026 Norbert Schulz github@schulznorbert.de
@@ -25,7 +23,8 @@ import sys
 import time
 import xml.etree.ElementTree as ET
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Pattern, Tuple
+from re import Pattern
+from typing import Any
 
 from .config import Config
 from .util import TrlcdocError, clean_dir, run_unchecked
@@ -68,26 +67,28 @@ def run_tests(cfg: Config) -> bool:
     tests = cfg.tests
     clean_dir(cfg.tests_dir, cfg.output)
 
-    if tests["runner"] == "pytest":
-        args = list(tests.get("args", []))
-        cmd = [sys.executable, "-m", "pytest", *args,
-               "-o", "junit_family=xunit1", f"--junitxml={cfg.junit_file}"]
-        if any(arg.startswith("--cov") for arg in args):
-            cmd.extend(["--cov-report=term", f"--cov-report=html:{cfg.coverage_dir}"])
-        # Keep the coverage data file in the output folder instead of the project root.
-        returncode = run_unchecked(cmd, cfg.root, {"COVERAGE_FILE": str(cfg.tests_dir / ".coverage")})
-        if returncode not in PYTEST_OK_CODES:
-            raise TrlcdocError(f"pytest could not run the tests (exit code {returncode}).")
-    else:
-        # The exit code of a test command is ignored, so a command that fails must not leave the
-        # results of a previous run behind: they would be reported as the current ones.
-        cfg.junit_file.unlink(missing_ok=True)
-        started = time.time()
-        run_unchecked(tests["command"], cfg.root)
-        coverage_index = cfg.coverage_dir / "index.html"
-        if "coverage" in tests and (not coverage_index.is_file()
-                                    or coverage_index.stat().st_mtime < started - MTIME_TOLERANCE):
-            raise TrlcdocError(f"Coverage report {coverage_index} was not created by the test command.")
+    match tests["runner"]:
+        case "pytest":
+            args = list(tests.get("args", []))
+            cmd = [sys.executable, "-m", "pytest", *args, "-o", "junit_family=xunit1", f"--junitxml={cfg.junit_file}"]
+            if any(arg.startswith("--cov") for arg in args):
+                cmd.extend(["--cov-report=term", f"--cov-report=html:{cfg.coverage_dir}"])
+            # Keep the coverage data file in the output folder instead of the project root.
+            returncode = run_unchecked(cmd, cfg.root, {"COVERAGE_FILE": str(cfg.tests_dir / ".coverage")})
+            if returncode not in PYTEST_OK_CODES:
+                raise TrlcdocError(f"pytest could not run the tests (exit code {returncode}).")
+
+        case "command":
+            # The exit code of a test command is ignored, so a command that fails must not leave the
+            # results of a previous run behind: they would be reported as the current ones.
+            cfg.junit_file.unlink(missing_ok=True)
+            started = time.time()
+            run_unchecked(tests["command"], cfg.root)
+            coverage_index = cfg.coverage_dir / "index.html"
+            if "coverage" in tests and (
+                not coverage_index.is_file() or coverage_index.stat().st_mtime < started - MTIME_TOLERANCE
+            ):
+                raise TrlcdocError(f"Coverage report {coverage_index} was not created by the test command.")
 
     if not cfg.junit_file.is_file():
         raise TrlcdocError(f"Test result file {cfg.junit_file} was not created.")
@@ -102,7 +103,7 @@ def run_tests(cfg: Config) -> bool:
     return not failed
 
 
-def read_junit(junit_file: Path, link: Dict[str, Any]) -> List[Tuple[str, bool, List[str]]]:
+def read_junit(junit_file: Path, link: dict[str, Any]) -> list[tuple[str, bool, list[str]]]:
     # lobster-trace: SwRequirements.sw_req_test_results
     """Read the test results and link them to their TRLC test cases.
 
@@ -110,18 +111,18 @@ def read_junit(junit_file: Path, link: Dict[str, Any]) -> List[Tuple[str, bool, 
 
     Args:
         junit_file (Path): JUnit XML file.
-        link (Dict[str, Any]): The tests.link configuration.
+        link (dict[str, Any]): The tests.link configuration.
 
     Returns:
-        List[Tuple[str, bool, List[str]]]: (test name, passed, qualified test case ids) per test.
+        list[tuple[str, bool, list[str]]]: (test name, passed, qualified test case ids) per test.
 
     Raises:
         TrlcdocError: If a test cannot be linked to a test case, or to several
         test cases while tests.link.array is not set.
     """
-    results: List[Tuple[str, bool, List[str]]] = []
-    unlinked: List[str] = []
-    ambiguous: List[str] = []
+    results: list[tuple[str, bool, list[str]]] = []
+    unlinked: list[str] = []
+    ambiguous: list[str] = []
     for suite in ET.parse(junit_file).getroot().iter("testsuite"):
         suite_ids = _suite_output_ids(suite, link)
         for testcase in suite.findall("testcase"):
@@ -140,17 +141,16 @@ def read_junit(junit_file: Path, link: Dict[str, Any]) -> List[Tuple[str, bool, 
     if unlinked:
         raise TrlcdocError(f"Tests without test case link ({_link_methods(link)}): {', '.join(unlinked)}")
     if ambiguous:
-        raise TrlcdocError(
-            f"Tests linked to several test cases, which needs tests.link.array: {', '.join(ambiguous)}")
+        raise TrlcdocError(f"Tests linked to several test cases, which needs tests.link.array: {', '.join(ambiguous)}")
     return results
 
 
-def _link_methods(link: Dict[str, Any]) -> str:
+def _link_methods(link: dict[str, Any]) -> str:
     # lobster-trace: SwRequirements.sw_req_test_results
     """Describe the configured link methods for an error message.
 
     Args:
-        link (Dict[str, Any]): The tests.link configuration.
+        link (dict[str, Any]): The tests.link configuration.
 
     Returns:
         str: The link methods, e.g. "property 'lobster-trace', output 'lobster-trace: {id}'".
@@ -163,15 +163,15 @@ def _link_methods(link: Dict[str, Any]) -> str:
     return ", ".join(methods)
 
 
-def _output_regex(link: Dict[str, Any]) -> Optional[Pattern[str]]:
+def _output_regex(link: dict[str, Any]) -> Pattern[str] | None:
     # lobster-trace: SwRequirements.sw_req_test_results
     """Compile the tests.link.output pattern.
 
     Args:
-        link (Dict[str, Any]): The tests.link configuration.
+        link (dict[str, Any]): The tests.link configuration.
 
     Returns:
-        Optional[Pattern[str]]: Regular expression with the group 'id', None without output link.
+        Pattern[str] | None: Regular expression with the group 'id', None without output link.
     """
     result = None
     if "output" in link:
@@ -179,21 +179,21 @@ def _output_regex(link: Dict[str, Any]) -> Optional[Pattern[str]]:
     return result
 
 
-def _output_ids(lines: List[str], regex: Pattern[str]) -> List[str]:
+def _output_ids(lines: list[str], regex: Pattern[str]) -> list[str]:
     # lobster-trace: SwRequirements.sw_req_test_results
     """Find the test case ids in output lines.
 
     Args:
-        lines (List[str]): Output lines.
+        lines (list[str]): Output lines.
         regex (Pattern[str]): Compiled tests.link.output pattern.
 
     Returns:
-        List[str]: The test case ids in order of appearance.
+        list[str]: The test case ids in order of appearance.
     """
     return [match.group("id") for match in (regex.search(line) for line in lines) if match is not None]
 
 
-def _system_out(element: ET.Element) -> List[str]:
+def _system_out(element: ET.Element) -> list[str]:
     # lobster-trace: SwRequirements.sw_req_test_results
     """Get the lines of the system-out elements directly below an element.
 
@@ -201,12 +201,12 @@ def _system_out(element: ET.Element) -> List[str]:
         element (ET.Element): JUnit testsuite or testcase element.
 
     Returns:
-        List[str]: The output lines.
+        list[str]: The output lines.
     """
     return [line.strip() for out in element.findall("system-out") for line in (out.text or "").splitlines()]
 
 
-def _suite_output_ids(suite: ET.Element, link: Dict[str, Any]) -> Dict[str, List[str]]:
+def _suite_output_ids(suite: ET.Element, link: dict[str, Any]) -> dict[str, list[str]]:
     # lobster-trace: SwRequirements.sw_req_test_results
     """Get the test case ids of the suite output per test.
 
@@ -215,12 +215,12 @@ def _suite_output_ids(suite: ET.Element, link: Dict[str, Any]) -> Dict[str, List
 
     Args:
         suite (ET.Element): JUnit testsuite element.
-        link (Dict[str, Any]): The tests.link configuration.
+        link (dict[str, Any]): The tests.link configuration.
 
     Returns:
-        Dict[str, List[str]]: Test case ids per test name, empty without output link.
+        dict[str, list[str]]: Test case ids per test name, empty without output link.
     """
-    result: Dict[str, List[str]] = {}
+    result: dict[str, list[str]] = {}
     regex = _output_regex(link)
     if regex is not None:
         for line in _system_out(suite):
@@ -230,7 +230,7 @@ def _suite_output_ids(suite: ET.Element, link: Dict[str, Any]) -> Dict[str, List
     return result
 
 
-def _linked_test_cases(testcase: ET.Element, link: Dict[str, Any], suite_ids: List[str]) -> List[str]:
+def _linked_test_cases(testcase: ET.Element, link: dict[str, Any], suite_ids: list[str]) -> list[str]:
     # lobster-trace: SwRequirements.sw_req_test_results
     """Get the qualified TRLC test case ids of a JUnit test case.
 
@@ -238,11 +238,11 @@ def _linked_test_cases(testcase: ET.Element, link: Dict[str, Any], suite_ids: Li
 
     Args:
         testcase (ET.Element): JUnit testcase element.
-        link (Dict[str, Any]): The tests.link configuration.
-        suite_ids (List[str]): Test case ids of this test in the suite output.
+        link (dict[str, Any]): The tests.link configuration.
+        suite_ids (list[str]): Test case ids of this test in the suite output.
 
     Returns:
-        List[str]: The test case ids without duplicates, empty if the test cannot be linked.
+        list[str]: The test case ids without duplicates, empty if the test cannot be linked.
     """
     property_name = link.get("property", "lobster-trace")
     result = [prop.get("value", "") for prop in testcase.iter("property") if prop.get("name") == property_name]
@@ -261,12 +261,12 @@ def _linked_test_cases(testcase: ET.Element, link: Dict[str, Any], suite_ids: Li
     return list(dict.fromkeys(result))
 
 
-def _results_package(results: List[Tuple[str, bool, List[str]]]) -> str:
+def _results_package(results: list[tuple[str, bool, list[str]]]) -> str:
     # lobster-trace: SwRequirements.sw_req_test_results
     """Get the package of the linked test cases, which is the package of the result records.
 
     Args:
-        results (List[Tuple[str, bool, List[str]]]): (test name, passed, qualified test case ids) per test.
+        results (list[tuple[str, bool, list[str]]]): (test name, passed, qualified test case ids) per test.
 
     Returns:
         str: The package name.
@@ -275,8 +275,8 @@ def _results_package(results: List[Tuple[str, bool, List[str]]]) -> str:
         TrlcdocError: If there is no linked test case, a test case id is not qualified, or the
         test cases belong to several packages.
     """
-    packages: Dict[str, List[str]] = {}
-    unqualified: List[str] = []
+    packages: dict[str, list[str]] = {}
+    unqualified: list[str] = []
     for name, _, test_case_ids in results:
         for test_case_id in test_case_ids:
             if "." in test_case_id:
@@ -294,16 +294,16 @@ def _results_package(results: List[Tuple[str, bool, List[str]]]) -> str:
     return next(iter(packages))
 
 
-def write_results(results: List[Tuple[str, bool, List[str]]], trlc_file: Path, link: Dict[str, Any]) -> Path:
+def write_results(results: list[tuple[str, bool, list[str]]], trlc_file: Path, link: dict[str, Any]) -> Path:
     # lobster-trace: SwRequirements.sw_req_test_results
     """Write the test results as TRLC SwTestCaseResult records.
 
     The records are written into the package of the linked test cases.
 
     Args:
-        results (List[Tuple[str, bool, List[str]]]): (test name, passed, qualified test case ids) per test.
+        results (list[tuple[str, bool, list[str]]]): (test name, passed, qualified test case ids) per test.
         trlc_file (Path): TRLC file to write.
-        link (Dict[str, Any]): The tests.link configuration. With 'array' the relates
+        link (dict[str, Any]): The tests.link configuration. With 'array' the relates
             component is written as list, otherwise as single reference.
 
     Returns:
@@ -313,7 +313,7 @@ def write_results(results: List[Tuple[str, bool, List[str]]], trlc_file: Path, l
         TrlcdocError: If the package of the test cases cannot be determined.
     """
     package = _results_package(results)
-    used_ids: Dict[str, int] = {}
+    used_ids: dict[str, int] = {}
     with open(trlc_file, "w", encoding="utf-8") as file:
         file.write(f"package {package}\n\n")
         file.write('section "SW Test Results" {\n\n')
@@ -331,5 +331,6 @@ def write_results(results: List[Tuple[str, bool, List[str]]], trlc_file: Path, l
             file.write("    }\n\n")
         file.write("}\n")
     return trlc_file
+
 
 # Main *************************************************************************

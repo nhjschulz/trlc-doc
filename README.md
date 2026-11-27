@@ -13,15 +13,16 @@ test results and LOBSTER trace reports into a static project report
 website. It is driven by a configuration YAML file that defines
 the project specific content to process.
 
-![Overview](./overview.svg)
-
-**NOTE**:
-trlcdoc is not a standalone solution, but a component extending the
+ trlcdoc is not a standalone solution, but a component extending the
 [trlc](https://github.com/bmw-software-engineering/trlc)
 and
 [BMW LOBSTER tooling](https://github.com/bmw-software-engineering/lobster)
 with automated documentation generation.
-An understanding of their purpose and usage is required to benefit from trlcdoc.
+An understanding of their purpose and usage is required to benefit from it.
+The following 6 minute video gives you a quick overview of what trlcdoc offers:
+
+![trlcdoc overview video](./trlcdoc-video.webp)
+▶ [Watch the overview video on YouTube](https://www.youtube.com/watch?v=_ZVOgigi_ws) (6 min, AI generated)
 
 **Status**: alpha. The configuration may change incompatibly before 1.0.0.
 
@@ -78,9 +79,14 @@ links), `2` build error. All generated files go to `paths.output`
 
 ### Installation
 
-The HTML site generation needs a Java runtime for PlantUML, and Graphviz for all
-diagrams except sequence diagrams. Tracing C/C++ code needs
-[doxygen](https://www.doxygen.nl).
+The HTML site generation needs a Java runtime for PlantUML, and
+[Graphviz](https://graphviz.org) for all diagrams except sequence diagrams and
+for the tracing policy diagram of the tracing report. Tracing C/C++ code needs
+[doxygen](https://www.doxygen.nl). All of them must be on the `PATH`; trlcdoc
+stops with an error if a step needs a missing tool.
+
+trlcdoc runs on Linux, Windows and macOS. On macOS, Homebrew provides the tools:
+`brew install --cask temurin` for Java and `brew install graphviz doxygen`.
 
 **From PyPI:**
 
@@ -108,6 +114,10 @@ trlcdoc --help
 ```bash
 pip install -e ."[test,doc,lint]"
 trlcdoc --help
+
+pytest              # unit tests
+ruff check .        # lint
+ruff format .       # format the code, the Tests workflow checks it
 ```
 
 ### Execution Examples
@@ -121,6 +131,7 @@ trlcdoc all show                    # full build, then open the site in the brow
 trlcdoc convert --format markdown   # Markdown export of the TRLC documents
 trlcdoc trace --online              # tracing report linked to the repository
 trlcdoc -c other.yaml check         # validate a configuration
+trlcdoc --output /tmp/site          # build into another folder, overrides paths.output
 ```
 
 ## Configuration
@@ -181,6 +192,7 @@ Key concepts:
 - A TRLC or test result document without `title` takes its page title from the
   converted content.
 - **PLANTUML** environment variable: a plantuml.jar or a PlantUML server URL.
+  trlcdoc starts a jar as local server, unless `plantuml.picoweb` is `false`.
 
 The built-in TRLC converters are the project converters of
 [pyTRLCConverter](https://github.com/NewTec-GmbH/pyTRLCConverter) (`tools/converter`),

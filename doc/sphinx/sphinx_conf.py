@@ -2,25 +2,25 @@
 # Additional project Sphinx configuration, executed at the end of the generated conf.py.
 
 # Use the full window width with sphinx_rtd_theme (default max-width is 800px).
-html_static_path.append(str(PROJECT_ROOT / 'doc' / 'sphinx' / '_static'))
-html_css_files = ['wide.css']
+html_static_path.append(str(PROJECT_ROOT / "doc" / "sphinx" / "_static"))
+html_css_files = ["wide.css"]
 
-autoapi_dirs = [str(PROJECT_ROOT / 'trlcdoc')]
-autoapi_root = 'autoapi'
+autoapi_dirs = [str(PROJECT_ROOT / "trlcdoc")]
+autoapi_root = "autoapi"
 autoapi_add_toctree_entry = False
-autoapi_options = ['members', 'undoc-members', 'show-inheritance', 'show-inheritance-diagram', 'show-module-summary']
-autoapi_ignore = ['*/sphinx/conf.py']
-#autoapi_ignore = ['*/sphinx/conf.py', '*/converters/*']
+autoapi_options = ["members", "undoc-members", "show-inheritance", "show-inheritance-diagram", "show-module-summary"]
+autoapi_ignore = ["*/sphinx/conf.py"]
+# autoapi_ignore = ['*/sphinx/conf.py', '*/converters/*']
 
 # sphinx.ext.inheritance_diagram configuration
 # https://www.sphinx-doc.org/en/master/usage/extensions/inheritance.html
 inheritance_graph_attrs = {
-    'rankdir': 'TB',  # Top-to-bottom layout (use 'LR' for left-to-right)
-    'size': '"8.0, 12.0"',
-    'bgcolor': 'transparent',
+    "rankdir": "TB",  # Top-to-bottom layout (use 'LR' for left-to-right)
+    "size": '"8.0, 12.0"',
+    "bgcolor": "transparent",
 }
 inheritance_edge_attrs = {
-    'arrowsize': '1.5',
+    "arrowsize": "1.5",
 }
 
 # sphinx.ext.linkcode: link the [source] buttons of the API pages to the repository
@@ -31,10 +31,9 @@ inheritance_edge_attrs = {
 import importlib
 import inspect
 import posixpath
-from typing import Dict, Optional
 
 
-def linkcode_resolve(domain: str, info: Dict[str, str]) -> Optional[str]:
+def linkcode_resolve(domain: str, info: dict[str, str]) -> str | None:
     """Get the repository URL of the source code of a documented object.
 
     This version generates GitHub URLs for Python objects in the project,
@@ -42,11 +41,11 @@ def linkcode_resolve(domain: str, info: Dict[str, str]) -> Optional[str]:
 
     Args:
         domain (str): Sphinx domain of the object, only 'py' is resolved.
-        info (Dict[str, str]): Object description of the domain, for 'py' the
+        info (dict[str, str]): Object description of the domain, for 'py' the
             'module' name and the 'fullname' of the object in the module.
 
     Returns:
-        Optional[str]: URL of the object's source lines at the built commit, or None
+        str | None: URL of the object's source lines at the built commit, or None
             if the object has no Python source in the project or the repository
             or commit is not known.
     """

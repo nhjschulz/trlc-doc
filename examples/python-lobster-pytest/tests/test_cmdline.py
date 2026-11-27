@@ -37,9 +37,10 @@ Author: Norbert Schulz (norbert.schulz@newtec.de)
 import sys
 
 import pytest
-from greeter. __main__ import main
+from greeter.__main__ import main
 
 # Functions ********************************************************************
+
 
 def test_cli(record_property):
     # lobster-trace: SwTests.tc_cli
@@ -50,8 +51,9 @@ def test_cli(record_property):
     """
     record_property("lobster-trace", "SwTests.tc_cli")
 
-    sys.argv = ['greet', "Alice"]
+    sys.argv = ["greet", "Alice"]
     assert main() == 0
+
 
 def test_stdout(record_property, capsys):
     # lobster-trace: SwTests.tc_cli_stdout
@@ -60,10 +62,11 @@ def test_stdout(record_property, capsys):
     """
     record_property("lobster-trace", "SwTests.tc_cli_stdout")
 
-    sys.argv = ['greet', "Tom"]
+    sys.argv = ["greet", "Tom"]
     main()
 
     assert "Tom" in capsys.readouterr().out
+
 
 def test_usage_help(record_property, capsys):
     # lobster-trace: SwTests.tc_cli_usage_help
@@ -72,7 +75,7 @@ def test_usage_help(record_property, capsys):
     """
     record_property("lobster-trace", "SwTests.tc_cli_usage_help")
 
-    expected_help_output_lines =[
+    expected_help_output_lines = [
         "usage: greet [-h] [name]",
         "",
         "A python CLI tool to greet a user considering the time.",
@@ -84,16 +87,17 @@ def test_usage_help(record_property, capsys):
         "  -h, --help  show this help message and exit",
         "",
         "Copyright (c) 2025 NewTec GmbH",
-        ""
+        "",
     ]
 
-    sys.argv = ['greet', "-h"]
+    sys.argv = ["greet", "-h"]
     with pytest.raises(SystemExit) as pytest_wrapped_e:
         main()
 
-    assert expected_help_output_lines == capsys.readouterr().out.split('\n')
+    assert expected_help_output_lines == capsys.readouterr().out.split("\n")
     assert pytest_wrapped_e.type is SystemExit
     assert pytest_wrapped_e.value.code == 0
+
 
 def test_usage_error(record_property, capsys):
     # lobster-trace: SwTests.tc_cli_usage_error
@@ -102,9 +106,9 @@ def test_usage_error(record_property, capsys):
     """
     record_property("lobster-trace", "SwTests.tc_cli_usage_error")
 
-    reference ="usage: greet [-h] [name]\ngreet: error: unrecognized arguments: --unknown\n"
+    reference = "usage: greet [-h] [name]\ngreet: error: unrecognized arguments: --unknown\n"
 
-    sys.argv = ['greet', "--unknown"]
+    sys.argv = ["greet", "--unknown"]
     with pytest.raises(SystemExit) as pytest_wrapped_e:
         main()
 

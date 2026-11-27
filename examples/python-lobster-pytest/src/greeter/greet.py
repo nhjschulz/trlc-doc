@@ -34,9 +34,9 @@ Greeter message provider implementation.
 
 import getpass
 from datetime import datetime
-from typing import Optional
 
 # Functions ********************************************************************
+
 
 def _get_hour_of_day() -> int:
     # lobster-trace: SwRequirements.sw_func_daytime_greeting_selection
@@ -48,12 +48,13 @@ def _get_hour_of_day() -> int:
     """
     return datetime.now().hour
 
-def greet(name : Optional[str]) -> str:
+
+def greet(name: str | None) -> str:
     """
     Greet the given user dependent on the current time.
 
     Args:
-        name (Optional[str]): A name to greet or None to use the login name.
+        name (str | None): A name to greet or None to use the login name.
 
     Returns:
         str: A greeting message for the user.

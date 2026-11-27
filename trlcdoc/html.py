@@ -1,6 +1,4 @@
-"""Generate the Sphinx sources from the configured documents and build the HTML site.
-
-"""
+"""Generate the Sphinx sources from the configured documents and build the HTML site."""
 
 # trlcdoc - A utility for producing project documentation from TRLC and LOBSTER contents.
 # Copyright (c) 2026 - 2026 Norbert Schulz github@schulznorbert.de
@@ -28,13 +26,13 @@ import shutil
 import subprocess
 import webbrowser
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from sphinx.cmd.build import build_main
 
-from .config import PACKAGE_DIR, TRLC_DOCUMENT_TYPES, Config
+from .config import PACKAGE_DIR, Config
 from .pages import replace_placeholders
-from .util import TrlcdocError, clean_dir, git_output, git_root, repository_url, run
+from .util import TrlcdocError, clean_dir, find_graphviz, git_output, git_root, repository_url, run
 
 # Variables ********************************************************************
 
@@ -58,6 +56,7 @@ PAGE_TITLE_CHAR = "-"
 
 def build_html(cfg: Config) -> Path:
     # lobster-trace: SwRequirements.sw_req_html_site
+    # lobster-trace: SwRequirements.sw_req_external_tools
     """Generate the Sphinx source folder and build the HTML site.
 
     Args:
@@ -67,14 +66,16 @@ def build_html(cfg: Config) -> Path:
         Path: The HTML output folder.
 
     Raises:
-        TrlcdocError: If an input is missing or Sphinx reports an error.
+        TrlcdocError: If an input or Graphviz is missing, or Sphinx reports an error.
     """
+    if "sphinx.ext.graphviz" in _extensions(cfg):
+        find_graphviz("by the Sphinx extension sphinx.ext.graphviz")
     src_dir = clean_dir(cfg.sphinx_dir, cfg.output)
     shutil.copy(SPHINX_TEMPLATE_DIR / "conf.py", src_dir / "conf.py")
     shutil.copytree(SPHINX_TEMPLATE_DIR / "_static", src_dir / "_static")
 
-    pages: List[str] = []
-    copy_dirs: List[Dict[str, str]] = []
+    pages: list[str] = []
+    copy_dirs: list[dict[str, str]] = []
     for doc in cfg.documents:
         pages.append(_write_page(cfg, doc, src_dir, copy_dirs))
 
@@ -118,8 +119,10 @@ def show_html(cfg: Config) -> Path:
         except webbrowser.Error:
             opened = False
         if not opened:
-            raise TrlcdocError(f"No web browser found to open {index}. Set the BROWSER environment variable "
-                               "to the command of a web browser, or open the file manually.")
+            raise TrlcdocError(
+                f"No web browser found to open {index}. Set the BROWSER environment variable "
+                "to the command of a web browser, or open the file manually."
+            )
     return index
 
 
@@ -143,7 +146,7 @@ def _open_in_windows(index: Path) -> bool:
     Returns:
         bool: True if the page was handed to Windows, False without Windows interop.
     """
-    cmd: Optional[List[str]] = None
+    cmd: list[str] | None = None
     wslview = shutil.which("wslview")
     explorer = shutil.which("explorer.exe")
     if wslview is not None:
@@ -160,7 +163,7 @@ def _open_in_windows(index: Path) -> bool:
     return cmd is not None
 
 
-def _windows_path(path: Path) -> Optional[str]:
+def _windows_path(path: Path) -> str | None:
     # lobster-trace: SwRequirements.sw_req_show
     """Convert a WSL path into a Windows path with wslpath.
 
@@ -168,7 +171,7 @@ def _windows_path(path: Path) -> Optional[str]:
         path (Path): Path in the WSL file system.
 
     Returns:
-        Optional[str]: The Windows path, or None if wslpath failed.
+        str | None: The Windows path, or None if wslpath failed.
     """
     result = None
     try:
@@ -195,16 +198,16 @@ def _heading(title: str, char: str = PAGE_TITLE_CHAR) -> str:
     return f"{title}\n{char * len(title)}\n\n"
 
 
-def _write_page(cfg: Config, doc: Dict[str, Any], src_dir: Path, copy_dirs: List[Dict[str, str]]) -> str:
+def _write_page(cfg: Config, doc: dict[str, Any], src_dir: Path, copy_dirs: list[dict[str, str]]) -> str:
     # lobster-trace: SwRequirements.sw_req_documents
     # lobster-trace: SwRequirements.sw_req_document_types
     """Write the Sphinx page of a document.
 
     Args:
         cfg (Config): Project configuration.
-        doc (Dict[str, Any]): Document configuration.
+        doc (dict[str, Any]): Document configuration.
         src_dir (Path): Sphinx source folder.
-        copy_dirs (List[Dict[str, str]]): Collects HTML folders to copy into the site.
+        copy_dirs (list[dict[str, str]]): Collects HTML folders to copy into the site.
 
     Returns:
         str: Page name for the table of contents.
@@ -215,30 +218,41 @@ def _write_page(cfg: Config, doc: Dict[str, Any], src_dir: Path, copy_dirs: List
     doc_type = doc["type"]
     page_file = src_dir / f"{doc['id']}.rst"
 
-    if doc_type in TRLC_DOCUMENT_TYPES:
-        _write_converted_page(cfg, doc, src_dir)
-    elif doc_type == "trace_report" and cfg.trace_report_format == "rst":
-        _write_rst_trace_report(cfg, doc, src_dir)
-    elif doc_type == "trace_report":
-        _require(cfg.trace_report_html, "run the trace step first")
-        _write_generated(cfg, page_file, doc, f".. raw:: html\n   :file: {cfg.trace_report_html.as_posix()}\n")
-    elif doc_type in ("html", "command"):
-        if doc_type == "command":
-            run(doc["command"], cfg.root)
-        html_source = cfg.html_source(doc)
-        _require(html_source / "index.html", "generate it first")
-        copy_dirs.append({"source": str(html_source), "destination": doc["id"]})
-        _write_generated(cfg, page_file, doc, ".. raw:: html\n\n"
-                         f'    <iframe src="{doc["id"]}/index.html" width="100%" height="1024px"></iframe>\n')
-    elif doc_type == "text":
-        source = _require(cfg.path(doc["source"]), "check the source path")
-        # Sphinx treats absolute include paths as relative to the source folder.
-        relative = Path(os.path.relpath(source, src_dir)).as_posix()
-        _write_generated(cfg, page_file, doc, f".. literalinclude:: {relative}\n   :language: none\n")
-    else:
-        source = _require(cfg.path(doc["source"]), "check the source path")
-        page_file = page_file.with_suffix(".md" if doc_type == "markdown" else ".rst")
-        _write_project_page(cfg, source, page_file, doc.get("placeholders", True))
+    # The schema allows only these document types, so every type has a case.
+    match doc_type:
+        case "trlc" | "test_results":
+            _write_converted_page(cfg, doc, src_dir)
+
+        case "trace_report" if cfg.trace_report_format == "rst":
+            _write_rst_trace_report(cfg, doc, src_dir)
+
+        case "trace_report":
+            _require(cfg.trace_report_html, "run the trace step first")
+            _write_generated(cfg, page_file, doc, f".. raw:: html\n   :file: {cfg.trace_report_html.as_posix()}\n")
+
+        case "html" | "command":
+            if doc_type == "command":
+                run(doc["command"], cfg.root)
+            html_source = cfg.html_source(doc)
+            _require(html_source / "index.html", "generate it first")
+            copy_dirs.append({"source": str(html_source), "destination": doc["id"]})
+            _write_generated(
+                cfg,
+                page_file,
+                doc,
+                f'.. raw:: html\n\n    <iframe src="{doc["id"]}/index.html" width="100%" height="1024px"></iframe>\n',
+            )
+
+        case "text":
+            source = _require(cfg.path(doc["source"]), "check the source path")
+            # Sphinx treats absolute include paths as relative to the source folder.
+            relative = Path(os.path.relpath(source, src_dir)).as_posix()
+            _write_generated(cfg, page_file, doc, f".. literalinclude:: {relative}\n   :language: none\n")
+
+        case "rst" | "markdown":
+            source = _require(cfg.path(doc["source"]), "check the source path")
+            page_file = page_file.with_suffix(".md" if doc_type == "markdown" else ".rst")
+            _write_project_page(cfg, source, page_file, doc.get("placeholders", True))
 
     return cfg.page_name(doc)
 
@@ -264,7 +278,7 @@ def _write_project_page(cfg: Config, source: Path, page_file: Path, placeholders
     return page_file
 
 
-def _write_generated(cfg: Config, page_file: Path, doc: Dict[str, Any], body: str) -> Path:
+def _write_generated(cfg: Config, page_file: Path, doc: dict[str, Any], body: str) -> Path:
     # lobster-trace: SwRequirements.sw_req_documents
     # lobster-trace: SwRequirements.sw_req_html_customization
     """Write a generated page: the page header, the title of the document and the body.
@@ -272,7 +286,7 @@ def _write_generated(cfg: Config, page_file: Path, doc: Dict[str, Any], body: st
     Args:
         cfg (Config): Project configuration.
         page_file (Path): The page in the Sphinx source folder.
-        doc (Dict[str, Any]): Document configuration, a page without title gets no heading.
+        doc (dict[str, Any]): Document configuration, a page without title gets no heading.
         body (str): Page content below the title.
 
     Returns:
@@ -302,7 +316,7 @@ def _page_header(cfg: Config, page_file: Path) -> str:
     return replace_placeholders(cfg, header, page_file).rstrip("\n") + "\n\n"
 
 
-def _write_rst_trace_report(cfg: Config, doc: Dict[str, Any], src_dir: Path) -> str:
+def _write_rst_trace_report(cfg: Config, doc: dict[str, Any], src_dir: Path) -> str:
     # lobster-trace: SwRequirements.sw_req_trace_report_rst
     """Write the reStructuredText tracing report as a folder of pages.
 
@@ -310,7 +324,7 @@ def _write_rst_trace_report(cfg: Config, doc: Dict[str, Any], src_dir: Path) -> 
 
     Args:
         cfg (Config): Project configuration.
-        doc (Dict[str, Any]): Document of type trace_report.
+        doc (dict[str, Any]): Document of type trace_report.
         src_dir (Path): Sphinx source folder.
 
     Returns:
@@ -322,8 +336,7 @@ def _write_rst_trace_report(cfg: Config, doc: Dict[str, Any], src_dir: Path) -> 
 
     for page_file in page_dir.glob("*.rst"):
         if page_file.name != "index.rst":
-            page_file.write_text(_page_header(cfg, page_file) + page_file.read_text(encoding="utf-8"),
-                                 encoding="utf-8")
+            page_file.write_text(_page_header(cfg, page_file) + page_file.read_text(encoding="utf-8"), encoding="utf-8")
 
     # The configured title replaces the LOBSTER title, a heading with over- and underline.
     start = (page_dir / "index.rst").read_text(encoding="utf-8")
@@ -334,7 +347,7 @@ def _write_rst_trace_report(cfg: Config, doc: Dict[str, Any], src_dir: Path) -> 
     return cfg.page_name(doc)
 
 
-def _write_converted_page(cfg: Config, doc: Dict[str, Any], src_dir: Path) -> str:
+def _write_converted_page(cfg: Config, doc: dict[str, Any], src_dir: Path) -> str:
     # lobster-trace: SwRequirements.sw_req_documents
     # lobster-trace: SwRequirements.sw_req_document_types
     """Write the page of a converted TRLC document.
@@ -344,7 +357,7 @@ def _write_converted_page(cfg: Config, doc: Dict[str, Any], src_dir: Path) -> st
 
     Args:
         cfg (Config): Project configuration.
-        doc (Dict[str, Any]): Document of type trlc or test_results.
+        doc (dict[str, Any]): Document of type trlc or test_results.
         src_dir (Path): Sphinx source folder.
 
     Returns:
@@ -387,7 +400,7 @@ def _require(path: Path, hint: str) -> Path:
     return path
 
 
-def _write_index(cfg: Config, src_dir: Path, pages: List[str]) -> Path:
+def _write_index(cfg: Config, src_dir: Path, pages: list[str]) -> Path:
     # lobster-trace: SwRequirements.sw_req_html_site
     # lobster-trace: SwRequirements.sw_req_html_customization
     """Write the start page with the table of contents, or the project owned start page.
@@ -395,7 +408,7 @@ def _write_index(cfg: Config, src_dir: Path, pages: List[str]) -> Path:
     Args:
         cfg (Config): Project configuration.
         src_dir (Path): Sphinx source folder.
-        pages (List[str]): Page names in table of contents order.
+        pages (list[str]): Page names in table of contents order.
 
     Returns:
         Path: The written index.rst.
@@ -424,7 +437,7 @@ def _project_title(cfg: Config) -> str:
     return " ".join(filter(None, [cfg.project["name"], cfg.project.get("version")]))
 
 
-def _write_sphinx_config(cfg: Config, src_dir: Path, copy_dirs: List[Dict[str, str]]) -> Path:
+def _write_sphinx_config(cfg: Config, src_dir: Path, copy_dirs: list[dict[str, str]]) -> Path:
     # lobster-trace: SwRequirements.sw_req_project_settings
     # lobster-trace: SwRequirements.sw_req_html_customization
     """Write the project settings read by the generic conf.py.
@@ -432,7 +445,7 @@ def _write_sphinx_config(cfg: Config, src_dir: Path, copy_dirs: List[Dict[str, s
     Args:
         cfg (Config): Project configuration.
         src_dir (Path): Sphinx source folder.
-        copy_dirs (List[Dict[str, str]]): HTML folders to copy into the site.
+        copy_dirs (list[dict[str, str]]): HTML folders to copy into the site.
 
     Returns:
         Path: The written settings file.
@@ -453,17 +466,19 @@ def _write_sphinx_config(cfg: Config, src_dir: Path, copy_dirs: List[Dict[str, s
         "conf": str(cfg.path(conf)) if conf else None,
         "copy_dirs": copy_dirs,
         "project_root": str(cfg.root),
+        "build_info": _build_info(cfg),
         "links": _link_settings(cfg),
         # Configured titles of project pages, which override the first heading of the file.
-        "page_titles": {doc["id"]: doc["title"] for doc in cfg.documents
-                        if doc["type"] in ("rst", "markdown") and "title" in doc},
+        "page_titles": {
+            doc["id"]: doc["title"] for doc in cfg.documents if doc["type"] in ("rst", "markdown") and "title" in doc
+        },
     }
     settings_file = src_dir / "trlcdoc_settings.json"
     settings_file.write_text(json.dumps(settings, indent=4), encoding="utf-8")
     return settings_file
 
 
-def _extensions(cfg: Config) -> List[str]:
+def _extensions(cfg: Config) -> list[str]:
     # lobster-trace: SwRequirements.sw_req_trace_report_rst
     """Get the configured Sphinx extensions, plus the ones the reStructuredText tracing report needs.
 
@@ -471,7 +486,7 @@ def _extensions(cfg: Config) -> List[str]:
         cfg (Config): Project configuration.
 
     Returns:
-        List[str]: Sphinx extensions in addition to the default ones.
+        list[str]: Sphinx extensions in addition to the default ones.
     """
     extensions = list(cfg.html.get("extensions", []))
     if cfg.trace_report_format == "rst" and any(doc["type"] == "trace_report" for doc in cfg.documents):
@@ -479,7 +494,31 @@ def _extensions(cfg: Config) -> List[str]:
     return extensions
 
 
-def _link_settings(cfg: Config) -> Dict[str, Any]:
+def _build_info(cfg: Config) -> str:
+    # lobster-trace: SwRequirements.sw_req_html_version_info
+    """Describe the version control state the site is built from, for the page footer.
+
+    Args:
+        cfg (Config): Project configuration.
+
+    Returns:
+        str: ' from <git describe output>', followed by ' on branch <name>' if HEAD is on a branch,
+            e.g. ' from V1.0.0-3-g1a2b3c4-dirty on branch develop'. Empty outside of a git repository.
+    """
+    info = ""
+    # --always falls back to the short commit hash if there is no tag,
+    # --dirty marks uncommitted changes of tracked files.
+    describe = git_output(["describe", "--tags", "--always", "--dirty"], cfg.root)
+    if describe:
+        info = f" from {describe}"
+        # Empty for a detached HEAD, e.g. a tag checkout or a pull request merge commit in CI.
+        branch = git_output(["branch", "--show-current"], cfg.root)
+        if branch:
+            info += f" on branch {branch}"
+    return info
+
+
+def _link_settings(cfg: Config) -> dict[str, Any]:
     # lobster-trace: SwRequirements.sw_req_markdown_links
     """Collect the settings to resolve the relative links of Markdown pages against the project.
 
@@ -487,13 +526,13 @@ def _link_settings(cfg: Config) -> Dict[str, Any]:
         cfg (Config): Project configuration.
 
     Returns:
-        Dict[str, Any]: The project root, the Markdown file of each Markdown page, the site page
+        dict[str, Any]: The project root, the Markdown file of each Markdown page, the site page
             of each project file and folder shown in the site, and the repository, the path of the
             project root in the repository and the commit for links to other project files
             (repository and commit None if not available).
     """
-    pages: Dict[str, str] = {}
-    markdown_sources: Dict[str, str] = {}
+    pages: dict[str, str] = {}
+    markdown_sources: dict[str, str] = {}
     for doc in cfg.documents:
         if "source" in doc and doc["type"] in ("trlc", "rst", "markdown", "text"):
             source = Path(os.path.relpath(cfg.path(doc["source"]), cfg.root)).as_posix()
@@ -512,7 +551,14 @@ def _link_settings(cfg: Config) -> Dict[str, Any]:
             repository = None
         # The project may be a subfolder of the repository.
         repository_path = Path(os.path.relpath(cfg.root, repo_root)).as_posix()
-    return {"root": str(cfg.root), "markdown_sources": markdown_sources, "pages": pages,
-            "repository": repository, "repository_path": repository_path, "commit": commit}
+    return {
+        "root": str(cfg.root),
+        "markdown_sources": markdown_sources,
+        "pages": pages,
+        "repository": repository,
+        "repository_path": repository_path,
+        "commit": commit,
+    }
+
 
 # Main *************************************************************************

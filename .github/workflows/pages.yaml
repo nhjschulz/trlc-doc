@@ -51,8 +51,9 @@ jobs:
           python -m pip install --upgrade pip
           pip install -e ".[test,doc]"
 
+      # The published tracing report links to the files in the repository, not to the runner's files.
       - name: Build documentation
-        run: trlcdoc
+        run: trlcdoc --online
 
       # The Pages deployment replaces the whole site, so every schema version
       # is regenerated from the git tags on each run.

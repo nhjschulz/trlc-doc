@@ -39,6 +39,7 @@ document adds the behavior behind the keys.
   - [6.3 trace\_to and requires](#63-trace_to-and-requires)
   - [6.4 Online tracing report](#64-online-tracing-report)
 - [7. plantuml](#7-plantuml)
+  - [7.1 Local PlantUML server](#71-local-plantuml-server)
 - [8. html](#8-html)
   - [8.1 theme, extensions and extra\_conf](#81-theme-extensions-and-extra_conf)
   - [8.2 conf: project Sphinx configuration](#82-conf-project-sphinx-configuration)
@@ -222,8 +223,13 @@ project:
 | `logo`       | no       | none    | Image file shown by the theme as site logo (Sphinx `html_logo`). |
 | `favicon`    | no       | none    | Browser tab icon (Sphinx `html_favicon`). |
 
-Each page footer also shows the date of the build and the git commit it was
-built from, if the project is a git repository. This needs no configuration.
+Each page footer also shows the date of the build and, if the project is a git
+repository, the output of `git describe --tags --always --dirty` and the branch,
+e.g. `Last updated on Nov 23, 2026 from V0.6.0-13-g6e9ca73-dirty on branch develop`:
+the nearest tag, the number of commits since it, the short commit hash and `-dirty`
+for uncommitted changes of tracked files. Without a tag it shows the short commit
+hash, with a detached HEAD (e.g. a tag checkout in CI) no branch. This needs no
+configuration.
 
 ## 3. paths
 
@@ -242,6 +248,24 @@ paths:
 including the downloaded PlantUML jar. Therefore it must not be the project
 root or one of its parents, and it must not be inside the trlcdoc package.
 Add it to `.gitignore`. Chapter [9](#9-generated-files) shows its content.
+
+**Command line option `-o`/`--output`:** replaces `paths.output` for one run,
+without changing the configuration, e.g. for several builds from one checkout
+or a CI job that writes outside the repository:
+
+```bash
+trlcdoc --output build/markdown convert --format markdown
+trlcdoc --output "$RUNNER_TEMP/site"
+```
+
+- A relative folder is relative to the **current folder**, not to the project
+  root like the paths in the configuration file.
+- The same location rules apply, a `paths.output` in the configuration is not
+  used and not checked in this run.
+- Everything listed in chapter [9](#9-generated-files) moves along, including
+  the downloaded PlantUML jar. A CI cache of the jar must use the new folder.
+- Files your own test or document commands write (`type: command` documents,
+  test result files of `runner: command`) stay where their commands put them.
 
 ## 4. documents
 
@@ -1003,8 +1027,9 @@ projects: the links contain the path of the project in the repository.
 ## 7. plantuml
 
 PlantUML renders the diagrams in TRLC records (during `convert`) and in
-`.. uml::` directives of the site (during `html`). Java is required unless you
-use a PlantUML server.
+`.. uml::` directives of the site (during `html`). Java and Graphviz are
+required unless you use a PlantUML server. The plantuml step checks that both
+are on the `PATH` and stops otherwise.
 
 ```yaml
 plantuml:
@@ -1015,6 +1040,7 @@ plantuml:
 |-----------|------------|--------------------|
 | `version` | `1.2024.8` | PlantUML release downloaded from GitHub into `<output>/plantuml` if no jar is configured. Quote it, so YAML keeps it a string. The download happens once; `clean` removes it. |
 | `jar`     | none       | Use this `plantuml.jar` (relative to the project root) instead of downloading one. |
+| `picoweb` | `true`     | Start the jar once as local PlantUML server for all diagrams, see [7.1](#71-local-plantuml-server). `false` starts the jar for each diagram. |
 
 The jar is selected in this order:
 
@@ -1026,6 +1052,26 @@ The jar is selected in this order:
 trlcdoc sets `PLANTUML` for the converters and Sphinx. Set it yourself to use a
 company wide jar or server without changing the configuration, e.g. in CI:
 `PLANTUML=https://www.plantuml.com/plantuml`.
+
+### 7.1 Local PlantUML server
+
+Starting Java takes seconds, rendering a diagram milliseconds. With a jar, the
+plantuml step therefore starts the jar once as PlantUML server (`-picoweb`) and
+sets `PLANTUML` to its URL, e.g. `http://127.0.0.1:50549/plantuml`:
+
+- The server listens on a free port of `127.0.0.1` only, it cannot be reached
+  from the network. `127.0.0.1` is added to `NO_PROXY`, so a configured proxy
+  is not used for it.
+- The server stops when trlcdoc ends, also after an error, Ctrl+C or a
+  termination (`SIGTERM`). Its output is in `<output>/plantuml/picoweb.log`.
+- If the server doesn't render a first diagram within 30 seconds, trlcdoc stops
+  it, prints a warning and starts the jar for each diagram instead. The build
+  continues.
+- The server gets the diagram text, not its file. A relative `!include` path is
+  therefore relative to the project root, not to the diagram file. Use
+  `picoweb: false` if your diagrams need includes relative to their file.
+
+A server URL in `PLANTUML` is used as it is, no local server is started.
 
 ## 8. html
 
@@ -1100,13 +1146,13 @@ undefined; `# pylint: skip-file` silences pylint.
 # doc/sphinx/sphinx_conf.py
 # pylint: skip-file
 
-autoapi_dirs = [str(PROJECT_ROOT / 'src')]
-html_static_path.append(str(PROJECT_ROOT / 'doc' / 'sphinx' / '_static'))
-html_css_files = ['custom.css']
+autoapi_dirs = [str(PROJECT_ROOT / "src")]
+html_static_path.append(str(PROJECT_ROOT / "doc" / "sphinx" / "_static"))
+html_css_files = ["custom.css"]
 
 
 def setup(app):
-    app.connect('builder-inited', lambda app: print("project hook"))
+    app.connect("builder-inited", lambda app: print("project hook"))
 ```
 
 - The file runs in the Sphinx folder `<output>/sphinx/`, so **build paths
@@ -1246,11 +1292,12 @@ The placeholders are not replaced in the `conf` file; use `PROJECT_ROOT` there.
 
 ## 9. Generated files
 
-Everything goes to `paths.output`:
+Everything goes to `paths.output`, or to the folder of the `--output` option:
 
 ```text
 build/trlcdoc/
 ├── plantuml/plantuml-<version>.jar     plantuml step (download)
+├── plantuml/picoweb.log                plantuml step (output of the local PlantUML server)
 ├── tests/
 │   ├── junit.xml                       tests step (pytest)
 │   ├── coverage/                       HTML coverage report (pytest with --cov)
@@ -1284,9 +1331,13 @@ Configuration errors are listed without the leading `<file>:<line>:`.
 | `documents[x].include: 'y' is no document of type trlc or test_results.` | `include` names a missing id or a page type without TRLC records. |
 | `documents[x].pytrlcconverter.converter.rst: file '...' not found.` | Wrong path, or `builtin:` prefix missing for a built-in file. |
 | `documents/0: 'converter' is not one of ['id', 'title', ...]` | A pyTRLCConverter option on document level. Move it into the `pytrlcconverter` block. |
+| `--output ...: must not be the project root or one of its parents.` | The `--output` folder would contain the project, which the clean step deletes. A relative folder is relative to the current folder, see [3](#3-paths). |
 | `trace.levels[A].requires: level 'B' is not defined.` | The level name must match exactly, including spaces and case. |
 | `trace.levels[A].doxyfile: file '...' not found.` | The Doxyfile path is relative to the project root. |
 | `Tool 'doxygen' not found. It is needed by the lobster-doxygen extractor of trace level 'A'` | Install doxygen and put it on the `PATH`. |
+| `Tool 'java' not found. A Java runtime is needed to run the PlantUML jar` | Install Java and put it on the `PATH`, or set `PLANTUML` to a PlantUML server URL, see [7](#7-plantuml). |
+| `Warning: The PlantUML picoweb server is not available, every diagram starts the jar instead.` | The local PlantUML server didn't start, the next line tells why, `<output>/plantuml/picoweb.log` has its output. The build continues, only slower. Set `plantuml.picoweb: false` to skip the server, see [7](#7-plantuml). |
+| `Tool 'dot' not found. Graphviz is needed ...` | Install [Graphviz](https://graphviz.org) and put its `bin` folder on the `PATH`. The plantuml step, the trace step (tracing policy diagram) and, with `trace.report: rst`, the html step need it. |
 | lobster-doxygen: `... has requirements or justifications on file level.` | An `@implements` tag in the `@file` comment. Move it to a function, struct or class. |
 | `Tests without test case link (property ..., output ..., name pattern ...)` | Tests without test case link, see [5.3](#53-link-from-test-results-to-test-cases). |
 | `Tests linked to several test cases, which needs tests.link.array` | Set `array: true` and make `relates` an array in the model. |

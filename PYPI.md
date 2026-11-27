@@ -13,7 +13,10 @@ requirements, test results and [LOBSTER](https://github.com/bmw-software-enginee
 trace reports into a static project documentation web site. A `trlcdoc.yaml`
 configuration file in the project root defines what to process.
 
-![Overview](https://raw.githubusercontent.com/nhjschulz/trlc-doc/main/overview.svg)
+The following 6 minute video gives you a quick overview of what trlcdoc offers:
+
+![trlcdoc overview video](https://raw.githubusercontent.com/nhjschulz/trlc-doc/main/trlcdoc-video.webp)
+▶ [Watch the overview video on YouTube](https://www.youtube.com/watch?v=_ZVOgigi_ws) (6 min, AI generated)
 
 Status: alpha. The configuration may change incompatibly before 1.0.0.
 
@@ -26,9 +29,11 @@ Status: alpha. The configuration may change incompatibly before 1.0.0.
 pip install trlcdoc
 ```
 
-The HTML site needs a Java runtime for PlantUML, and Graphviz for all
-diagrams except sequence diagrams. Tracing C/C++ code needs
-[doxygen](https://www.doxygen.nl).
+The HTML site needs a Java runtime for PlantUML, and
+[Graphviz](https://graphviz.org) for all diagrams except sequence diagrams and
+for the tracing policy diagram of the tracing report. Tracing C/C++ code needs
+[doxygen](https://www.doxygen.nl). All of them must be on the `PATH`; trlcdoc
+stops with an error if a step needs a missing tool.
 
 ## Usage
 

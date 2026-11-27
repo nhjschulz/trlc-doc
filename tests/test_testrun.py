@@ -1,6 +1,4 @@
-"""Tests of the test runner and the conversion of the test results into TRLC records.
-
-"""
+"""Tests of the test runner and the conversion of the test results into TRLC records."""
 
 # trlcdoc - A utility for producing project documentation from TRLC and LOBSTER contents.
 # Copyright (c) 2026 - 2026 Norbert Schulz github@schulznorbert.de
@@ -24,7 +22,7 @@ import os
 import shutil
 import sys
 from pathlib import Path
-from typing import Any, Dict, List, Tuple
+from typing import Any
 
 import pytest
 from conftest import MODEL_DIR, base_config, make_project, write_config
@@ -121,9 +119,12 @@ def test_test_run(tmp_path: Path) -> None:
     root = tmp_path / "command"
     make_project(root)
     data = base_config()
-    data["tests"] = {"runner": "command",
-                     "command": [sys.executable, "-m", "pytest", "tests", "--junitxml=out/results.xml"],
-                     "junit": "out/results.xml", "link": data["tests"]["link"]}
+    data["tests"] = {
+        "runner": "command",
+        "command": [sys.executable, "-m", "pytest", "tests", "--junitxml=out/results.xml"],
+        "junit": "out/results.xml",
+        "link": data["tests"]["link"],
+    }
     cfg = load_config(write_config(root, data))
     assert cfg.junit_file == root / "out" / "results.xml"
     assert run_tests(cfg) is True
@@ -135,8 +136,15 @@ def test_test_run(tmp_path: Path) -> None:
         run_tests(load_config(write_config(root, data)))
     assert not (root / "out" / "results.xml").exists()
 
-    data["tests"]["command"] = [sys.executable, "-m", "pytest", "tests", "--junitxml=out/results.xml",
-                                "--cov=hello", "--cov-report=html:out/coverage"]
+    data["tests"]["command"] = [
+        sys.executable,
+        "-m",
+        "pytest",
+        "tests",
+        "--junitxml=out/results.xml",
+        "--cov=hello",
+        "--cov-report=html:out/coverage",
+    ]
     data["tests"]["coverage"] = "out/coverage"
     assert run_tests(load_config(write_config(root, data))) is True
     index = root / "out" / "coverage" / "index.html"
@@ -180,8 +188,7 @@ def test_test_results(tmp_path: Path) -> None:
     assert "relates = [SwTests.tc_failing]" in content
     assert "relates = [SwTests.tc_passing, SwTests.tc_other]" in content
 
-    junit.write_text(JUNIT_XML.format(extra='<testcase classname="x" name="check_unlinked"/>'),
-                     encoding="utf-8")
+    junit.write_text(JUNIT_XML.format(extra='<testcase classname="x" name="check_unlinked"/>'), encoding="utf-8")
     with pytest.raises(TrlcdocError, match="check_unlinked"):
         read_junit(junit, LINK)
 
@@ -244,23 +251,26 @@ def test_test_results_package(tmp_path: Path) -> None:
     assert "relates = Other.tc_a" in content
 
     for results, message in (
-            ([("check_a", True, ["SwTests.tc_a"]), ("check_b", True, ["Other.tc_b"]),
-              ("check_c", True, ["Other.tc_c"])],
-             "several packages: SwTests: check_a; Other: check_b, check_c"),
-            ([("check_a", True, ["tc_a"])], r"without package: check_a \(tc_a\)"),
-            ([], "No test linked")):
+        (
+            [("check_a", True, ["SwTests.tc_a"]), ("check_b", True, ["Other.tc_b"]), ("check_c", True, ["Other.tc_c"])],
+            "several packages: SwTests: check_a; Other: check_b, check_c",
+        ),
+        ([("check_a", True, ["tc_a"])], r"without package: check_a \(tc_a\)"),
+        ([], "No test linked"),
+    ):
         with pytest.raises(TrlcdocError, match=message):
             write_results(results, trlc_file, LINK)
 
 
-def _write_valid_results(folder: Path, results: List[Tuple[str, bool, List[str]]], link: Dict[str, Any],
-                         relates: str) -> str:
+def _write_valid_results(
+    folder: Path, results: list[tuple[str, bool, list[str]]], link: dict[str, Any], relates: str
+) -> str:
     """Write the test results and check that they are valid TRLC with the test model.
 
     Args:
         folder (Path): Folder for the model and the records, created.
-        results (List[Tuple[str, bool, List[str]]]): Test results from read_junit().
-        link (Dict[str, Any]): The tests.link configuration.
+        results (list[tuple[str, bool, list[str]]]): Test results from read_junit().
+        link (dict[str, Any]): The tests.link configuration.
         relates (str): Declaration of the relates component in the model.
 
     Returns:
@@ -268,15 +278,21 @@ def _write_valid_results(folder: Path, results: List[Tuple[str, bool, List[str]]
     """
     shutil.copytree(MODEL_DIR, folder / "model")
     model_file = folder / "model" / "swe-test.rsl"
-    model_file.write_text(model_file.read_text(encoding="utf-8").replace("relates SwTestCase", relates),
-                          encoding="utf-8")
+    model_file.write_text(
+        model_file.read_text(encoding="utf-8").replace("relates SwTestCase", relates), encoding="utf-8"
+    )
     (folder / "results").mkdir()
     (folder / "results" / "cases.trlc").write_text(
-        "package SwTests\n" + "".join(f"SwTestCase tc_{name} {{ description = \"x\" verifies = [] }}\n"
-                                      for name in ("passing", "failing", "error", "param", "other")),
-        encoding="utf-8")
+        "package SwTests\n"
+        + "".join(
+            f'SwTestCase tc_{name} {{ description = "x" verifies = [] }}\n'
+            for name in ("passing", "failing", "error", "param", "other")
+        ),
+        encoding="utf-8",
+    )
     content = write_results(results, folder / "results" / RESULTS_FILE, link).read_text(encoding="utf-8")
     assert run_unchecked([find_tool("trlc"), str(folder / "model"), str(folder / "results")], folder) == 0
     return content
+
 
 # Main *************************************************************************

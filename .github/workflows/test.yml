@@ -32,17 +32,27 @@ jobs:
           python -m pip install --upgrade pip
           pip install "$(python -c "import tomllib; print(tomllib.load(open('pyproject.toml', 'rb'))['project']['optional-dependencies']['lint'][0])")"
 
-      - name: Run ruff
+      - name: Run ruff check
         run: ruff check --output-format=github .
+
+      - name: Check formatting
+        run: ruff format --check .
 
   test:
     name: pytest (${{ matrix.os }}, Python ${{ matrix.python-version }})
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
+      # Python compatibility doesn't depend on the OS: every supported version runs on Linux,
+      # the slower Windows and macOS runners test the newest version only.
       matrix:
-        os: [ubuntu-latest, windows-latest]
+        os: [ubuntu-latest]
         python-version: ["3.10", "3.11", "3.12", "3.13", "3.14"]
+        include:
+          - os: windows-latest
+            python-version: "3.14"
+          - os: macos-latest
+            python-version: "3.14"
 
     steps:
       - name: Checkout
@@ -69,15 +79,21 @@ jobs:
           key: plantuml-${{ hashFiles('trlcdoc/plantuml.py') }}
 
       # doxygen is needed by the C/C++ tracing test (lobster-doxygen extractor).
-      - name: Install doxygen (Linux)
+      # Graphviz is needed by the plantuml, trace and html steps, which stop without it.
+      - name: Install doxygen and Graphviz (Linux)
         if: runner.os == 'Linux'
-        run: sudo apt-get update && sudo apt-get install -y doxygen
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends doxygen graphviz
 
-      - name: Install doxygen (Windows)
+      - name: Install doxygen and Graphviz (Windows)
         if: runner.os == 'Windows'
         run: |
-          choco install doxygen.install -y --no-progress
+          choco install doxygen.install graphviz -y --no-progress
           echo "C:\Program Files\doxygen\bin" >> $env:GITHUB_PATH
+          echo "C:\Program Files\Graphviz\bin" >> $env:GITHUB_PATH
+
+      - name: Install doxygen and Graphviz (macOS)
+        if: runner.os == 'macOS'
+        run: brew install doxygen graphviz
 
       - name: Install trlcdoc with test dependencies
         run: |

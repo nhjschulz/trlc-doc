@@ -49,6 +49,7 @@ section "trlcdoc SW Architecture" {
                 SwRequirements.sw_constraint_python,
                 SwRequirements.sw_constraint_os_win,
                 SwRequirements.sw_constraint_os_linux,
+                SwRequirements.sw_constraint_os_macos,
                 SwRequirements.sw_constraint_project_independent,
                 SwRequirements.sw_constraint_toolchain
             ]
@@ -98,7 +99,7 @@ section "trlcdoc SW Architecture" {
                         The CLI provides the application entry point. It
 
                         - parses the command line with argparse
-                        - locates and loads the configuration
+                        - locates and loads the configuration, with the output folder of the `--output` option
                         - determines the steps to run in their fixed order, including the steps they depend on
                         - runs them
 
@@ -126,7 +127,8 @@ section "trlcdoc SW Architecture" {
                         SwRequirements.sw_req_exit_code,
                         SwRequirements.sw_req_clean,
                         SwRequirements.sw_req_show,
-                        SwRequirements.sw_req_toctree_check
+                        SwRequirements.sw_req_toctree_check,
+                        SwRequirements.sw_req_output_option
                     ]
                 }
 
@@ -152,6 +154,7 @@ section "trlcdoc SW Architecture" {
                         It provides the validated settings as a `Config` object, which resolves all paths:
 
                         - the configured inputs relative to the project root
+                        - the output folder of the `--output` option, if given, relative to the current folder
                         - the generated files in fixed subfolders of the output folder
 
                         It defines the page name of each document (`page_name()`), the single place of this rule.
@@ -172,6 +175,7 @@ section "trlcdoc SW Architecture" {
                         SwRequirements.sw_req_project_settings,
                         SwRequirements.sw_req_documents,
                         SwRequirements.sw_req_output_folder,
+                        SwRequirements.sw_req_output_option,
                         SwRequirements.sw_req_page_placeholders
                     ]
                 }
@@ -192,6 +196,7 @@ section "trlcdoc SW Architecture" {
                         Provides services shared by all steps:
 
                         - locating the toolchain executables of the running Python environment
+                        - locating the external tools on the `PATH`, e.g. Java and Graphviz, before a step needs them
                         - running external commands
                         - querying git
                         - managing the output folder
@@ -209,7 +214,8 @@ section "trlcdoc SW Architecture" {
                         SwRequirements.sw_req_output_folder,
                         SwRequirements.sw_req_clean,
                         SwRequirements.sw_req_delete_protection,
-                        SwRequirements.sw_req_exit_code
+                        SwRequirements.sw_req_exit_code,
+                        SwRequirements.sw_req_external_tools
                     ]
                 }
 
@@ -233,13 +239,36 @@ section "trlcdoc SW Architecture" {
                         - a download of the configured version into the output folder
 
                         It exports the selection in the `PLANTUML` environment variable for the converters and Sphinx.
+
+                        A PlantUML jar runs with the Java option `-Djava.awt.headless=true`:
+
+                        - the generic Sphinx configuration `conf.py` passes it on every system
+                        - pyTRLCConverter passes it on Linux, on macOS `java_headless_env()` sets `JAVA_TOOL_OPTIONS`
+
+                        Java on Linux without a display and on Windows needs no option, on macOS every diagram would
+                        otherwise start the graphical user interface support of Java.
+
+                        With `plantuml.picoweb` (default), `start_picoweb()` starts a selected jar once as picoweb
+                        server on a free port of `127.0.0.1` and exports its URL instead of the jar:
+
+                        - pyTRLCConverter renders through the server URL itself
+                        - Sphinx runs `plantuml_client.py` per diagram, the `plantuml -pipe` of the server
+                        - `NO_PROXY` gets `127.0.0.1`, so requests to the server don't go through a proxy
+
+                        The server is ready when it renders a probe diagram. If it doesn't within 30 seconds, it is
+                        stopped and the jar stays exported, with a warning. `stop_picoweb()` stops the server and
+                        restores the environment. The CLI calls it at the end of every run, `atexit` when Python exits.
+                        While the server runs, SIGTERM ends trlcdoc like `sys.exit()`, so both run then too.
                         '''
                     verification_criteria =
                         '''
                         Run the plantuml step with the environment variable set, with a configured jar and without both.
                         Check the exported jar path.
+                        Check the Java command of Sphinx and the environment of pyTRLCConverter on each system.
+                        Run the plantuml step with picoweb, check the exported URL, a rendered diagram and the stopped
+                        server. Check the fallback to the jar.
                         '''
-                    satisfies = [SwRequirements.sw_req_plantuml]
+                    satisfies = [SwRequirements.sw_req_plantuml, SwRequirements.sw_req_plantuml_picoweb]
                 }
 
                 Generic.PlantUML sw_arch_comp_plantuml_diagram {
@@ -385,7 +414,7 @@ section "trlcdoc SW Architecture" {
 
                         - reads the project settings
                         - copies embedded HTML sites into the site
-                        - adds the git commit to the page footer
+                        - adds the version control state from `html.py` (git describe and branch) to the page footer
                         - executes the project specific Sphinx configuration
 
                         The Sphinx extension `sphinx_links.py` resolves the relative links and images of Markdown pages

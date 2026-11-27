@@ -1,17 +1,17 @@
 """Sphinx extension resolving the relative links and images of Markdown pages against the project.
 
-    A Markdown document is copied into the Sphinx source folder, so its relative
-    links and images would point into that folder instead of the project. This
-    extension resolves them against the location of the Markdown file in the project:
+A Markdown document is copied into the Sphinx source folder, so its relative
+links and images would point into that folder instead of the project. This
+extension resolves them against the location of the Markdown file in the project:
 
-    - an image is taken from the project, Sphinx copies it into the site
-    - a link to a file of a site page links to that page
-    - a link to any other project file or folder links to the repository at the built commit
-    - without a repository, such a link is shown as text with a warning
+- an image is taken from the project, Sphinx copies it into the site
+- a link to a file of a site page links to that page
+- a link to any other project file or folder links to the repository at the built commit
+- without a repository, such a link is shown as text with a warning
 
-    Links to targets which do not exist in the project are left to MyST, which reports them.
+Links to targets which do not exist in the project are left to MyST, which reports them.
 
-    The settings are provided by trlcdoc in the configuration value 'trlcdoc_links'.
+The settings are provided by trlcdoc in the configuration value 'trlcdoc_links'.
 
 """
 
@@ -37,7 +37,7 @@ import os
 import posixpath
 import re
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 from urllib.parse import quote
 
 from docutils import nodes
@@ -103,11 +103,11 @@ class MarkdownLinks(SphinxPostTransform):
                 if xref.get("reftype") == "myst" and xref.get("refdomain") is None:
                     self._resolve(settings, source, xref)
 
-    def _resolve(self, settings: Dict[str, Any], source: str, xref: addnodes.pending_xref) -> None:
+    def _resolve(self, settings: dict[str, Any], source: str, xref: addnodes.pending_xref) -> None:
         """Replace a link to a project file or folder, leave other links to MyST.
 
         Args:
-            settings (Dict[str, Any]): The link settings.
+            settings (dict[str, Any]): The link settings.
             source (str): The Markdown file of the page, relative to the project root.
             xref (addnodes.pending_xref): The unresolved link.
         """
@@ -126,17 +126,22 @@ class MarkdownLinks(SphinxPostTransform):
                 fragment = f"#{anchor}" if anchor else ""
                 repository_path = posixpath.normpath(posixpath.join(settings.get("repository_path", "."), path))
                 uri = f"{settings['repository']}/{kind}/{settings['commit']}/{quote(repository_path)}{fragment}"
-                xref.replace_self(nodes.reference("", "", *_link_content(xref, target), internal=False,
-                                                  refuri=uri))
+                xref.replace_self(nodes.reference("", "", *_link_content(xref, target), internal=False, refuri=uri))
             else:
-                LOGGER.warning("Link to project file '%s' shown as text, no repository for the link.", path,
-                               location=xref, type="trlcdoc", subtype="link")
+                LOGGER.warning(
+                    "Link to project file '%s' shown as text, no repository for the link.",
+                    path,
+                    location=xref,
+                    type="trlcdoc",
+                    subtype="link",
+                )
                 xref.replace_self(nodes.inline("", "", *_link_content(xref, target)))
+
 
 # Functions ********************************************************************
 
 
-def _link_content(xref: addnodes.pending_xref, target: str) -> List[nodes.Node]:
+def _link_content(xref: addnodes.pending_xref, target: str) -> list[nodes.Node]:
     # lobster-trace: SwRequirements.sw_req_markdown_links
     """Get the content of a link without the MyST cross-reference wrapper.
 
@@ -145,9 +150,9 @@ def _link_content(xref: addnodes.pending_xref, target: str) -> List[nodes.Node]:
         target (str): The link target, the content of a link without text.
 
     Returns:
-        List[nodes.Node]: The link text nodes.
+        list[nodes.Node]: The link text nodes.
     """
-    content: List[nodes.Node] = [nodes.literal(target, target)]
+    content: list[nodes.Node] = [nodes.literal(target, target)]
     if xref.astext():
         content = []
         for child in xref.children:
@@ -158,17 +163,17 @@ def _link_content(xref: addnodes.pending_xref, target: str) -> List[nodes.Node]:
     return content
 
 
-def _project_path(settings: Dict[str, Any], source: str, target: str) -> Optional[Path]:
+def _project_path(settings: dict[str, Any], source: str, target: str) -> Path | None:
     # lobster-trace: SwRequirements.sw_req_markdown_links
     """Resolve a relative link target of a Markdown file against its location in the project.
 
     Args:
-        settings (Dict[str, Any]): The link settings.
+        settings (dict[str, Any]): The link settings.
         source (str): The Markdown file, relative to the project root.
         target (str): The link target, relative to the Markdown file.
 
     Returns:
-        Optional[Path]: The target relative to the project root, or None for URLs, absolute
+        Path | None: The target relative to the project root, or None for URLs, absolute
             paths and targets outside of the project.
     """
     result = None
@@ -179,7 +184,7 @@ def _project_path(settings: Dict[str, Any], source: str, target: str) -> Optiona
     return result
 
 
-def setup(app: Sphinx) -> Dict[str, Any]:
+def setup(app: Sphinx) -> dict[str, Any]:
     # lobster-trace: SwRequirements.sw_req_markdown_links
     """Register the configuration value and the transforms.
 
@@ -187,11 +192,12 @@ def setup(app: Sphinx) -> Dict[str, Any]:
         app (Sphinx): The Sphinx application.
 
     Returns:
-        Dict[str, Any]: The extension metadata.
+        dict[str, Any]: The extension metadata.
     """
     app.add_config_value(CONFIG_NAME, {}, "env")
     app.add_transform(MarkdownImages)
     app.add_post_transform(MarkdownLinks)
     return {"parallel_read_safe": True, "parallel_write_safe": True}
+
 
 # Main *************************************************************************
