@@ -55,9 +55,11 @@ PICOWEB_STOP_TIMEOUT = 5.0
 # Diagram that checks that the picoweb server renders. A sequence diagram doesn't need Graphviz.
 PICOWEB_PROBE_DIAGRAM = "@startuml\nA -> B\n@enduml\n"
 
-# Environment variables set while the picoweb server runs. The proxy exceptions keep requests
-# to the local server away from a proxy configured for the internet.
-PICOWEB_ENV_NAMES = ("PLANTUML", "NO_PROXY", "no_proxy")
+# Proxy exceptions, which keep requests to the local server away from a proxy configured for the internet.
+# Both spellings are in use. Environment variable names on Windows ignore the case, there they are one variable.
+NO_PROXY_NAMES = ("NO_PROXY",) if sys.platform == "win32" else ("NO_PROXY", "no_proxy")
+# Environment variables set while the picoweb server runs.
+PICOWEB_ENV_NAMES = ("PLANTUML", *NO_PROXY_NAMES)
 
 # Classes **********************************************************************
 
@@ -184,8 +186,8 @@ def start_picoweb(cfg: Config, jar: Path) -> str | None:
         return None
 
     os.environ["PLANTUML"] = url
-    for name in ("NO_PROXY", "no_proxy"):
-        os.environ[name] = ",".join(filter(None, [os.environ.get(name), PICOWEB_HOST]))
+    for name in NO_PROXY_NAMES:
+        _add_no_proxy_host(name, PICOWEB_HOST)
     return url
 
 
@@ -215,6 +217,20 @@ def stop_picoweb() -> None:
             os.environ[name] = value
     if server.saved_sigterm is not None:
         signal.signal(signal.SIGTERM, server.saved_sigterm)
+
+
+def _add_no_proxy_host(name: str, host: str) -> None:
+    # lobster-trace: SwRequirements.sw_req_plantuml_picoweb
+    """Add a host to a comma separated proxy exception variable, unless it is listed already.
+
+    Args:
+        name (str): Name of the environment variable, e.g. NO_PROXY.
+        host (str): Host that is reached without proxy.
+    """
+    hosts = [entry.strip() for entry in os.environ.get(name, "").split(",") if entry.strip()]
+    if host not in hosts:
+        hosts.append(host)
+    os.environ[name] = ",".join(hosts)
 
 
 def _free_port() -> int:

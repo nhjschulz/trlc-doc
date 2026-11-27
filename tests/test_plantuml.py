@@ -195,8 +195,10 @@ def test_plantuml_picoweb(
         capsys (pytest.CaptureFixture): pytest output capture.
     """
     monkeypatch.setenv("PLANTUML", str(plantuml_jar))
-    monkeypatch.delenv("NO_PROXY", raising=False)
-    monkeypatch.setenv("no_proxy", "example.com")
+    # On Windows, no_proxy and NO_PROXY are one variable: deleting no_proxy first works on every system.
+    monkeypatch.delenv("no_proxy", raising=False)
+    monkeypatch.setenv("NO_PROXY", "example.com,127.0.0.1")
+    windows = sys.platform == "win32"
     sigterm_handler = signal.getsignal(signal.SIGTERM)
     cfg = load_config(project)
 
@@ -205,8 +207,13 @@ def test_plantuml_picoweb(
     assert isinstance(url, str)
     assert url.startswith("http://127.0.0.1:") and url.endswith("/plantuml")
     assert os.environ["PLANTUML"] == url
-    assert os.environ["NO_PROXY"] == "127.0.0.1"
-    assert os.environ["no_proxy"] == "example.com,127.0.0.1"
+    # A listed host is not added again.
+    assert os.environ["NO_PROXY"] == "example.com,127.0.0.1"
+    monkeypatch.setenv("TRLCDOC_TEST_NO_PROXY", " example.com ,")
+    for _ in range(2):
+        plantuml._add_no_proxy_host("TRLCDOC_TEST_NO_PROXY", "127.0.0.1")
+        assert os.environ["TRLCDOC_TEST_NO_PROXY"] == "example.com,127.0.0.1"
+    assert os.environ["no_proxy"] == ("example.com,127.0.0.1" if windows else "127.0.0.1")
     process = plantuml._running_picoweb[0].process
     assert process.poll() is None
     assert f"Starting PlantUML picoweb server {url}" in capsys.readouterr().out
@@ -244,8 +251,8 @@ def test_plantuml_picoweb(
     assert process.poll() is not None
     assert not plantuml._running_picoweb
     assert os.environ["PLANTUML"] == str(plantuml_jar)
-    assert "NO_PROXY" not in os.environ
-    assert os.environ["no_proxy"] == "example.com"
+    assert os.environ["NO_PROXY"] == "example.com,127.0.0.1"
+    assert os.environ.get("no_proxy") == ("example.com,127.0.0.1" if windows else None)
     assert signal.getsignal(signal.SIGTERM) == sigterm_handler
     exit_code, _, error = _render(url, DIAGRAM, ["-pipe"], capsys)
     assert exit_code == 1 and "not reachable" in error
