@@ -192,6 +192,7 @@ Key concepts:
 - A TRLC or test result document without `title` takes its page title from the
   converted content.
 - **PLANTUML** environment variable: a plantuml.jar or a PlantUML server URL.
+  trlcdoc starts a jar as local server, unless `plantuml.picoweb` is `false`.
 
 The built-in TRLC converters are the project converters of
 [pyTRLCConverter](https://github.com/NewTec-GmbH/pyTRLCConverter) (`tools/converter`),

@@ -26,7 +26,7 @@ from .config import Config, find_config, load_config
 from .convert import convert_documents
 from .html import build_html, show_html
 from .pages import check_toctrees
-from .plantuml import provide_plantuml
+from .plantuml import provide_plantuml, stop_picoweb
 from .testrun import run_tests
 from .trace import build_trace_report
 from .util import TrlcdocError, remove_output
@@ -201,7 +201,8 @@ def main(argv: list[str] | None = None) -> int:
     # lobster-trace: SwRequirements.sw_req_config_validation
     # lobster-trace: SwRequirements.sw_req_exit_code
     # lobster-trace: SwRequirements.sw_req_output_option
-    """Run the requested trlcdoc steps.
+    # lobster-trace: SwRequirements.sw_req_plantuml_picoweb
+    """Run the requested trlcdoc steps and stop the PlantUML picoweb server at the end.
 
     Args:
         argv (list[str] | None): Arguments, defaults to sys.argv[1:].
@@ -227,6 +228,8 @@ def main(argv: list[str] | None = None) -> int:
     except TrlcdocError as err:
         print(f"\ntrlcdoc error: {err}")
         exit_code = 2
+    finally:
+        stop_picoweb()
     return exit_code
 
 

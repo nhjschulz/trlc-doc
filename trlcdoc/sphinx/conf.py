@@ -14,6 +14,7 @@ trlcdoc writes next to this file from the project configuration.
 import json
 import os
 import shutil
+import sys
 from pathlib import Path
 from typing import Any
 from urllib.parse import urlparse
@@ -75,7 +76,8 @@ _PLANTUML_ENV = os.getenv("PLANTUML")
 if _PLANTUML_ENV is None:
     raise ConfigError("The environment variable PLANTUML is not defined.")
 if urlparse(_PLANTUML_ENV).scheme in ["http", "https"]:
-    plantuml = [_PLANTUML_ENV]
+    # sphinxcontrib-plantuml can only run a command, which renders through the server.
+    plantuml = [sys.executable, "-m", "trlcdoc.plantuml_client", _PLANTUML_ENV]
 elif os.path.isfile(_PLANTUML_ENV):
     # Headless: on macOS, Java would otherwise start its graphical user interface support (Dock icon).
     plantuml = ["java", "-Djava.awt.headless=true", "-jar", _PLANTUML_ENV]

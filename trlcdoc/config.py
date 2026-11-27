@@ -112,7 +112,7 @@ class Config:
     def plantuml_dir(self) -> Path:
         # lobster-trace: SwRequirements.sw_req_plantuml
         # lobster-trace: SwRequirements.sw_req_output_folder
-        """Folder for the downloaded PlantUML jar."""
+        """Folder for the downloaded PlantUML jar and the log of the picoweb server."""
         return self.output / "plantuml"
 
     def convert_dir(self, fmt: str, doc_id: str) -> Path:
