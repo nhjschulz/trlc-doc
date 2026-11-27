@@ -60,8 +60,10 @@ def test_plantuml(project: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(plantuml, "find_tool", lambda name, hint: name)
     monkeypatch.setattr(plantuml, "find_graphviz", lambda purpose: "dot")
 
-    # Download of the configured version into the output folder.
-    monkeypatch.delenv("PLANTUML", raising=False)
+    # Download of the configured version into the output folder. Setting PLANTUML before deleting it
+    # lets monkeypatch restore it, provide_plantuml() exports the jar otherwise beyond this test.
+    monkeypatch.setenv("PLANTUML", "")
+    monkeypatch.delenv("PLANTUML")
     data = base_config()
     data["plantuml"] = {"version": "1.2023.1"}
     cfg = load_config(write_config(root, data))
