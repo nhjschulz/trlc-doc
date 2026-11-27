@@ -435,12 +435,16 @@ section "trlcdoc" {
                     The software shall create an HTML tracing report. On request, the report shall link the items to
                     their sources in the project repository, also for a project in a subfolder of the repository. On
                     request, the report shall render the item descriptions as Markdown.
+
+                    Test results are generated into the output folder, which neither the repository nor the site
+                    contains. Their items shall link to the site page of their test results document instead.
                     '''
                 verification_criteria =
                     '''
                     Create the tracing report offline and online, online also for a project in a subfolder of the
-                    repository. Check the item links of the reports. Create the report with and without Markdown
-                    rendering and check the descriptions.
+                    repository and with an output folder outside the repository. Check the item links of the reports,
+                    also of the test results. Create the report with and without Markdown rendering and check the
+                    descriptions.
                     '''
                 valid_status = AbstractRequirements.VALID_STATUS.valid
             }
@@ -452,12 +456,12 @@ section "trlcdoc" {
 
                     On request, the software shall include the tracing report as pages of the HTML site, one page per
                     trace level, instead of embedding the HTML tracing report. The links to the item sources shall work
-                    from the site pages.
+                    from the site pages. Test result items shall link to the site page of their test results document.
                     '''
                 verification_criteria =
                     '''
                     Build a site with the tracing report as site pages. Check the start page with its title, the level
-                    pages with their items, the page header and the links to the item sources.
+                    pages with their items, the page header, the links to the item sources and to the test results.
                     '''
                 valid_status = AbstractRequirements.VALID_STATUS.valid
             }

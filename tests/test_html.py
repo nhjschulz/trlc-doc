@@ -349,6 +349,16 @@ def test_trace_report_rst(tmp_path: Path, plantuml_jar: Path, monkeypatch: pytes
         assert not Path(link).is_absolute()
         assert (report_dir / link).resolve() == (root / "trlc" / "swe-req" / "swe-req.trlc").resolve()
 
+    # Test results link to their site page, which Sphinx resolves and names by its title.
+    results = (report_dir / "sw_test_result.html").read_text(encoding="utf-8")
+    assert "sw_test_result_report.trlc" not in results
+    links = re.findall(r'<a class="reference internal" href="([^"]+)"><span class="doc">([^<]+)</span></a>', results)
+    assert links
+    for link, text in links:
+        assert link == "../sw_test_results/index.html"
+        assert text == next(doc["title"] for doc in data["documents"] if doc["id"] == "sw_test_results")
+    assert (report_dir / "../sw_test_results/index.html").is_file()
+
 
 def test_page_placeholders_site(tmp_path: Path, plantuml_jar: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     """A project start page with {documents} and pages linking with {page:<id>} work with both tracing report

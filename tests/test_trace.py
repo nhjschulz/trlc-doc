@@ -77,6 +77,16 @@ def _report_items(cfg_file: Path) -> dict:
     return {item["tag"]: item for level in report["levels"] for item in level["items"]}
 
 
+def _assert_test_result_links(report: str) -> None:
+    """Check that the test results link to their site page and not to their generated records.
+
+    Args:
+        report (str): The HTML tracing report.
+    """
+    assert '<a href="sw_test_results/index.html" target="_blank">sw_test_results/index.html</a>' in report
+    assert "sw_test_result_report.trlc" not in report
+
+
 def test_trace_levels(project: Path) -> None:
     """The LOBSTER configuration is derived from the trace levels.
 
@@ -113,7 +123,8 @@ def test_trace_levels(project: Path) -> None:
 
 def test_trace_report(tmp_path: Path) -> None:
     """The HTML tracing report links to local files, or to the repository when online, also for a project in a
-    subfolder of the repository.
+    subfolder of the repository. Test results link to their site page, also with an output folder outside the
+    repository.
 
     Args:
         tmp_path (Path): pytest temporary folder.
@@ -126,12 +137,14 @@ def test_trace_report(tmp_path: Path) -> None:
     report = cfg.trace_report_html.read_text(encoding="utf-8")
     assert "sw_req_hello" in report
     assert "example/example" not in report
+    _assert_test_result_links(report)
 
     commit = git_init(cfg.root)
     assert build_trace_report(cfg, online=True) == 0
     report = cfg.trace_report_html.read_text(encoding="utf-8")
     link = f"https://github.com/example/example/blob/{commit}/trlc/swe-req/swe-req.trlc"
     assert link in report
+    _assert_test_result_links(report)
 
     # 'auto' derives the repository from the git origin remote.
     data = base_config()
@@ -148,6 +161,14 @@ def test_trace_report(tmp_path: Path) -> None:
     assert build_trace_report(cfg, online=True) == 0
     link = f"https://github.com/example/example/blob/{commit}/examples/greeter/trlc/swe-req/swe-req.trlc"
     assert link in cfg.trace_report_html.read_text(encoding="utf-8")
+
+    # An output folder outside the repository, which lobster-online-report cannot link.
+    cfg = load_config(project, tmp_path / "out")
+    run_tests(cfg)
+    assert build_trace_report(cfg, online=True) == 0
+    report = cfg.trace_report_html.read_text(encoding="utf-8")
+    assert link in report
+    _assert_test_result_links(report)
 
 
 def test_trace_markdown(tmp_path: Path) -> None:
