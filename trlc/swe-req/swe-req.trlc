@@ -51,11 +51,11 @@ section "trlcdoc" {
                 description =
                     '''
                     The software shall show its version and exit successfully when called with the command line
-                    argument `-v` or `--version`.
+                    argument `--version`.
                     '''
                 verification_criteria =
                     '''
-                    Call trlcdoc with `-v` and `--version` and check that the version is shown and the exit code is 0.
+                    Call trlcdoc with `--version` and check that the version is shown and the exit code is 0.
                     '''
                 valid_status = AbstractRequirements.VALID_STATUS.valid
             }
@@ -111,11 +111,40 @@ section "trlcdoc" {
                     - 0 on success
                     - 1 if the project content has findings (failed tests, missing trace links)
                     - 2 if the documentation could not be built
+                    - 130 if it was interrupted (Ctrl+C), with a message instead of a traceback
                     '''
                 verification_criteria =
                     '''
-                    Run trlcdoc on a project without findings, with a failing test and with an invalid configuration.
-                    Check the exit codes.
+                    Run trlcdoc on a project without findings, with a failing test, with an invalid configuration and
+                    with an interrupt. Check the exit codes.
+                    '''
+                valid_status = AbstractRequirements.VALID_STATUS.valid
+            }
+
+            SwReq sw_req_verbose_output {
+                description =
+                    '''
+                    **Verbose output**
+
+                    On request, the software shall show additional output to aid debugging. With `-v` (`--verbose`),
+                    it shall show
+
+                    - its decisions
+                    - the working folder, input size, exit code and duration of each external tool
+                    - the environment variables it sets for an external tool
+
+                    With `-vv`, it shall also show per-item details, e.g. the rewritten links, and the full environment.
+
+                    trlcdoc's own verbose lines shall start with their level name. The output of tools, also of Sphinx,
+                    shall be passed through unchanged. Without `-v`, the output shall not change.
+                    Errors and warnings shall go to the standard error output, all other output to the standard output.
+                    The verbose output shall not change the results, and it shall not show the values of environment
+                    variables named like secrets or the user info of URLs.
+                    '''
+                verification_criteria =
+                    '''
+                    Run a step without `-v`, with `-v` and with `-vv`. Check the output, that the results are the same,
+                    and that secrets of environment variables and URLs are not shown.
                     '''
                 valid_status = AbstractRequirements.VALID_STATUS.valid
             }

@@ -81,18 +81,19 @@ def test_cli_help(option: str, capsys: pytest.CaptureFixture) -> None:
     assert cli.REPOSITORY in out
 
 
-@pytest.mark.parametrize("option", ["-v", "--version"])
-def test_cli_version(option: str, capsys: pytest.CaptureFixture) -> None:
-    """The version is shown with -v and --version.
+def test_cli_version(capsys: pytest.CaptureFixture) -> None:
+    """The version is shown with --version, -v is the short option of --verbose.
 
     Args:
-        option (str): Version option.
         capsys (pytest.CaptureFixture): pytest output capture.
     """
     with pytest.raises(SystemExit) as exit_info:
-        cli.main([option])
+        cli.main(["--version"])
     assert exit_info.value.code == 0
     assert capsys.readouterr().out == f"trlcdoc {__version__}\n"
+
+    # Parsed only: running 'trlcdoc -v' here would build this repository, including these tests.
+    assert cli._parse_args(["-v"]).verbose == 1
 
 
 def test_steps(project: Path, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -190,7 +191,7 @@ def test_external_tools(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys:
     jar.write_bytes(b"jar")
     monkeypatch.setenv("PLANTUML", str(jar))
     assert cli.main(["-c", str(project), "plantuml"]) == 2
-    assert "Tool 'java' not found" in capsys.readouterr().out
+    assert "Tool 'java' not found" in capsys.readouterr().err
 
     # A PlantUML server needs neither Java nor Graphviz.
     monkeypatch.setenv("PLANTUML", "https://plantuml.example.com/plantuml")
@@ -199,13 +200,13 @@ def test_external_tools(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys:
 
     # The tracing policy diagram needs Graphviz.
     assert cli.main(["-c", str(project), "trace"]) == 2
-    assert "Tool 'dot' not found. Graphviz is needed for the tracing policy diagram" in capsys.readouterr().out
+    assert "Tool 'dot' not found. Graphviz is needed for the tracing policy diagram" in capsys.readouterr().err
 
     # The reStructuredText tracing report adds sphinx.ext.graphviz to the site.
     data = base_config()
     data["trace"]["report"] = "rst"
     assert cli.main(["-c", str(write_config(root, data)), "html"]) == 2
-    assert "Graphviz is needed by the Sphinx extension sphinx.ext.graphviz" in capsys.readouterr().out
+    assert "Graphviz is needed by the Sphinx extension sphinx.ext.graphviz" in capsys.readouterr().err
 
 
 def test_output_option(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture) -> None:
@@ -247,13 +248,13 @@ def test_output_option(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: 
         (PACKAGE_DIR / "out", "must not be inside the trlcdoc package folder"),
     ):
         assert cli.main(["-c", str(project), "--output", str(output), "check"]) == 2
-        assert f"--output {output.resolve()}: {error}" in capsys.readouterr().out
+        assert f"--output {output.resolve()}: {error}" in capsys.readouterr().err
 
     data = base_config()
     data["paths"]["output"] = "."
     assert cli.main(["-c", str(write_config(root, data)), "--output", "out", "check"]) == 0
     assert cli.main(["-c", str(project), "check"]) == 2
-    assert "paths.output: must not be the project root" in capsys.readouterr().out
+    assert "paths.output: must not be the project root" in capsys.readouterr().err
 
 
 # Main *************************************************************************

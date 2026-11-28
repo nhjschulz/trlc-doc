@@ -87,7 +87,7 @@ def test_delete_protection(project: Path, capsys: pytest.CaptureFixture) -> None
 
     for step in ("clean", "tests", "convert"):
         assert cli.main(["-c", str(project), step]) == 2
-        assert "is not a trlcdoc output folder" in capsys.readouterr().out
+        assert "is not a trlcdoc output folder" in capsys.readouterr().err
         assert source.read_text(encoding="utf-8") == content
         assert not (root / "tests" / MARKER_FILE).exists()
 

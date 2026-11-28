@@ -18,6 +18,7 @@
 
 # Imports **********************************************************************
 
+import logging
 import re
 import sys
 import time
@@ -27,11 +28,14 @@ from re import Pattern
 from typing import Any
 
 from .config import Config
+from .log import TRACE
 from .util import TrlcdocError, clean_dir, run_unchecked
 
 # Variables ********************************************************************
 
 RESULTS_FILE = "sw_test_result_report.trlc"
+
+LOG = logging.getLogger(__name__)
 
 # pytest exit codes: 0 = all passed, 1 = some tests failed.
 PYTEST_OK_CODES = (0, 1)
@@ -66,6 +70,7 @@ def run_tests(cfg: Config) -> bool:
     """
     tests = cfg.tests
     clean_dir(cfg.tests_dir, cfg.output)
+    LOG.debug("Test runner %s, JUnit XML file %s", tests["runner"], cfg.junit_file)
 
     match tests["runner"]:
         case "pytest":
@@ -94,12 +99,14 @@ def run_tests(cfg: Config) -> bool:
         raise TrlcdocError(f"Test result file {cfg.junit_file} was not created.")
 
     results = read_junit(cfg.junit_file, tests["link"])
+    for name, passed, test_cases in results:
+        LOG.log(TRACE, "Test %s: %s, test cases %s", name, "passed" if passed else "failed", ", ".join(test_cases))
     write_results(results, clean_dir(cfg.test_results_dir, cfg.output) / RESULTS_FILE, tests["link"])
 
     failed = [name for name, passed, _ in results if not passed]
-    print(f"Tests: {len(results)} results, {len(failed)} failed.")
+    LOG.info("Tests: %d results, %d failed.", len(results), len(failed))
     for name in failed:
-        print(f"  FAILED: {name}")
+        LOG.info("  FAILED: %s", name)
     return not failed
 
 

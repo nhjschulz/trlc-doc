@@ -27,6 +27,7 @@ from typing import Any
 import pytest
 import yaml
 
+from trlcdoc.log import setup_logging
 from trlcdoc.plantuml import DEFAULT_VERSION, DOWNLOAD_URL, _download
 
 # Variables ********************************************************************
@@ -293,6 +294,12 @@ def git_init(root: Path) -> str:
     git("commit", "-q", "-m", "Initial commit")
     git("remote", "add", "origin", "git@github.com:example/example.git")
     return git("rev-parse", "HEAD")
+
+
+@pytest.fixture(autouse=True)
+def fixture_default_output() -> None:
+    """Start every test with the default output, as a test running trlcdoc with -v changes the log level."""
+    setup_logging()
 
 
 @pytest.fixture(name="project")

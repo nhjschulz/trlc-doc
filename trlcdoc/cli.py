@@ -19,12 +19,14 @@
 # Imports **********************************************************************
 
 import argparse
+import logging
 from pathlib import Path
 
 from . import __version__
 from .config import Config, find_config, load_config
 from .convert import convert_documents
 from .html import build_html, show_html
+from .log import TRACE, setup_logging
 from .pages import check_toctrees
 from .plantuml import provide_plantuml, stop_picoweb
 from .testrun import run_tests
@@ -41,6 +43,11 @@ REPOSITORY = "https://github.com/nhjschulz/trlc-doc"
 DESCRIPTION = """Build project documentation for TRLC/LOBSTER based projects: requirements, architecture,
 tests, test results, tracing report and HTML site."""
 
+# Exit code after Ctrl+C, as the shell reports a process ended by SIGINT.
+EXIT_INTERRUPTED = 130
+
+LOG = logging.getLogger(__name__)
+
 # Classes **********************************************************************
 
 # Functions ********************************************************************
@@ -53,6 +60,7 @@ def _parse_args(argv: list[str] | None) -> argparse.Namespace:
     # lobster-trace: SwRequirements.sw_req_steps
     # lobster-trace: SwRequirements.sw_req_config_file
     # lobster-trace: SwRequirements.sw_req_output_option
+    # lobster-trace: SwRequirements.sw_req_verbose_output
     """Parse the command line arguments.
 
     Args:
@@ -72,7 +80,14 @@ def _parse_args(argv: list[str] | None) -> argparse.Namespace:
         "steps", nargs="*", metavar="step", help=f"steps to run: {', '.join(STEPS)} or all (default: all)"
     )
     parser.add_argument(
-        "-v", "--version", action="version", version=f"%(prog)s {__version__}", help="show the trlcdoc version and exit"
+        "--version", action="version", version=f"%(prog)s {__version__}", help="show the trlcdoc version and exit"
+    )
+    parser.add_argument(
+        "-v",
+        "--verbose",
+        action="count",
+        default=0,
+        help="show decisions, tool details and timings, -vv also per-item details",
     )
     parser.add_argument(
         "-c",
@@ -107,6 +122,7 @@ def _parse_args(argv: list[str] | None) -> argparse.Namespace:
 def _selected_steps(cfg: Config, requested: list[str]) -> list[str]:
     # lobster-trace: SwRequirements.sw_req_steps
     # lobster-trace: SwRequirements.sw_req_step_order
+    # lobster-trace: SwRequirements.sw_req_verbose_output
     """Determine the steps to run, in execution order.
 
     Args:
@@ -125,10 +141,17 @@ def _selected_steps(cfg: Config, requested: list[str]) -> list[str]:
             and not (step == "tests" and cfg.tests is None)
             and not (step == "trace" and cfg.trace is None)
         )
+        if cfg.tests is None:
+            LOG.debug("Step tests skipped: the configuration has no 'tests' section.")
+        if cfg.trace is None:
+            LOG.debug("Step trace skipped: the configuration has no 'trace' section.")
     # Converting and rendering need the PlantUML jar.
-    if selected & {"convert", "html"}:
+    if selected & {"convert", "html"} and "plantuml" not in selected:
+        LOG.debug("Step plantuml added: convert and html need PlantUML.")
         selected.add("plantuml")
-    return [step for step in STEPS if step in selected]
+    steps = [step for step in STEPS if step in selected]
+    LOG.debug("Steps: %s", ", ".join(steps))
+    return steps
 
 
 def _run_step(step: str, cfg: Config, args: argparse.Namespace) -> bool:
@@ -152,23 +175,23 @@ def _run_step(step: str, cfg: Config, args: argparse.Namespace) -> bool:
         TrlcdocError: If the step cannot be completed.
     """
     ok = True
-    print(f"\n===== trlcdoc {step} =====", flush=True)
+    LOG.info("\n===== trlcdoc %s =====", step)
 
     # _parse_args() accepts only the names in STEPS, so every step has a case.
     match step:
         case "clean":
             if remove_output(cfg.output):
-                print(f"Removing {cfg.output}")
+                LOG.info("Removing %s", cfg.output)
             else:
-                print(f"Nothing to clean in {cfg.output}")
+                LOG.info("Nothing to clean in %s", cfg.output)
 
         case "check":
-            print(f"Configuration {cfg.config_file} is valid, output: {cfg.output}")
+            LOG.info("Configuration %s is valid, output: %s", cfg.config_file, cfg.output)
             toctree_findings = check_toctrees(cfg)
             if toctree_findings:
-                print("Table of contents of the project start page:")
+                LOG.info("Table of contents of the project start page:")
                 for finding in toctree_findings:
-                    print(f"  {finding}")
+                    LOG.info("  %s", finding)
             ok = not toctree_findings
 
         case "plantuml":
@@ -202,6 +225,7 @@ def main(argv: list[str] | None = None) -> int:
     # lobster-trace: SwRequirements.sw_req_exit_code
     # lobster-trace: SwRequirements.sw_req_output_option
     # lobster-trace: SwRequirements.sw_req_plantuml_picoweb
+    # lobster-trace: SwRequirements.sw_req_verbose_output
     """Run the requested trlcdoc steps and stop the PlantUML picoweb server at the end.
 
     Args:
@@ -209,25 +233,33 @@ def main(argv: list[str] | None = None) -> int:
 
     Returns:
         int: 0 if all steps succeeded and the content has no findings,
-        1 on findings (failed tests, missing trace links), 2 on build errors.
+        1 on findings (failed tests, missing trace links), 2 on build errors, 130 if interrupted.
     """
     args = _parse_args(argv)
+    setup_logging(args.verbose)
     exit_code = 0
     try:
         config_file = args.config if args.config is not None else find_config(Path.cwd())
         cfg = load_config(config_file, args.output)
+        LOG.debug("Configuration %s, project root %s, output %s", cfg.config_file, cfg.root, cfg.output)
+        if LOG.isEnabledFor(TRACE):
+            for doc in cfg.documents:
+                LOG.log(TRACE, "Document %s: type %s, page %s", doc["id"], doc["type"], cfg.page_name(doc))
         findings: list[str] = []
         for step in _selected_steps(cfg, args.steps):
             if not _run_step(step, cfg, args):
                 findings.append(step)
         if findings:
-            print(f"\ntrlcdoc finished with findings in: {', '.join(findings)}")
+            LOG.info("\ntrlcdoc finished with findings in: %s", ", ".join(findings))
             exit_code = 1
         else:
-            print("\ntrlcdoc finished successfully.")
+            LOG.info("\ntrlcdoc finished successfully.")
     except TrlcdocError as err:
-        print(f"\ntrlcdoc error: {err}")
+        LOG.error("\ntrlcdoc error: %s", err)
         exit_code = 2
+    except KeyboardInterrupt:
+        LOG.error("\ntrlcdoc interrupted")
+        exit_code = EXIT_INTERRUPTED
     finally:
         stop_picoweb()
     return exit_code

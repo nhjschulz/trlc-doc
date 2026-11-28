@@ -19,6 +19,7 @@
 # Imports **********************************************************************
 
 import atexit
+import logging
 import os
 import signal
 import socket
@@ -33,10 +34,13 @@ from typing import Any
 from urllib.parse import urlparse
 
 from .config import Config
+from .log import command_line, redact_url
 from .plantuml_client import encode_diagram
 from .util import TrlcdocError, find_graphviz, find_tool, prepare_output
 
 # Variables ********************************************************************
+
+LOG = logging.getLogger(__name__)
 
 DEFAULT_VERSION = "1.2024.8"
 DOWNLOAD_URL = "https://github.com/plantuml/plantuml/releases/download/v{version}/plantuml-{version}.jar"
@@ -116,14 +120,19 @@ def provide_plantuml(cfg: Config) -> Path | str:
         find_graphviz("by PlantUML for all diagrams except sequence diagrams")
 
     if server:
+        LOG.debug("PlantUML server from the PLANTUML environment variable")
         jar = env_jar
     elif env_jar and Path(env_jar).is_file():
+        LOG.debug("PlantUML jar from the PLANTUML environment variable")
         jar = Path(env_jar).resolve()
     elif cfg_jar:
+        LOG.debug("PlantUML jar from plantuml.jar of the configuration")
         jar = cfg.path(cfg_jar)
     else:
         jar = cfg.plantuml_dir / f"plantuml-{version}.jar"
-        if not jar.is_file():
+        if jar.is_file():
+            LOG.debug("PlantUML jar %s downloaded before", version)
+        else:
             prepare_output(cfg.output)
             _download(DOWNLOAD_URL.format(version=version), jar)
 
@@ -131,11 +140,15 @@ def provide_plantuml(cfg: Config) -> Path | str:
         raise TrlcdocError(f"PlantUML jar {jar} not found.")
 
     os.environ["PLANTUML"] = str(jar)
-    print(f"PlantUML: {jar}")
-    if isinstance(jar, Path) and cfg.plantuml.get("picoweb", True):
-        url = start_picoweb(cfg, jar)
-        if url is not None:
-            return url
+    LOG.info("PlantUML: %s", redact_url(str(jar)))
+    LOG.debug("env: PLANTUML=%s", redact_url(str(jar)))
+    if isinstance(jar, Path):
+        if cfg.plantuml.get("picoweb", True):
+            url = start_picoweb(cfg, jar)
+            if url is not None:
+                return url
+        else:
+            LOG.debug("No picoweb server: plantuml.picoweb is false, every diagram starts the jar.")
     return jar
 
 
@@ -163,7 +176,8 @@ def start_picoweb(cfg: Config, jar: Path) -> str | None:
     prepare_output(cfg.output)
     cfg.plantuml_dir.mkdir(parents=True, exist_ok=True)
 
-    print(f"Starting PlantUML picoweb server {url}")
+    LOG.info("Starting PlantUML picoweb server %s", url)
+    LOG.debug("  $ %s (cwd %s, log %s)", command_line(cmd), cfg.root, log_file)
     with log_file.open("w", encoding="utf-8") as log:
         try:
             # The project root is the folder of relative !include paths, as the server gets no file name.
@@ -186,8 +200,10 @@ def start_picoweb(cfg: Config, jar: Path) -> str | None:
         return None
 
     os.environ["PLANTUML"] = url
+    LOG.debug("env: PLANTUML=%s", url)
     for name in NO_PROXY_NAMES:
         _add_no_proxy_host(name, PICOWEB_HOST)
+        LOG.debug("env: %s=%s", name, os.environ[name])
     return url
 
 
@@ -201,6 +217,7 @@ def stop_picoweb() -> None:
         return
     server = _running_picoweb.pop()
     atexit.unregister(stop_picoweb)
+    LOG.debug("Stopping PlantUML picoweb server %s", server.url)
 
     if server.process.poll() is None:
         server.process.terminate()
@@ -293,10 +310,10 @@ def _warn_no_picoweb(reason: str) -> None:
     Args:
         reason (str): Why the server is not available.
     """
-    print(
+    LOG.warning(
         "Warning: The PlantUML picoweb server is not available, every diagram starts the jar instead. "
-        "Set plantuml.picoweb to false to skip the server.\n"
-        f"  {reason}"
+        "Set plantuml.picoweb to false to skip the server.\n  %s",
+        reason,
     )
 
 
@@ -335,7 +352,7 @@ def _download(url: str, target: Path) -> Path:
     Raises:
         TrlcdocError: If the download fails.
     """
-    print(f"Downloading {url}")
+    LOG.info("Downloading %s", url)
     target.parent.mkdir(parents=True, exist_ok=True)
     partial = target.with_suffix(".part")
     try:

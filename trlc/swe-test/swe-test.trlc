@@ -42,10 +42,57 @@ section "SW-Tests" {
         SwTestCase tc_cli_version {
             description =
                 '''
-                Call trlcdoc with `-v` and with `--version`. Check that the version of the installed package is shown and
-                the exit code is 0 (`tests/test_cli.py`).
+                Call trlcdoc with `--version`. Check that the version of the installed package is shown and the exit
+                code is 0, and that `-v` is the short option of `--verbose` (`tests/test_cli.py`).
                 '''
             verifies = [SwRequirements.sw_req_cli_version]
+        }
+
+        SwTestCase tc_verbose_output {
+            description =
+                '''
+                **Verbose output** (`tests/test_log.py`)
+
+                Run the tests step without `-v`, with `-v` and with `-vv`. Check
+
+                - that the default output has no verbose lines
+                - the decisions and tool details with `-v`
+                - the environment and the test details with `-vv`
+                - that the test results are the same
+                '''
+            verifies = [SwRequirements.sw_req_verbose_output]
+        }
+
+        SwTestCase tc_verbose_secrets {
+            description =
+                '''
+                **No secrets in the verbose output** (`tests/test_log.py`)
+
+                Run with `-vv`, a secret environment variable and a PlantUML server URL with user and password. Check
+                that neither the secret nor the password is shown.
+                '''
+            verifies = [SwRequirements.sw_req_verbose_output]
+        }
+
+        SwTestCase tc_verbose_tools {
+            description =
+                '''
+                **Verbose tool output** (`tests/test_log.py`)
+
+                Run commands with `-v`, one with input and one ended by a signal (not on Windows). Check the input size,
+                exit code and signal name, the shell quoting of a command and the Sphinx verbosity for each level.
+                '''
+            verifies = [SwRequirements.sw_req_verbose_output]
+        }
+
+        SwTestCase tc_interrupted {
+            description =
+                '''
+                **Interrupt** (`tests/test_log.py`)
+
+                Interrupt a step with Ctrl+C. Check the exit code 130 and the message.
+                '''
+            verifies = [SwRequirements.sw_req_exit_code]
         }
 
         SwTestCase tc_steps {

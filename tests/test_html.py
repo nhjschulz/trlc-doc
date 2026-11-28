@@ -552,7 +552,7 @@ def test_show(project: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.Cap
 
     # Without site.
     assert cli.main(["-c", str(project), "show"]) == 2
-    assert "run the html step first" in capsys.readouterr().out
+    assert "run the html step first" in capsys.readouterr().err
     assert not browser.urls
 
     output = project.parent / "build" / "trlcdoc"
@@ -570,7 +570,7 @@ def test_show(project: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.Cap
 
     monkeypatch.setattr(webbrowser, "get", no_browser)
     assert cli.main(["-c", str(project), "show"]) == 2
-    assert "No web browser found" in capsys.readouterr().out
+    assert "No web browser found" in capsys.readouterr().err
 
     # WSL: explorer.exe opens the Windows path of the page, also if it returns 1.
     commands: list[list[str]] = []

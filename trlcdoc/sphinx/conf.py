@@ -12,6 +12,7 @@ trlcdoc writes next to this file from the project configuration.
 # Imports **********************************************************************
 
 import json
+import logging
 import os
 import shutil
 import sys
@@ -22,9 +23,14 @@ from urllib.parse import urlparse
 from docutils import nodes
 from sphinx.errors import ConfigError
 
+from trlcdoc.log import TRACE
+
 # pylint: disable=invalid-name,redefined-builtin,exec-used
 
 # Variables ********************************************************************
+
+# Sphinx executes this file in its own namespace, so the logger is named explicitly.
+_LOG = logging.getLogger("trlcdoc.sphinx.conf")
 
 _SETTINGS = json.loads((Path(__file__).parent / "trlcdoc_settings.json").read_text(encoding="utf-8"))
 
@@ -119,6 +125,8 @@ def _page_title(app: Any, doctree: Any) -> None:
     docname = app.env.docname
     title = _SETTINGS["page_titles"].get(docname)
     if title is not None:
+        old_title = app.env.titles[docname].astext() if docname in app.env.titles else ""
+        _LOG.log(TRACE, "Page title of %s: %r replaced by %r", docname, old_title, title)
         app.env.titles[docname] = nodes.title(title, title)
         app.env.longtitles[docname] = nodes.title(title, title)
         # The table of contents entries are taken from the section tree of the page, its first
