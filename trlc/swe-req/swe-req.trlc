@@ -293,11 +293,13 @@ section "trlcdoc" {
                     - test cases
                     - test results
 
-                    which projects can reference instead of requiring their own converter files.
+                    which projects can reference instead of requiring their own converter files. The reStructuredText
+                    converter for test results shall give every result an anchor, so links can lead to it.
                     '''
                 verification_criteria =
                     '''
-                    Convert documents of each kind using the built-in converters and check the output.
+                    Convert documents of each kind using the built-in converters and check the output, also the
+                    anchors of the test results.
                     '''
                 valid_status = AbstractRequirements.VALID_STATUS.valid
             }
@@ -437,7 +439,8 @@ section "trlcdoc" {
                     request, the report shall render the item descriptions as Markdown.
 
                     Test results are generated into the output folder, which neither the repository nor the site
-                    contains. Their items shall link to the site page of their test results document instead.
+                    contains. Their items shall link to their result on the site page of their test results document
+                    instead.
                     '''
                 verification_criteria =
                     '''
@@ -456,7 +459,8 @@ section "trlcdoc" {
 
                     On request, the software shall include the tracing report as pages of the HTML site, one page per
                     trace level, instead of embedding the HTML tracing report. The links to the item sources shall work
-                    from the site pages. Test result items shall link to the site page of their test results document.
+                    from the site pages. Test result items shall link to their result on the site page of their test
+                    results document.
                     '''
                 verification_criteria =
                     '''

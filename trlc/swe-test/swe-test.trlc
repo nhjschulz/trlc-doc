@@ -365,8 +365,8 @@ section "SW-Tests" {
                 **Built-in converters** (`tests/test_convert.py`)
 
                 Convert the requirements, architecture, test cases and test results of the example project with the
-                built-in converters into both formats. Check the converted content and the error for missing test
-                results.
+                built-in converters into both formats. Check the converted content, the anchors of the test results
+                in reStructuredText and the error for missing test results.
                 '''
             verifies = [SwRequirements.sw_req_builtin_converters]
         }
@@ -488,7 +488,8 @@ section "SW-Tests" {
                 - online with an output folder outside the repository
 
                 Check the links to the repository files at the current commit, with the subfolder for a project in
-                a subfolder. Check that the test results link to their site page, not to their generated records.
+                a subfolder. Check that the test results link to their row on the site page, named by their record,
+                not to their generated records.
                 '''
             verifies = [SwRequirements.sw_req_trace_report]
         }
@@ -519,7 +520,7 @@ section "SW-Tests" {
                 - the start page with the configured title and the coverage summary instead of the LOBSTER title
                 - a page per trace level with the item cards and the page header
                 - that the item source links are relative and point to the project files
-                - that the test results link to their site page, named by its title
+                - that the test results link to their row on the site page, named by their record
                 - that no HTML tracing report is created
                 '''
             verifies = [SwRequirements.sw_req_trace_report_rst]

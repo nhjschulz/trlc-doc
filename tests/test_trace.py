@@ -78,12 +78,13 @@ def _report_items(cfg_file: Path) -> dict:
 
 
 def _assert_test_result_links(report: str) -> None:
-    """Check that the test results link to their site page and not to their generated records.
+    """Check that the test results link to their row on the site page and not to their generated records.
 
     Args:
         report (str): The HTML tracing report.
     """
-    assert '<a href="sw_test_results/index.html" target="_blank">sw_test_results/index.html</a>' in report
+    href = "sw_test_results/index.html#sw_test_result_report.rst-test_hello_result"
+    assert f'<a href="{href}" target="_blank">test_hello_result</a>' in report
     assert "sw_test_result_report.trlc" not in report
 
 

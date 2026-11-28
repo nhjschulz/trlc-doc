@@ -1026,9 +1026,12 @@ projects: the links contain the path of the project in the repository.
 
 Test results are an exception, online and offline: their records are generated
 into the output folder, which neither the repository nor the site contains. The
-items of a level whose `document` is a `test_results` document link to the site
-page of that document instead, e.g. `sw_test_results/index.html`. With
-`trace.report: rst`, the link shows the page title.
+items of a level whose `document` is a `test_results` document link to their
+row on the site page of that document instead, e.g.
+`sw_test_results/index.html#sw_test_result_report.rst-test_cli_result`. The link
+shows the record name, e.g. `test_cli_result`. The anchor of the row comes from
+the built-in converter `builtin:create_test_report_in_rst.py`; with a project
+converter without these anchors, the link opens the top of the page.
 
 ## 7. plantuml
 

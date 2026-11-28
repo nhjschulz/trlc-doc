@@ -349,15 +349,13 @@ def test_trace_report_rst(tmp_path: Path, plantuml_jar: Path, monkeypatch: pytes
         assert not Path(link).is_absolute()
         assert (report_dir / link).resolve() == (root / "trlc" / "swe-req" / "swe-req.trlc").resolve()
 
-    # Test results link to their site page, which Sphinx resolves and names by its title.
+    # Test results link to their row on the site page, named by their record.
     results = (report_dir / "sw_test_result.html").read_text(encoding="utf-8")
     assert "sw_test_result_report.trlc" not in results
-    links = re.findall(r'<a class="reference internal" href="([^"]+)"><span class="doc">([^<]+)</span></a>', results)
-    assert links
-    for link, text in links:
-        assert link == "../sw_test_results/index.html"
-        assert text == next(doc["title"] for doc in data["documents"] if doc["id"] == "sw_test_results")
-    assert (report_dir / "../sw_test_results/index.html").is_file()
+    links = re.findall(r'<a class="reference external" href="(\.\./sw_test_results/[^"]+)">([^<]+)</a>', results)
+    assert links == [("../sw_test_results/index.html#sw_test_result_report.rst-test_hello_result", "test_hello_result")]
+    page, anchor = links[0][0].split("#")
+    assert f'<span id="{anchor}">' in (report_dir / page).read_text(encoding="utf-8")
 
 
 def test_page_placeholders_site(tmp_path: Path, plantuml_jar: Path, monkeypatch: pytest.MonkeyPatch) -> None:
