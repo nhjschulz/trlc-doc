@@ -18,6 +18,7 @@
 
 # Imports **********************************************************************
 
+import html
 import json
 import os
 import re
@@ -88,7 +89,7 @@ def _write_html_report(cfg: Config, report_file: Path) -> Path:
     # lobster-trace: SwRequirements.sw_req_trace_report
     """Create the HTML tracing report, which the html step embeds in a page at the root of the site.
 
-    The items of test results link to the page of their document, relative to the site root.
+    The items of test results link to their row on the page of their document, relative to the site root.
 
     Args:
         cfg (Config): Project configuration.
@@ -99,7 +100,7 @@ def _write_html_report(cfg: Config, report_file: Path) -> Path:
     """
     with open(report_file, encoding="utf-8") as file:
         report = json.load(file)
-    _link_test_results(cfg, report, ".html")
+    links = _link_test_results(cfg, report, ".html")
     html_input = report_file.with_name("report_html.lobster")
     html_input.write_text(json.dumps(report, indent=2), encoding="utf-8")
 
@@ -107,6 +108,7 @@ def _write_html_report(cfg: Config, report_file: Path) -> Path:
     if cfg.trace.get("markdown", False):
         command.append("--render-md")
     run([*command, str(html_input)], cfg.root)
+    _replace_link_texts(cfg.trace_report_html, links)
     return cfg.trace_report_html
 
 
@@ -116,7 +118,7 @@ def _write_rst_report(cfg: Config, report_file: Path) -> Path:
 
     The local file references are made relative to the project root and prefixed with the path from a report page
     back to the project root, so they work from the site. Repository links of an online report are kept.
-    The items of test results link to the page of their document.
+    The items of test results link to their row on the page of their document.
 
     Args:
         cfg (Config): Project configuration.
@@ -132,7 +134,7 @@ def _write_rst_report(cfg: Config, report_file: Path) -> Path:
             location = item.get("location", {})
             if location.get("kind") == "file" and Path(location["file"]).is_relative_to(cfg.root):
                 location["file"] = Path(location["file"]).relative_to(cfg.root).as_posix()
-    pages = _link_test_results(cfg, report, "")
+    links = _link_test_results(cfg, report, "")
     rst_input = report_file.with_name("report_rst.lobster")
     rst_input.write_text(json.dumps(report, indent=2), encoding="utf-8")
 
@@ -149,14 +151,14 @@ def _write_rst_report(cfg: Config, report_file: Path) -> Path:
         ],
         cfg.root,
     )
-    _replace_page_links(cfg.trace_report_rst, source_root, pages)
+    _replace_page_links(cfg.trace_report_rst, source_root, links)
     return cfg.trace_report_rst
 
 
-def _link_test_results(cfg: Config, report: dict[str, Any], suffix: str) -> list[str]:
+def _link_test_results(cfg: Config, report: dict[str, Any], suffix: str) -> dict[str, str]:
     # lobster-trace: SwRequirements.sw_req_trace_report
     # lobster-trace: SwRequirements.sw_req_trace_report_rst
-    """Link the items of test result levels to the page of their test_results document.
+    """Link the items of test result levels to their row on the page of their test_results document.
 
     The test result records are generated into the output folder, which neither the repository
     nor the site contains. The reader wants to see the results anyway, not their records.
@@ -169,7 +171,8 @@ def _link_test_results(cfg: Config, report: dict[str, Any], suffix: str) -> list
         suffix (str): Appended to the page name, e.g. '.html'.
 
     Returns:
-        list[str]: The page names the items link to now.
+        dict[str, str]: The new link targets, e.g. 'sw_test_results/index.html#<anchor>', with the record
+        names to show as link text.
     """
     level_pages: dict[str, str] = {}
     for level in cfg.trace["levels"]:
@@ -179,32 +182,92 @@ def _link_test_results(cfg: Config, report: dict[str, Any], suffix: str) -> list
         if doc["type"] == "test_results":
             level_pages[level["name"]] = cfg.page_name(doc)
 
+    links: dict[str, str] = {}
     for level in report["levels"]:
         page = level_pages.get(level["name"])
         if page is None:
             continue
         for item in level["items"]:
-            item["location"] = {"kind": "file", "file": page + suffix, "line": None, "column": None}
-    return sorted(set(level_pages.values()))
+            target = page + suffix
+            anchor = _test_result_anchor(item)
+            if anchor:
+                target += "#" + anchor
+            item["location"] = {"kind": "file", "file": target, "line": None, "column": None}
+            links[target] = _record_name(item)
+    return links
 
 
-def _replace_page_links(rst_dir: Path, source_root: str, pages: list[str]) -> None:
+def _record_name(item: dict[str, Any]) -> str:
+    # lobster-trace: SwRequirements.sw_req_trace_report
+    """Get the TRLC record name of a LOBSTER item.
+
+    Args:
+        item (dict[str, Any]): LOBSTER item of a TRLC record, named '<package>.<record>'.
+
+    Returns:
+        str: The record name without package, e.g. 'test_cli_result'.
+    """
+    return item["name"].rsplit(".", 1)[-1]
+
+
+def _test_result_anchor(item: dict[str, Any]) -> str:
+    # lobster-trace: SwRequirements.sw_req_trace_report
+    """Get the anchor of a test result row on the test results page.
+
+    builtin:create_test_report_in_rst.py gives every row the ID '<file>.rst-<record>', with the
+    name of the converted TRLC file and the record name in lowercase, e.g.
+    'sw_test_result_report.rst-test_cli_result'.
+
+    Args:
+        item (dict[str, Any]): LOBSTER item of a test result record, still with its TRLC location.
+
+    Returns:
+        str: The anchor, empty if the item has no file location.
+    """
+    file_name = item.get("location", {}).get("file")
+    if not file_name:
+        return ""
+    record = _record_name(item).lower().replace(" ", "-")
+    return f"{Path(file_name).stem}.rst-{record}"
+
+
+def _replace_link_texts(report_html: Path, links: dict[str, str]) -> None:
+    # lobster-trace: SwRequirements.sw_req_trace_report
+    """Show the record names as text of the test result links in the HTML report.
+
+    lobster-html-report shows the link target as text, which is long with the anchor.
+
+    Args:
+        report_html (Path): HTML tracing report, updated in place.
+        links (dict[str, str]): Link targets with the text to show.
+    """
+    text = report_html.read_text(encoding="utf-8")
+    for target, name in links.items():
+        text = text.replace(f">{html.escape(target)}</a>", f">{html.escape(name)}</a>")
+    report_html.write_text(text, encoding="utf-8")
+
+
+def _replace_page_links(rst_dir: Path, source_root: str, links: dict[str, str]) -> None:
     # lobster-trace: SwRequirements.sw_req_trace_report_rst
-    """Replace the links of the reStructuredText report to site pages by Sphinx document links.
+    """Replace the links of the reStructuredText report to site pages by links relative to the report page.
 
     lobster-rst-report prefixes every file link with the path back to the project root, which is
-    wrong for a site page. A :doc: link is resolved by Sphinx and shows the page title.
+    wrong for a site page. The report pages are in a folder below the site root, and the pages of the
+    built site are '<page>.html'. The record name is the link text.
 
     Args:
         rst_dir (Path): Folder with the report pages, updated in place.
         source_root (str): The prefix lobster-rst-report adds to file links.
-        pages (list[str]): Page names the report links to as files.
+        links (dict[str, str]): Link targets '<page>' or '<page>#<anchor>' with the text to show.
     """
     for page_file in rst_dir.glob("*.rst"):
         text = page_file.read_text(encoding="utf-8")
-        for page in pages:
-            href = f"{source_root.rstrip('/')}/{page}"
-            text = re.sub(r"`[^`]*<" + re.escape(href) + r">`__", f":doc:`/{page}`", text)
+        for target, name in links.items():
+            page, _, anchor = target.partition("#")
+            href = f"../{page}.html" + (f"#{anchor}" if anchor else "")
+            lobster_link = r"`[^`]*<" + re.escape(f"{source_root.rstrip('/')}/{target}") + r">`__"
+            # Record names and page names contain no backslash, which re.sub would interpret.
+            text = re.sub(lobster_link, f"`{name} <{href}>`__", text)
         page_file.write_text(text, encoding="utf-8")
 
 

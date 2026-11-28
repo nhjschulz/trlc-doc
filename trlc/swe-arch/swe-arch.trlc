@@ -365,11 +365,13 @@ section "trlcdoc SW Architecture" {
                         - creates the HTML tracing report with lobster-html-report
                         - or the site pages with lobster-rst-report, using project relative file references
                         - links the items to the repository with lobster-online-report for online reports
-                        - links the items of levels with a test results document to the site page of that document
+                        - links the items of levels with a test results document to their row on the site page
 
                         The test result records are generated into the output folder, so their items are found by
                         their level and get a link relative to the report page, after the online conversion. The HTML
-                        report is embedded at the site root, the site pages get a Sphinx `:doc:` link.
+                        report is embedded at the site root, the site pages are in a folder below it. The link ends
+                        with the anchor that the built-in test results converter gives every row, derived from the
+                        TRLC file and record name. The record name is the link text.
 
                         It lists the items with missing trace links and reports them as findings.
                         '''

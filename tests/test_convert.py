@@ -113,6 +113,10 @@ def test_builtin_converters(project: Path) -> None:
         assert "Call hello() and check the greeting." in _read_all(cfg.convert_dir(fmt, "sw_test"), pattern)
         assert "test_hello" in _read_all(cfg.convert_dir(fmt, "sw_test_results"), pattern)
 
+    # Every result row has an anchor for the links of the tracing report.
+    anchor = '<span id="sw_test_result_report.rst-test_hello_result"></span>'
+    assert anchor in _read_all(cfg.convert_dir("rst", "sw_test_results"), "*.rst")
+
 
 def test_conversion_error(tmp_path: Path) -> None:
     """A TRLC error stops the conversion with a build error.

@@ -24,13 +24,17 @@ from typing import Optional, Any
 from pyTRLCConverter.base_converter import RecordsPolicy
 from pyTRLCConverter.ret import Ret
 from pyTRLCConverter.rst_converter import RstConverter
-from pyTRLCConverter.rst.element import RstTable
+from pyTRLCConverter.rst.element import RstRawText, RstTable
 from pyTRLCConverter.rst.text import RstText
 from pyTRLCConverter.trlc_helper import Record_Object
 
 # Variables ********************************************************************
 
 TEST_CASES_FILE_NAME = "swe-test.rst"
+
+# Role for inline raw HTML. A table row can't hold a label, so each row gets an anchor as HTML span.
+# The empty comment ends the directive, otherwise the indented table would become its content.
+RAW_HTML_ROLE = ".. role:: raw-html(raw)\n   :format: html\n\n..\n\n"
 
 # Classes **********************************************************************
 
@@ -144,7 +148,7 @@ class CustomRstConverter(RstConverter):
 
             test_case = RstText.link(test_case, anchor_tag)
 
-        test_function_name = RstText.escape(test_function_name)
+        test_function_name = self._get_anchor(test_case_result) + RstText.escape(test_function_name)
 
         if test_result == "PASSED":
             test_result = RstText.role(test_result, "green")
@@ -155,6 +159,25 @@ class CustomRstConverter(RstConverter):
 
         return row
 
+    def _get_anchor(self, test_case_result: Record_Object) -> str:
+        """Get the anchor of the given test case result as inline raw HTML.
+
+        The anchor ID follows the label scheme of the converted records: the reStructuredText
+        file name, a hyphen and the lowercase record name, e.g.
+        "sw_test_result_report.rst-test_cli_result". It allows links to the row of a result.
+
+        Args:
+            test_case_result (Record_Object): Test case result.
+
+        Returns:
+            str: Anchor as raw-html role
+        """
+        file_name = self._file_name_trlc_to_rst(test_case_result.location.file_name)
+        anchor_id = f"{file_name}-{test_case_result.name.lower().replace(' ', '-')}"
+
+        # The escaped space ends the role without adding a space to the cell text.
+        return f":raw-html:`<span id=\"{anchor_id}\"></span>`\\ "
+
     def _print_test_case_results(self) -> None:
         """Prints the software test case results.
         """
@@ -164,6 +187,7 @@ class CustomRstConverter(RstConverter):
 
         rows = [self._get_table_row(test_case_result) for test_case_result in self._test_case_results]
 
+        self._document.add(RstRawText(RAW_HTML_ROLE))
         self._document.add(RstTable(column_titles, rows))
 
 # Functions ********************************************************************
