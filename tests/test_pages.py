@@ -156,7 +156,7 @@ def test_toctree_check(project: Path, capsys: pytest.CaptureFixture) -> None:
     # A placeholder naming no document is a configuration error, exit code 2.
     data = _config(root, WRONG_INDEX.replace("{page:sw_requirements}", "{page:sw_req}\n   {page:sw-arch}"))
     assert cli.main(["-c", str(write_config(root, data)), "check"]) == 2
-    out = capsys.readouterr().out
+    out = capsys.readouterr().err
     assert "html.index: placeholder '{page:sw_req}' names no document." in out
     assert "html.index: placeholder '{page:sw-arch}' names no document." in out
 

@@ -16,6 +16,7 @@ class "argparse" as argparser
 
 class "config" as config <<module>>
 class "util" as util <<module>>
+class "log" as log <<module>>
 class "plantuml" as plantuml <<module>>
 class "testrun" as testrun <<module>>
 class "convert" as convert <<module>>
@@ -26,6 +27,7 @@ main ..> cli : main()
 cli ...> argparser
 cli ...> config : find_config()\nload_config()
 cli ...> util : remove_output()
+cli ...> log : setup_logging()
 cli ...> plantuml : provide_plantuml()
 cli ...> testrun : run_tests()
 cli ...> convert : convert_documents()

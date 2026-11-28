@@ -20,6 +20,7 @@
 
 import html
 import json
+import logging
 import os
 import re
 from pathlib import Path
@@ -28,9 +29,12 @@ from typing import Any
 import yaml
 
 from .config import Config
+from .log import TRACE
 from .util import TrlcdocError, clean_dir, find_graphviz, find_tool, git_output, git_root, repository_url, run
 
 # Variables ********************************************************************
+
+LOG = logging.getLogger(__name__)
 
 # LOBSTER tracing status of items that are traced as required. Justified items
 # (e.g. marked with "lobster-exclude") count as covered in LOBSTER, too.
@@ -45,6 +49,7 @@ def build_trace_report(cfg: Config, online: bool) -> int:
     # lobster-trace: SwRequirements.sw_req_trace_report
     # lobster-trace: SwRequirements.sw_req_trace_findings
     # lobster-trace: SwRequirements.sw_req_external_tools
+    # lobster-trace: SwRequirements.sw_req_verbose_output
     """Extract the trace data of all levels and create the tracing report.
 
     Args:
@@ -64,6 +69,7 @@ def build_trace_report(cfg: Config, online: bool) -> int:
 
     for level in cfg.trace["levels"]:
         out_file = trace_dir / f"{_slug(level['name'])}.lobster"
+        LOG.debug("Trace level %s (%s) -> %s", level["name"], level.get("kind", "requirements"), out_file)
         match level.get("kind", "requirements"):
             case "requirements":
                 _extract_trlc(cfg, level, out_file)
@@ -76,8 +82,10 @@ def build_trace_report(cfg: Config, online: bool) -> int:
     run([find_tool("lobster-report"), "--lobster-config", str(policy_file), "--out", str(report_file)], cfg.root)
 
     if online:
+        LOG.debug("Online report: item links point to the repository at the current commit")
         _make_online(cfg, report_file)
 
+    LOG.debug("Tracing report format: %s", cfg.trace_report_format)
     if cfg.trace_report_format == "rst":
         _write_rst_report(cfg, report_file)
     else:
@@ -194,6 +202,7 @@ def _link_test_results(cfg: Config, report: dict[str, Any], suffix: str) -> dict
                 target += "#" + anchor
             item["location"] = {"kind": "file", "file": target, "line": None, "column": None}
             links[target] = _record_name(item)
+            LOG.log(TRACE, "Test result %s links to %s", item["name"], target)
     return links
 
 
@@ -243,7 +252,10 @@ def _replace_link_texts(report_html: Path, links: dict[str, str]) -> None:
     """
     text = report_html.read_text(encoding="utf-8")
     for target, name in links.items():
-        text = text.replace(f">{html.escape(target)}</a>", f">{html.escape(name)}</a>")
+        old_text = f">{html.escape(target)}</a>"
+        count = text.count(old_text)
+        LOG.log(TRACE, "%s: link text %s replaced by %s (%d times)", report_html.name, target, name, count)
+        text = text.replace(old_text, f">{html.escape(name)}</a>")
     report_html.write_text(text, encoding="utf-8")
 
 
@@ -267,7 +279,9 @@ def _replace_page_links(rst_dir: Path, source_root: str, links: dict[str, str]) 
             href = f"../{page}.html" + (f"#{anchor}" if anchor else "")
             lobster_link = r"`[^`]*<" + re.escape(f"{source_root.rstrip('/')}/{target}") + r">`__"
             # Record names and page names contain no backslash, which re.sub would interpret.
-            text = re.sub(lobster_link, f"`{name} <{href}>`__", text)
+            text, count = re.subn(lobster_link, f"`{name} <{href}>`__", text)
+            if count:
+                LOG.log(TRACE, "%s: link to %s replaced by %s (%d times)", page_file.name, target, href, count)
         page_file.write_text(text, encoding="utf-8")
 
 
@@ -480,7 +494,7 @@ def _print_summary(report_file: Path) -> int:
         report = json.load(file)
 
     total = 0
-    print("Tracing:")
+    LOG.info("Tracing:")
     for level in report["levels"]:
         missing = [item["tag"] for item in level["items"] if item.get("tracing_status") not in TRACED_STATUS]
         justified = sum(item.get("tracing_status") == "JUSTIFIED" for item in level["items"])
@@ -488,9 +502,9 @@ def _print_summary(report_file: Path) -> int:
         line = f"  {level['name']}: {len(level['items'])} items, {len(missing)} not traced"
         if justified:
             line += f", {justified} justified"
-        print(line)
+        LOG.info("%s", line)
         for tag in missing:
-            print(f"    {tag}")
+            LOG.info("    %s", tag)
     return total
 
 

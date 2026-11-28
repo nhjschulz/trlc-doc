@@ -12,6 +12,14 @@ package "Common Services" {
         + git_output(args, cwd): Optional[str]
     }
 
+    class "log" as log <<module>> {
+        + TRACE
+        + setup_logging(verbosity)
+        + redact_env(env): dict
+        + redact_url(text): str
+        + command_line(cmd): str
+    }
+
     class "TrlcdocError" as error
 
     class "Exception" as exception
@@ -19,10 +27,13 @@ package "Common Services" {
 
 class "subprocess" as subprocess <<module>>
 class "shutil" as shutil <<module>>
+class "logging" as logging <<module>>
 
 error -up-|> exception
 util .l.> error : raises
 util ..> subprocess : <<use>>
 util ..> shutil : <<use>>
+util ..> log : <<use>>
+log ..> logging : <<use>>
 
 @enduml

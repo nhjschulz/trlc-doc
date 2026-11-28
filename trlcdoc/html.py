@@ -19,6 +19,7 @@
 # Imports **********************************************************************
 
 import json
+import logging
 import os
 import platform
 import re
@@ -31,12 +32,15 @@ from typing import Any
 from sphinx.cmd.build import build_main
 
 from .config import PACKAGE_DIR, Config
+from .log import TRACE
 from .pages import replace_placeholders
 from .util import TrlcdocError, clean_dir, find_graphviz, git_output, git_root, repository_url, run
 
 # Variables ********************************************************************
 
 SPHINX_TEMPLATE_DIR = PACKAGE_DIR / "sphinx"
+
+LOG = logging.getLogger(__name__)
 
 # Included converter output gets this suffix, so Sphinx does not treat it as a document.
 INCLUDE_SUFFIX = ".inc"
@@ -85,10 +89,24 @@ def build_html(cfg: Config) -> Path:
     out_dir = clean_dir(cfg.html_dir, cfg.output)
     # The Sphinx doctree cache is kept out of the HTML site.
     doctrees_dir = clean_dir(cfg.output / "doctrees", cfg.output)
-    print(f"Building HTML -> {out_dir}")
-    if build_main(["-b", "html", "-q", "-d", str(doctrees_dir), str(src_dir), str(out_dir)]) != 0:
+    LOG.info("Building HTML -> %s", out_dir)
+    if build_main(["-b", "html", *_sphinx_verbosity(), "-d", str(doctrees_dir), str(src_dir), str(out_dir)]) != 0:
         raise TrlcdocError("Sphinx HTML build failed.")
     return out_dir
+
+
+def _sphinx_verbosity() -> list[str]:
+    # lobster-trace: SwRequirements.sw_req_verbose_output
+    """Get the Sphinx option for the verbosity of trlcdoc.
+
+    Returns:
+        list[str]: '-q' (warnings and errors only) by default, nothing with -v, '-v' with -vv.
+    """
+    if LOG.isEnabledFor(TRACE):
+        return ["-v"]
+    if LOG.isEnabledFor(logging.DEBUG):
+        return []
+    return ["-q"]
 
 
 def show_html(cfg: Config) -> Path:
@@ -112,7 +130,7 @@ def show_html(cfg: Config) -> Path:
     if not index.is_file():
         raise TrlcdocError(f"No HTML site found at {index}, run the html step first.")
 
-    print(f"Opening {index}")
+    LOG.info("Opening %s", index)
     if not (_is_wsl() and _open_in_windows(index)):
         try:
             opened = webbrowser.get().open(index.as_uri())
@@ -217,6 +235,7 @@ def _write_page(cfg: Config, doc: dict[str, Any], src_dir: Path, copy_dirs: list
     """
     doc_type = doc["type"]
     page_file = src_dir / f"{doc['id']}.rst"
+    LOG.log(TRACE, "Page %s: document %s of type %s", cfg.page_name(doc), doc["id"], doc_type)
 
     # The schema allows only these document types, so every type has a case.
     match doc_type:
@@ -236,6 +255,7 @@ def _write_page(cfg: Config, doc: dict[str, Any], src_dir: Path, copy_dirs: list
             html_source = cfg.html_source(doc)
             _require(html_source / "index.html", "generate it first")
             copy_dirs.append({"source": str(html_source), "destination": doc["id"]})
+            LOG.debug("HTML folder %s is copied into the site as %s", html_source, doc["id"])
             _write_generated(
                 cfg,
                 page_file,

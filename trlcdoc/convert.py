@@ -18,6 +18,7 @@
 
 # Imports **********************************************************************
 
+import logging
 from typing import Any
 
 from .config import TRLC_DOCUMENT_TYPES, Config
@@ -25,6 +26,8 @@ from .plantuml import java_headless_env
 from .util import TrlcdocError, clean_dir, find_tool, run
 
 # Variables ********************************************************************
+
+LOG = logging.getLogger(__name__)
 
 # Classes **********************************************************************
 
@@ -49,7 +52,7 @@ def convert_documents(cfg: Config, fmt: str) -> int:
                 convert_document(cfg, doc, fmt)
                 converted += 1
             else:
-                print(f"Skipping {doc['id']}: no {fmt} converter configured.")
+                LOG.info("Skipping %s: no %s converter configured.", doc["id"], fmt)
     return converted
 
 
@@ -74,7 +77,7 @@ def convert_document(cfg: Config, doc: dict[str, Any], fmt: str) -> list[str]:
         raise TrlcdocError(f"No test results in {cfg.test_results_dir}, run the tests step first.")
 
     out_dir = clean_dir(cfg.convert_dir(fmt, doc["id"]), cfg.output)
-    print(f"Converting {doc['id']} -> {out_dir}")
+    LOG.info("Converting %s -> %s", doc["id"], out_dir)
 
     cmd = [find_tool("pyTRLCConverter")]
     cmd.extend(f"--source={source}" for source in sources)

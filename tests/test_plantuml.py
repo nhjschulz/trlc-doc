@@ -301,11 +301,8 @@ def test_plantuml_picoweb_stop(project: Path, plantuml_jar: Path, monkeypatch: p
             raise error
 
         monkeypatch.setattr(cli, "_run_step", failing_run_step)
-        if isinstance(error, TrlcdocError):
-            assert cli.main(["-c", str(project), "convert"]) == 2
-        else:
-            with pytest.raises(KeyboardInterrupt):
-                cli.main(["-c", str(project), "convert"])
+        expected_exit_code = 2 if isinstance(error, TrlcdocError) else cli.EXIT_INTERRUPTED
+        assert cli.main(["-c", str(project), "convert"]) == expected_exit_code
         assert processes[-1].poll() is not None
         assert not plantuml._running_picoweb
     assert len(processes) == 3
@@ -338,7 +335,7 @@ def test_plantuml_picoweb_fallback(
     monkeypatch.setenv("PLANTUML", str(broken_jar))
     assert provide_plantuml(cfg) == broken_jar
     assert os.environ["PLANTUML"] == str(broken_jar)
-    assert warning in capsys.readouterr().out
+    assert warning in capsys.readouterr().err
     assert not plantuml._running_picoweb
 
     # A server that doesn't answer in time is stopped.
@@ -348,7 +345,7 @@ def test_plantuml_picoweb_fallback(
     assert provide_plantuml(cfg) == plantuml_jar
     monkeypatch.undo()
     assert len(processes) == 1 and processes[0].poll() is not None
-    output = capsys.readouterr().out
+    output = capsys.readouterr().err
     assert warning in output and "no diagram rendered within 0 s" in output
     assert not plantuml._running_picoweb
 
@@ -356,7 +353,7 @@ def test_plantuml_picoweb_fallback(
     monkeypatch.setenv("PLANTUML", str(plantuml_jar))
     monkeypatch.setattr(plantuml, "find_tool", lambda name, hint="": str(cfg.root / "no-java"))
     assert provide_plantuml(cfg) == plantuml_jar
-    assert warning in capsys.readouterr().out
+    assert warning in capsys.readouterr().err
     assert not plantuml._running_picoweb
 
 

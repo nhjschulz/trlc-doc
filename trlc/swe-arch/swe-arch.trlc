@@ -99,6 +99,7 @@ section "trlcdoc SW Architecture" {
                         The CLI provides the application entry point. It
 
                         - parses the command line with argparse
+                        - sets up the console output for the verbosity of the `-v` option (`log.py`)
                         - locates and loads the configuration, with the output folder of the `--output` option
                         - determines the steps to run in their fixed order, including the steps they depend on
                         - runs them
@@ -112,11 +113,12 @@ section "trlcdoc SW Architecture" {
                         - 0: success
                         - 1: findings
                         - 2: build error
+                        - 130: interrupted
                         '''
                     verification_criteria =
                         '''
-                        Call `trlcdoc` with different step selections, with `--help`, with `--version` and with an invalid
-                        configuration. Check the executed steps, the console output and the exit code.
+                        Call `trlcdoc` with different step selections, with `--help`, `--version`, `-v` and with an
+                        invalid configuration. Check the executed steps, the console output and the exit code.
                         '''
                     satisfies = [
                         SwRequirements.sw_req_cli,
@@ -128,7 +130,8 @@ section "trlcdoc SW Architecture" {
                         SwRequirements.sw_req_clean,
                         SwRequirements.sw_req_show,
                         SwRequirements.sw_req_toctree_check,
-                        SwRequirements.sw_req_output_option
+                        SwRequirements.sw_req_output_option,
+                        SwRequirements.sw_req_verbose_output
                     ]
                 }
 
@@ -191,7 +194,7 @@ section "trlcdoc SW Architecture" {
                 SwArchSpec sw_arch_comp_util {
                     description =
                         '''
-                        **Common Services component** (`util.py`)
+                        **Common Services component** (`util.py`, `log.py`)
 
                         Provides services shared by all steps:
 
@@ -200,6 +203,13 @@ section "trlcdoc SW Architecture" {
                         - running external commands
                         - querying git
                         - managing the output folder
+                        - the console output
+
+                        All modules log with the standard `logging` module, below the `trlcdoc` logger. `log.py` writes
+                        INFO and DEBUG messages to the standard output, warnings and errors to the standard error
+                        output, and adds the level name to verbose lines. It defines the TRACE level for `-vv` and
+                        removes secrets from environment variables and URLs. Running a command logs it, and with `-v`
+                        its working folder, environment, exit code and duration.
 
                         Build errors are reported with the `TrlcdocError` exception. The output folder management
                         creates the output folder with a marker file and deletes only folders inside a marked output
@@ -215,7 +225,8 @@ section "trlcdoc SW Architecture" {
                         SwRequirements.sw_req_clean,
                         SwRequirements.sw_req_delete_protection,
                         SwRequirements.sw_req_exit_code,
-                        SwRequirements.sw_req_external_tools
+                        SwRequirements.sw_req_external_tools,
+                        SwRequirements.sw_req_verbose_output
                     ]
                 }
 

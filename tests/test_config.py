@@ -77,7 +77,7 @@ def test_config_file(project: Path, monkeypatch: pytest.MonkeyPatch, capsys: pyt
     assert load_config(other).project["name"] == "other"
 
     assert cli.main(["-c", str(root / "missing.yaml"), "check"]) == 2
-    assert "not found" in capsys.readouterr().out
+    assert "not found" in capsys.readouterr().err
 
 
 def test_config_validation(project: Path, capsys: pytest.CaptureFixture) -> None:
@@ -126,7 +126,7 @@ def test_config_validation(project: Path, capsys: pytest.CaptureFixture) -> None
 
     # No step runs with an invalid configuration.
     assert cli.main(["-c", str(project), "clean", "all"]) == 2
-    assert "has invalid settings" in capsys.readouterr().out
+    assert "has invalid settings" in capsys.readouterr().err
     assert not (root / "build").exists()
 
     # Errors start with file and line of their entry, a missing key with the line of its parent.
@@ -164,7 +164,7 @@ def test_config_validation(project: Path, capsys: pytest.CaptureFixture) -> None
     # fmt: on
     project.write_text("\n".join(lines) + "\n", encoding="utf-8")
     assert cli.main(["-c", str(project), "check"]) == 2
-    out = capsys.readouterr().out.splitlines()
+    out = capsys.readouterr().err.splitlines()
     assert out[-4:] == [
         f"  {project}:5: project.logo: file 'docs/logo.pngx' not found.",
         f"  {project}:20: documents[sw_architecture].include: 'unknown' is no document of type trlc or test_results.",
@@ -178,7 +178,7 @@ def test_config_validation(project: Path, capsys: pytest.CaptureFixture) -> None
     lines[24] = "    type: pdf"
     project.write_text("\n".join(lines) + "\n", encoding="utf-8")
     assert cli.main(["-c", str(project), "check"]) == 2
-    out = capsys.readouterr().out
+    out = capsys.readouterr().err
     assert f"\n  {project}:1: project: 'author' is a required property" in out
     assert f"\n  {project}:3: project: Additional properties are not allowed ('authors' was unexpected)" in out
     assert f"\n  {project}:25: documents/2/type: 'pdf' is not one of" in out
@@ -187,7 +187,7 @@ def test_config_validation(project: Path, capsys: pytest.CaptureFixture) -> None
     # A file that is no valid YAML is reported with the position of the error.
     project.write_text("project:\n  name: x\n   author: y\n", encoding="utf-8")
     assert cli.main(["-c", str(project), "check"]) == 2
-    out = capsys.readouterr().out
+    out = capsys.readouterr().err
     assert "is no valid YAML: mapping values are not allowed here" in out
     assert "line 3, column 10" in out
     assert "Traceback" not in out

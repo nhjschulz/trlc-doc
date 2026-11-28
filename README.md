@@ -72,7 +72,7 @@ The table below shows the supported steps. Steps always execute in this order:
 | `show` | Opens the start page of the built site in the web browser. Not part of `all`. |
 
 Exit codes: `0` success, `1` content findings (failed tests, missing trace
-links), `2` build error. All generated files go to `paths.output`
+links), `2` build error, `130` interrupted (Ctrl+C). All generated files go to `paths.output`
 (default `build/trlcdoc`), never into this package folder.
 
 ## Usage
@@ -132,6 +132,8 @@ trlcdoc convert --format markdown   # Markdown export of the TRLC documents
 trlcdoc trace --online              # tracing report linked to the repository
 trlcdoc -c other.yaml check         # validate a configuration
 trlcdoc --output /tmp/site          # build into another folder, overrides paths.output
+trlcdoc -v tests                    # verbose: decisions, tool details and timings (-vv: per-item details)
+trlcdoc --version                   # show the trlcdoc version
 ```
 
 ## Configuration

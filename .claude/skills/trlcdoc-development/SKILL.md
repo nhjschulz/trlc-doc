@@ -100,6 +100,12 @@ The TRLC files are part of every functional change:
 - Errors for the user raise `TrlcdocError` with a message that names the
   configuration entry, file or tool and what to do. Exit codes: 0 success,
   1 content findings (failed tests, untraced items), 2 build or configuration error.
+- Output goes through `logging`, never `print` (except `plantuml_client.py`, which runs as
+  a child process): `LOG = logging.getLogger(__name__)` per module. INFO is the default
+  output, keep it short and stable; decisions, tool details and timings are DEBUG (`-v`);
+  per-item details such as file rewrites are TRACE (`-vv`, `trlcdoc.log.TRACE`). Use lazy
+  formatting (`LOG.debug("x=%s", x)`) and never log secrets: pass environments and URLs
+  through `redact_env()` / `redact_url()` of `trlcdoc/log.py`.
 - Configuration changes: update the JSON schema `trlcdoc/schema/trlcdoc.schema.json`
   and the reference checks in `trlcdoc/config.py` together.
 - `trlcdoc/converters/` is a copy of pyTRLCConverter's project converters: don't

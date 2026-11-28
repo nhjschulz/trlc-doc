@@ -124,7 +124,7 @@ site or without a web browser it stops with exit code `2`.
 
 Exit codes: `0` success, `1` content findings (failed tests, missing trace
 links, a wrong table of contents in `html.index`), `2` build or configuration
-error.
+error, `130` interrupted (Ctrl+C).
 
 ### 1.4 Validation
 
@@ -1330,7 +1330,21 @@ so stale files of a previous run do not remain.
 
 ## 10. Typical errors
 
-Configuration errors are listed without the leading `<file>:<line>:`.
+Configuration errors are listed without the leading `<file>:<line>:`. Errors and
+warnings go to the standard error output, everything else to the standard output.
+
+If the message doesn't explain the problem, run trlcdoc again with `-v`. It shows
+its decisions (steps, PlantUML source, report format), and for every tool it runs
+the working folder, the environment variables trlcdoc sets, the exit code and the
+duration. `-vv` adds details per item, e.g. every rewritten link of the tracing
+report, and the complete environment. Values of variables named like secrets
+(`TOKEN`, `SECRET`, `PASSWORD`, `KEY`, `CREDENTIAL`) and the user info of URLs are
+shown as `***`.
+
+```bash
+trlcdoc -v tests      # decisions, tool details and timings
+trlcdoc -vv trace     # also per-item details and the environment
+```
 
 | Message | Cause and fix |
 |---------|---------------|
