@@ -485,8 +485,10 @@ section "SW-Tests" {
                 - online with a configured repository
                 - online with the repository derived from the git origin remote
                 - online for a project in a subfolder of the repository
+                - online with an output folder outside the repository
 
-                Check the links to the repository files at the current commit, with the subfolder for the last one.
+                Check the links to the repository files at the current commit, with the subfolder for a project in
+                a subfolder. Check that the test results link to their site page, not to their generated records.
                 '''
             verifies = [SwRequirements.sw_req_trace_report]
         }
@@ -517,6 +519,7 @@ section "SW-Tests" {
                 - the start page with the configured title and the coverage summary instead of the LOBSTER title
                 - a page per trace level with the item cards and the page header
                 - that the item source links are relative and point to the project files
+                - that the test results link to their site page, named by its title
                 - that no HTML tracing report is created
                 '''
             verifies = [SwRequirements.sw_req_trace_report_rst]

@@ -1024,6 +1024,12 @@ uses `project.repository` and needs a git repository with the commit pushed.
 The project may be a subfolder of the repository, e.g. one of several example
 projects: the links contain the path of the project in the repository.
 
+Test results are an exception, online and offline: their records are generated
+into the output folder, which neither the repository nor the site contains. The
+items of a level whose `document` is a `test_results` document link to the site
+page of that document instead, e.g. `sw_test_results/index.html`. With
+`trace.report: rst`, the link shows the page title.
+
 ## 7. plantuml
 
 PlantUML renders the diagrams in TRLC records (during `convert`) and in
